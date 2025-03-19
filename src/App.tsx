@@ -22,12 +22,14 @@ const App = () => (
         <BrowserRouter>
           <NavbarTheme />
           <main className="min-h-screen pt-4">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/scan" element={<Scan />} />
-              <Route path="/about" element={<AboutUs />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <div className="content-container container mx-auto p-4 my-4">
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/scan" element={<Scan />} />
+                <Route path="/about" element={<AboutUs />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </div>
           </main>
         </BrowserRouter>
       </TooltipProvider>

@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -97,5 +98,15 @@
 
   body {
     @apply bg-background text-foreground;
+    background-image: url('/lovable-uploads/37e389b9-efa1-4bb2-87c0-bb57fb7b0716.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
   }
+}
+
+/* Hier fügen wir einen Container-Stil hinzu, um den Content lesbar zu machen */
+.content-container {
+  @apply bg-white/80 dark:bg-black/80 backdrop-blur-sm rounded-lg shadow-lg;
 }

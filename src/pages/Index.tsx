@@ -30,7 +30,7 @@ const Home = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-12 bg-gray-50 rounded-xl mb-12">
+      <section className="py-12 bg-white/90 rounded-xl mb-12 backdrop-blur-sm">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">
             Entdecke Deine Sammlung
