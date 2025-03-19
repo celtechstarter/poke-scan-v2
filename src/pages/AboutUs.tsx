@@ -1,4 +1,3 @@
-
 import { TeamMember } from '@/lib/types';
 import { Github, Mail, Linkedin } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -11,7 +10,7 @@ const AboutUs = () => {
     {
       name: "Marcel Welk",
       role: "Full Stack Entwickler & Projektleiter",
-      description: "React, TypeScript, TailwindCSS, Shadcn/UI, React Query für das Frontend. Computer Vision für Pokémon-Kartenerkennung.",
+      description: "Spezialisiert auf moderne Webarchitekturen mit React, TypeScript und TailwindCSS. Entwicklung reaktiver Benutzeroberflächen mit Shadcn/UI und React Query. Implementation von Computer Vision Algorithmen für präzise Pokémon-Kartenerkennung.",
       image: "/lovable-uploads/c50fc555-0cf5-44b8-a017-e10bfd12252f.png",
       github: "https://github.com/celtechstarter",
       email: "mailto:marcel.welk87@gmail.com",
