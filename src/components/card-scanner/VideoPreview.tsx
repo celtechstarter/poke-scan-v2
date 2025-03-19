@@ -30,6 +30,14 @@ export function VideoPreview({
         scanProgress={scanProgress}
         isCameraActive={isCameraActive}
       />
+
+      {isCameraActive && !isScanning && (
+        <div className="absolute top-4 left-0 right-0 text-center">
+          <div className="inline-block bg-black/40 text-white text-sm px-3 py-1 rounded-full backdrop-blur-sm">
+            Halte die Karte ins Bild für automatische Erkennung
+          </div>
+        </div>
+      )}
     </div>
   );
 }

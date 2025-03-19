@@ -14,8 +14,10 @@ const CardScannerWebcam = () => {
     isCameraActive,
     scanProgress,
     scanResult,
+    autoDetectEnabled,
     scanCard,
-    toggleCamera
+    toggleCamera,
+    toggleAutoDetection
   } = useScannerLogic();
 
   return (
@@ -39,7 +41,7 @@ const CardScannerWebcam = () => {
             isCameraActive={isCameraActive}
           />
           
-          {/* Versteckter Canvas für Bilderfassung */}
+          {/* Versteckter Canvas für Bilderfassung und Analyse */}
           <canvas ref={canvasRef} className="hidden"></canvas>
         </CardContent>
         
@@ -47,8 +49,10 @@ const CardScannerWebcam = () => {
           <ScannerControls 
             isCameraActive={isCameraActive}
             isScanning={isScanning}
+            autoDetectEnabled={autoDetectEnabled}
             onCameraToggle={toggleCamera}
             onScanStart={scanCard}
+            onAutoDetectToggle={toggleAutoDetection}
           />
           
           <ScanResultDisplay scanResult={scanResult} />

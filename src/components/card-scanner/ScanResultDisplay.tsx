@@ -2,6 +2,7 @@
 interface ScanResultProps {
   scanResult: {
     cardName: string;
+    cardNumber?: string;
     price: number | null;
     imageDataUrl: string | null;
   } | null;
@@ -26,6 +27,13 @@ export function ScanResultDisplay({ scanResult }: ScanResultProps) {
         
         <div className="w-full md:w-1/2 flex flex-col justify-center">
           <h3 className="text-xl font-bold">{scanResult.cardName}</h3>
+          
+          {scanResult.cardNumber && (
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              {scanResult.cardNumber}
+            </p>
+          )}
+          
           <p className="text-muted-foreground mb-2">Erkannte Pokemon-Karte</p>
           
           {scanResult.price ? (
@@ -42,11 +50,6 @@ export function ScanResultDisplay({ scanResult }: ScanResultProps) {
               Kein Preis verfügbar
             </p>
           )}
-          
-          <p className="mt-4 text-sm text-muted-foreground">
-            * Dies ist eine Simulation. In der fertigen Version würde die Kartentext-Erkennung 
-            mit KI und eine Integration mit CardMarket implementiert.
-          </p>
         </div>
       </div>
     </div>

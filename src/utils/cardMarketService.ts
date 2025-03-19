@@ -10,8 +10,8 @@ const openai = new OpenAI({
 });
 
 // Function to get card price from CardMarket using OpenAI
-export const getCardPriceFromCardMarket = async (cardName: string): Promise<number | null> => {
-  console.log(`Suche Preis für Karte: ${cardName}`);
+export const getCardPriceFromCardMarket = async (cardIdentifier: string): Promise<number | null> => {
+  console.log(`Suche Preis für Karte: ${cardIdentifier}`);
   
   try {
     // Define the system prompt for OpenAI
@@ -20,11 +20,11 @@ export const getCardPriceFromCardMarket = async (cardName: string): Promise<numb
       messages: [
         {
           role: "system",
-          content: "Du bist ein Assistent, der aktuelle Preise von Pokemon-Karten auf cardmarket.com recherchiert. Gib nur den Durchschnittspreis als Dezimalzahl zurück, ohne Text oder Währungssymbole."
+          content: "Du bist ein Assistent, der aktuelle Preise von Pokemon-Karten auf cardmarket.com recherchiert. Bei der Suche berücksichtigst du sowohl den Kartennamen als auch die Setnummer, um die exakte Karte zu finden. Gib nur den Durchschnittspreis als Dezimalzahl zurück, ohne Text oder Währungssymbole."
         },
         {
           role: "user",
-          content: `Suche den aktuellen Durchschnittspreis für die Pokemon-Karte "${cardName}" auf cardmarket.com. Gib NUR den Preis als Dezimalzahl zurück, ohne Text oder Währungssymbole.`
+          content: `Suche den aktuellen Durchschnittspreis für die Pokemon-Karte "${cardIdentifier}" auf cardmarket.com. Achte dabei besonders auf die Set-Nummer, wenn angegeben. Gib NUR den Preis als Dezimalzahl zurück, ohne Text oder Währungssymbole.`
         }
       ],
       temperature: 0.2, // Lower temperature for more consistent results
