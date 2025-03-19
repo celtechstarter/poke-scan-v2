@@ -11,7 +11,7 @@ const AboutUs = () => {
     {
       name: "Marcel Welk",
       role: "Full Stack Entwickler & Projektleiter",
-      description: "Architektur, Frontend mit React, Backend mit Node.js, Texterkennung mit Tesseract.js und AWS-Integration.",
+      description: "React, TypeScript, TailwindCSS, Shadcn/UI, React Query für das Frontend. Computer Vision für Pokémon-Kartenerkennung.",
       image: "/lovable-uploads/c50fc555-0cf5-44b8-a017-e10bfd12252f.png",
       github: "https://github.com/celtechstarter",
       email: "mailto:marcel.welk87@gmail.com",
