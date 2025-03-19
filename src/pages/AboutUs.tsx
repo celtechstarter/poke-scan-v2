@@ -11,7 +11,7 @@ const AboutUs = () => {
     {
       name: "Marcel Welk",
       role: "Full Stack Entwickler & Projektleiter",
-      description: "Spezialisiert auf moderne Webarchitekturen mit React, TypeScript und TailwindCSS. Entwicklung reaktiver Benutzeroberflächen mit Shadcn/UI und React Query. Implementation von Computer Vision Algorithmen für präzise Pokémon-Kartenerkennung.",
+      description: "Spezialisiert auf React, TypeScript und moderne Web-Technologien. Entwickler der PokeScan Computer Vision Algorithmen für Kartenerkennung.",
       image: "/lovable-uploads/c50fc555-0cf5-44b8-a017-e10bfd12252f.png",
       github: "https://github.com/celtechstarter",
       email: "mailto:marcel.welk87@gmail.com",
@@ -114,7 +114,7 @@ const AboutUs = () => {
       {/* Team-Sektion */}
       <section className="mb-16">
         <h2 className="text-2xl font-bold mb-8 text-center">Unser Team</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+        <div className="flex justify-center">
           {teamMembers.map(renderCard)}
         </div>
       </section>
