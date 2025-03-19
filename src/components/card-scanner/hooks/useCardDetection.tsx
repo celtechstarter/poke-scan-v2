@@ -9,7 +9,7 @@ import {
 
 /**
  * Custom hook for automatic card detection functionality
- * Handles the periodic checking for cards in video frames
+ * Modified to detect only once when enabled
  * 
  * @param {Object} params - Parameters object
  * @param {React.RefObject<HTMLVideoElement>} params.videoRef - Reference to video element
@@ -35,6 +35,7 @@ export function useCardDetection({
   const [autoDetectEnabled, setAutoDetectEnabled] = useState(true);
   const [detectError, setDetectError] = useState<{message: string; type: CardDetectionErrorType} | null>(null);
   const autoDetectIntervalRef = useRef<number | null>(null);
+  const hasDetectedRef = useRef(false);
   const { toast } = useToast();
   
   // Error counter to avoid spamming users with error toasts
@@ -45,7 +46,7 @@ export function useCardDetection({
    * Checks if a card is present in the current video frame
    */
   const detectCard = useCallback(() => {
-    if (!videoRef.current || !canvasRef.current || isScanning) return;
+    if (!videoRef.current || !canvasRef.current || isScanning || hasDetectedRef.current) return;
     
     // Reset error state on each detection attempt
     setDetectError(null);
@@ -57,6 +58,13 @@ export function useCardDetection({
       errorCountRef.current = 0;
       
       if (isCardDetected) {
+        // Mark as detected to prevent multiple detections
+        hasDetectedRef.current = true;
+        
+        // Stop the detection interval
+        stopAutoDetection();
+        
+        // Call the handler
         onCardDetected();
       }
     } catch (error) {
@@ -106,9 +114,12 @@ export function useCardDetection({
       clearInterval(autoDetectIntervalRef.current);
     }
     
+    // Reset the detection flag when starting
+    hasDetectedRef.current = false;
+    
     // Check for card every 1 second
     autoDetectIntervalRef.current = window.setInterval(() => {
-      if (!isScanning && isCameraActive) {
+      if (!isScanning && isCameraActive && !hasDetectedRef.current) {
         detectCard();
       }
     }, 1000);
@@ -134,8 +145,9 @@ export function useCardDetection({
     setAutoDetectEnabled(prev => {
       const newState = !prev;
       if (newState && isCameraActive) {
-        // Reset error counter when enabling
+        // Reset error counter and detection flag when enabling
         errorCountRef.current = 0;
+        hasDetectedRef.current = false;
         startAutoDetection();
       } else {
         stopAutoDetection();
@@ -147,6 +159,8 @@ export function useCardDetection({
   // Start/stop auto detection based on camera state and auto-detect setting
   useEffect(() => {
     if (isCameraActive && autoDetectEnabled) {
+      // Reset detection flag when camera is activated
+      hasDetectedRef.current = false;
       startAutoDetection();
     } else {
       stopAutoDetection();
@@ -157,11 +171,12 @@ export function useCardDetection({
     };
   }, [isCameraActive, autoDetectEnabled, startAutoDetection, stopAutoDetection]);
 
-  // Reset error state when camera is toggled
+  // Reset error state and detection flag when camera is toggled
   useEffect(() => {
     if (!isCameraActive) {
       setDetectError(null);
       errorCountRef.current = 0;
+      hasDetectedRef.current = false;
     }
   }, [isCameraActive]);
 

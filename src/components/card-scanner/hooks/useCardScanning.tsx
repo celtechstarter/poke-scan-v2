@@ -175,7 +175,7 @@ export function useCardScanning({
 
   /**
    * Initiates the card scanning process
-   * Shows a progress indicator while scanning
+   * MODIFIED: Now captures frame immediately instead of showing progress
    */
   const scanCard = useCallback(() => {
     // First cancel any ongoing scan
@@ -185,22 +185,18 @@ export function useCardScanning({
     setScanProgress(0);
     setScanError(null);
     
-    // Simulate scan progress
-    let progress = 0;
-    scanIntervalRef.current = window.setInterval(() => {
-      progress += 5;
-      setScanProgress(progress);
-      
-      if (progress >= 100) {
-        clearInterval(scanIntervalRef.current!);
-        captureFrame();
-      }
-    }, 100);
-    
+    // Instead of a progress simulation, capture immediately
     toast({
       title: "Scan gestartet",
-      description: "Halte die Karte ruhig, während wir sie analysieren...",
+      description: "Karte wird sofort erfasst...",
     });
+    
+    // Give a very short delay to allow the UI to update
+    setTimeout(() => {
+      setScanProgress(100);
+      captureFrame();
+    }, 100);
+    
   }, [captureFrame, toast]);
 
   /**
