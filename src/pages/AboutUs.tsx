@@ -59,7 +59,7 @@ const AboutUs = () => {
 
   // Komponente zum Rendern von Karten
   const renderCard = (member: TeamMember) => (
-    <Card key={member.name} className="overflow-hidden">
+    <Card key={member.name} className="overflow-hidden w-full max-w-xs">
       <div className="flex flex-col items-center p-6">
         <Avatar className="w-24 h-24 mb-4">
           <AvatarImage src={member.image} alt={member.name} />
@@ -122,7 +122,7 @@ const AboutUs = () => {
       {/* Trainer-Sektion */}
       <section className="mb-16">
         <h2 className="text-2xl font-bold mb-8 text-center">Unsere Trainer</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 place-items-center">
           {trainers.map(renderCard)}
         </div>
       </section>
@@ -130,7 +130,7 @@ const AboutUs = () => {
       {/* Teaching Assists-Sektion */}
       <section>
         <h2 className="text-2xl font-bold mb-8 text-center">Unsere Teaching Assists</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 place-items-center max-w-4xl mx-auto">
           {teachingAssists.map(renderCard)}
         </div>
       </section>
