@@ -32,7 +32,7 @@ const App = () => (
             </div>
             <footer className="app-footer mt-8">
               <div className="footer-logo-container">
-                <img src="/lovable-uploads/8533bc26-7219-490e-aa30-08759e7c4f10.png" alt="Rotierendes Logo" className="rotating-logo-footer" />
+                <img src="/lovable-uploads/524bbc0d-e4eb-42db-aa04-f227799c439b.png" alt="Rotierendes Logo" className="rotating-logo-footer" />
               </div>
               <p className="text-sm font-bold text-gray-500">
                 © 2025 PokeScan Technologies
