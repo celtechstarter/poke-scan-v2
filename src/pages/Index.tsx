@@ -12,6 +12,13 @@ const Home = () => {
     <div className="container mx-auto px-4 py-8">
       <section className="mb-12">
         <div className="flex flex-col items-center text-center mb-8">
+          <div className="mb-4 animate-spin-slow">
+            <img 
+              src="/lovable-uploads/206e6059-1061-4262-a2ef-b17a308c4d41.png" 
+              alt="PokeScan Logo" 
+              className="w-20 h-20"
+            />
+          </div>
           <h1 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-pokeblue to-pokered bg-clip-text text-transparent">
             PokeScan v2
           </h1>
