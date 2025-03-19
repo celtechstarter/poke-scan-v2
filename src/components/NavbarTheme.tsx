@@ -2,9 +2,26 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useEffect, useRef } from "react";
 
 const NavbarTheme = () => {
   const location = useLocation();
+  const logoRef = useRef<HTMLImageElement>(null);
+  
+  useEffect(() => {
+    const rotateLogo = () => {
+      if (logoRef.current) {
+        logoRef.current.style.transform = `rotate(${Date.now() / 100 % 360}deg)`;
+        requestAnimationFrame(rotateLogo);
+      }
+    };
+    
+    const animationId = requestAnimationFrame(rotateLogo);
+    
+    return () => {
+      cancelAnimationFrame(animationId);
+    };
+  }, []);
   
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -14,8 +31,9 @@ const NavbarTheme = () => {
     <nav className="w-full border-b shadow-sm">
       <div className="container mx-auto flex items-center justify-between py-3">
         <Link to="/" className="flex items-center space-x-2">
-          <div className="animate-spin-slow">
+          <div className="transition-transform">
             <img 
+              ref={logoRef}
               src="/lovable-uploads/206e6059-1061-4262-a2ef-b17a308c4d41.png" 
               alt="PokeScan Logo" 
               className="w-8 h-8"
