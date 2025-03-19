@@ -120,6 +120,11 @@ export default {
 				'spin-slow': {
 					'0%': { transform: 'rotate(0deg)' },
 					'100%': { transform: 'rotate(360deg)' }
+				},
+				'rotate-rock': {
+					'0%': { transform: 'rotate(-10deg)' },
+					'50%': { transform: 'rotate(10deg)' },
+					'100%': { transform: 'rotate(-10deg)' }
 				}
 			},
 			animation: {
@@ -129,7 +134,8 @@ export default {
 				'slide-out': 'slide-out 0.5s ease-out',
 				'fade-in': 'fade-in 0.5s ease-out',
 				'fade-out': 'fade-out 0.5s ease-out',
-				'spin-slow': 'spin-slow 6s linear infinite'
+				'spin-slow': 'spin-slow 6s linear infinite',
+				'rotate-gentle': 'rotate-rock 4s ease-in-out infinite'
 			}
 		}
 	},
