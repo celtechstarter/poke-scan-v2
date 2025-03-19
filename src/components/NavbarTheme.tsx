@@ -14,6 +14,13 @@ const NavbarTheme = () => {
     <nav className="w-full border-b shadow-sm">
       <div className="container mx-auto flex items-center justify-between py-3">
         <Link to="/" className="flex items-center space-x-2">
+          <div className="animate-spin-slow mr-2">
+            <img 
+              src="/lovable-uploads/206e6059-1061-4262-a2ef-b17a308c4d41.png" 
+              alt="PokeScan Logo" 
+              className="w-8 h-8"
+            />
+          </div>
           <span className="font-bold text-2xl text-pokeyellow">PokeScan</span>
           <span className="text-lg font-light">v2</span>
         </Link>
