@@ -1,4 +1,3 @@
-
 import { TeamMember } from '@/lib/types';
 import { Github, Mail, Linkedin } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -9,30 +8,12 @@ const AboutUs = () => {
   // Daten für Teammitglieder
   const teamMembers: TeamMember[] = [
     {
-      name: "Christian Sawatzky",
-      role: "DevOps Engineer",
-      description: "Verantwortlich für AWS-Serverdienste, Datenbankintegration und Support im Design.",
-      image: "/placeholder.svg",
-      github: "https://github.com/Chrisawatzky",
-      email: "mailto:sawatzkychristian@gmail.com",
-      linkedin: "https://linkedin.com",
-    },
-    {
       name: "Marcel Welk",
       role: "Full Stack Entwickler & Projektleiter",
       description: "Architektur, Frontend mit React, Backend mit Node.js, Texterkennung mit Tesseract.js und AWS-Integration.",
       image: "/lovable-uploads/c50fc555-0cf5-44b8-a017-e10bfd12252f.png",
       github: "https://github.com/celtechstarter",
       email: "mailto:marcel.welk87@gmail.com",
-      linkedin: "https://linkedin.com",
-    },
-    {
-      name: "Willy Ellwart",
-      role: "DevOps Engineer",
-      description: "Datenbankverwaltung, API-Routing und Konfiguration von Cloud-Serverdiensten.",
-      image: "/placeholder.svg",
-      github: "https://github.com/WillyEllwart",
-      email: "mailto:willellwart@gmail.com",
       linkedin: "https://linkedin.com",
     },
   ];
