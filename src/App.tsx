@@ -30,6 +30,17 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </div>
+            <footer className="app-footer mt-8">
+              <div className="footer-logo-container">
+                <img src="/lovable-uploads/8533bc26-7219-490e-aa30-08759e7c4f10.png" alt="Rotierendes Logo" className="rotating-logo-footer" />
+              </div>
+              <p className="text-sm font-bold text-gray-500">
+                © 2025 PokeScan Technologies
+              </p>
+              <p className="text-sm text-gray-500">
+                Powered by Marcel Welk
+              </p>
+            </footer>
           </main>
         </BrowserRouter>
       </TooltipProvider>

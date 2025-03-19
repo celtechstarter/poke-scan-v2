@@ -98,11 +98,6 @@
 
   body {
     @apply bg-background text-foreground;
-    background-image: url('/lovable-uploads/37e389b9-efa1-4bb2-87c0-bb57fb7b0716.png');
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    background-position: center;
   }
 }
 
@@ -110,3 +105,29 @@
 .content-container {
   @apply bg-white/80 dark:bg-black/80 backdrop-blur-sm rounded-lg shadow-lg;
 }
+
+/* Footer Styling */
+.app-footer {
+  display: flex;
+  flex-direction: column; /* Elemente untereinander */
+  align-items: center; /* Zentrierung */
+  justify-content: center; /* Vertikale Zentrierung */
+  padding: 20px;    
+  width: 100%;
+  position: relative; /* Sicherstellen, dass es nicht vom Parent überschrieben wird */
+  z-index: 100; /* Oberhalb von anderen transparenten Elementen */
+  text-align: center;
+  background: none; /* Kein Hintergrund */
+  box-shadow: none; /* Keine Schatten */
+}
+
+.footer-logo-container {
+  margin-bottom: 10px;
+}
+
+.rotating-logo-footer {
+  width: 40px;
+  height: 40px;
+  animation: spin-slow 6s linear infinite;
+}
+
