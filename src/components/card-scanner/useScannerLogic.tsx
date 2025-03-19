@@ -1,7 +1,9 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { getCardPriceFromCardMarket } from '@/utils/cardMarketService';
 import { useToast } from '@/components/ui/use-toast';
+import { detectCardInFrame, captureVideoFrame } from '@/utils/cardDetectionUtils';
+import { analyzeCardImage } from '@/utils/cardAnalysisUtils';
+import { startCamera as startCameraUtil, stopMediaStream } from '@/utils/cameraUtils';
 
 export function useScannerLogic() {
   const { toast } = useToast();
@@ -19,76 +21,75 @@ export function useScannerLogic() {
   const scanIntervalRef = useRef<number | null>(null);
   const autoDetectIntervalRef = useRef<number | null>(null);
   const [autoDetectEnabled, setAutoDetectEnabled] = useState(true);
-
-  // Nehme ein Bild auf
-  const captureFrame = useCallback(async () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
+  
+  // Start the camera
+  const startCamera = useCallback(async () => {
+    try {
+      const stream = await startCameraUtil(videoRef);
       
-      if (context) {
-        // Setze Canvas-Dimensionen auf Video-Dimensionen
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        
-        // Zeichne das Video-Frame auf den Canvas
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        // Speichere das Bild als Data URL
-        const imageDataUrl = canvas.toDataURL('image/jpeg');
-        
-        // Hier würden wir normalerweise die Texterkennung durchführen
-        analyzeCardImage(imageDataUrl);
+      if (stream) {
+        setIsCameraActive(true);
+        toast({
+          title: "Kamera aktiv",
+          description: "Halte eine Pokemon-Karte vor die Kamera, um sie zu scannen",
+        });
       }
+    } catch (error) {
+      console.error('Fehler beim Zugriff auf die Kamera:', error);
+      toast({
+        title: "Kamerazugriff fehlgeschlagen",
+        description: "Bitte erlaube den Zugriff auf deine Kamera und versuche es erneut",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
+
+  // Capture a frame and analyze the card
+  const captureFrame = useCallback(async () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    
+    const imageDataUrl = captureVideoFrame(videoRef.current, canvasRef.current);
+    
+    if (imageDataUrl) {
+      await processCardImage(imageDataUrl);
     }
     
     setIsScanning(false);
   }, []);
 
-  // Analysiere das Kartenbild mit KI-Texterkennung
-  const analyzeCardImage = useCallback(async (imageDataUrl: string) => {
+  // Process the captured card image
+  const processCardImage = useCallback(async (imageDataUrl: string) => {
     toast({
       title: "Bild aufgenommen",
       description: "Analysiere Pokemon-Karte...",
     });
     
-    // Simuliere Verzögerung für API-Aufruf
-    setTimeout(async () => {
-      // Im echten Szenario würde hier die OCR-Texterkennung stattfinden
-      // Für die Demo verwenden wir simulierte Daten
-      const mockCards = [
-        { name: "Pikachu V", number: "SWSH004/073" },
-        { name: "Charizard VMAX", number: "SWSH3 020/189" },
-        { name: "Mew EX", number: "SV2 039/149" },
-        { name: "Blastoise GX", number: "SM9 026/095" },
-        { name: "Gengar VMAX", number: "SWSH8 057/198" }
-      ];
-      
-      const randomIndex = Math.floor(Math.random() * mockCards.length);
-      const recognizedCard = mockCards[randomIndex];
-      
-      console.log('Erkannte Karte:', recognizedCard);
-      
-      // Suche nach dem Preis bei CardMarket
-      const price = await getCardPriceFromCardMarket(`${recognizedCard.name} ${recognizedCard.number}`);
+    try {
+      const result = await analyzeCardImage(imageDataUrl);
       
       setScanResult({
-        cardName: recognizedCard.name,
-        cardNumber: recognizedCard.number,
-        price: price,
+        cardName: result.cardName,
+        cardNumber: result.cardNumber,
+        price: result.price,
         imageDataUrl: imageDataUrl
       });
       
       toast({
         title: "Karte erkannt!",
-        description: `${recognizedCard.name} (${recognizedCard.number}) - Preis: ${price ? `${price.toFixed(2)} €` : 'Nicht verfügbar'}`,
+        description: `${result.cardName} (${result.cardNumber}) - Preis: ${result.price ? `${result.price.toFixed(2)} €` : 'Nicht verfügbar'}`,
         variant: "default",
       });
-    }, 2000);
+    } catch (error) {
+      console.error('Fehler bei der Kartenanalyse:', error);
+      toast({
+        title: "Fehler bei der Analyse",
+        description: "Die Karte konnte nicht erkannt werden. Bitte versuche es erneut.",
+        variant: "destructive",
+      });
+    }
   }, [toast]);
 
-  // Scanne nach Pokemon-Karten
+  // Scan for Pokemon cards
   const scanCard = useCallback(() => {
     if (!isCameraActive) {
       startCamera();
@@ -98,7 +99,7 @@ export function useScannerLogic() {
     setIsScanning(true);
     setScanProgress(0);
     
-    // Simuliere den Scan-Fortschritt
+    // Simulate scan progress
     let progress = 0;
     scanIntervalRef.current = window.setInterval(() => {
       progress += 5;
@@ -116,112 +117,17 @@ export function useScannerLogic() {
     });
   }, [isCameraActive, startCamera, captureFrame, toast]);
 
-  // Detect if a card is present in the frame
+  // Check if a card is in the frame
   const detectCard = useCallback(() => {
     if (!videoRef.current || !canvasRef.current || isScanning) return;
     
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const context = canvas.getContext('2d', { willReadFrequently: true });
+    const isCardDetected = detectCardInFrame(videoRef.current, canvasRef.current);
     
-    if (!context) return;
-    
-    // Set canvas dimensions to match video
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    
-    // Draw video frame to canvas
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    // Simple detection: check if there's a significant object in frame
-    // This is a simplified approach - in a real app, you'd use ML for this
-    try {
-      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-      
-      // Calculate average brightness in center area
-      const centerWidth = canvas.width * 0.6;
-      const centerHeight = canvas.height * 0.6;
-      const startX = (canvas.width - centerWidth) / 2;
-      const startY = (canvas.height - centerHeight) / 2;
-      
-      let totalBrightness = 0;
-      let pixelCount = 0;
-      
-      for (let y = startY; y < startY + centerHeight; y += 10) {
-        for (let x = startX; x < startX + centerWidth; x += 10) {
-          const i = (Math.floor(y) * canvas.width + Math.floor(x)) * 4;
-          const brightness = (data[i] + data[i+1] + data[i+2]) / 3;
-          totalBrightness += brightness;
-          pixelCount++;
-        }
-      }
-      
-      const avgBrightness = totalBrightness / pixelCount;
-      
-      // Check edge contrast (cards typically have high edge contrast)
-      let edgeContrast = 0;
-      for (let y = startY; y < startY + centerHeight; y += 20) {
-        for (let x = startX; x < startX + centerWidth - 10; x += 20) {
-          const i1 = (Math.floor(y) * canvas.width + Math.floor(x)) * 4;
-          const i2 = (Math.floor(y) * canvas.width + Math.floor(x + 10)) * 4;
-          
-          const b1 = (data[i1] + data[i1+1] + data[i1+2]) / 3;
-          const b2 = (data[i2] + data[i2+1] + data[i2+2]) / 3;
-          
-          edgeContrast += Math.abs(b1 - b2);
-        }
-      }
-      
-      edgeContrast /= (centerHeight * centerWidth / 400);
-      
-      console.log('Detection metrics:', { avgBrightness, edgeContrast });
-      
-      // Detect card based on brightness and edge contrast
-      // Values determined through testing - would need to be calibrated
-      if (avgBrightness > 50 && edgeContrast > 15) {
-        console.log('Karte erkannt - starte Scan');
-        scanCard();
-      }
-    } catch (e) {
-      console.error('Fehler bei der Kartenerkennung:', e);
+    if (isCardDetected) {
+      scanCard();
     }
   }, [isScanning, scanCard]);
   
-  // Starte die Webcam
-  const startCamera = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        } 
-      });
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setIsCameraActive(true);
-        toast({
-          title: "Kamera aktiv",
-          description: "Halte eine Pokemon-Karte vor die Kamera, um sie zu scannen",
-        });
-
-        // Start auto-detection if enabled
-        if (autoDetectEnabled) {
-          startAutoDetection();
-        }
-      }
-    } catch (error) {
-      console.error('Fehler beim Zugriff auf die Kamera:', error);
-      toast({
-        title: "Kamerazugriff fehlgeschlagen",
-        description: "Bitte erlaube den Zugriff auf deine Kamera und versuche es erneut",
-        variant: "destructive",
-      });
-    }
-  }, [toast, autoDetectEnabled, startAutoDetection]);
-
   // Start automatic card detection
   const startAutoDetection = useCallback(() => {
     if (autoDetectIntervalRef.current) {
@@ -247,11 +153,11 @@ export function useScannerLogic() {
     console.log('Automatische Kartenerkennung deaktiviert');
   }, []);
 
-  // Stoppe die Webcam
+  // Stop the camera
   const stopCamera = useCallback(() => {
     if (videoRef.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
+      stopMediaStream(stream);
       videoRef.current.srcObject = null;
       setIsCameraActive(false);
     }
@@ -282,8 +188,14 @@ export function useScannerLogic() {
     }
   }, [isCameraActive, startCamera, stopCamera]);
 
-  // Bereinige beim Unmounten
+  // Initialize and clean up
   useEffect(() => {
+    // Start auto-detection if enabled when camera becomes active
+    if (isCameraActive && autoDetectEnabled) {
+      startAutoDetection();
+    }
+    
+    // Clean up when unmounting
     return () => {
       stopCamera();
       if (scanIntervalRef.current) {
@@ -293,7 +205,7 @@ export function useScannerLogic() {
         clearInterval(autoDetectIntervalRef.current);
       }
     };
-  }, [stopCamera]);
+  }, [isCameraActive, autoDetectEnabled, startAutoDetection, stopCamera]);
 
   return {
     videoRef,
