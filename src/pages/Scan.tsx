@@ -1,5 +1,5 @@
 
-import CardScannerWebcam from '@/components/CardScannerWebcam';
+import CardScannerWebcam from '@/components/card-scanner/CardScannerWebcam';
 
 const Scan = () => {
   return (
