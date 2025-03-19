@@ -2,14 +2,27 @@
 import { PokeCard } from "@/lib/types";
 import OpenAI from "openai";
 
-// Initialize OpenAI client
-// Note: In a production environment, this should be stored in environment variables
+/**
+ * CardMarket integration service
+ * @module cardMarketService
+ */
+
+/**
+ * Initialize OpenAI client for card price estimation
+ * @note In a production environment, this API key should be stored in environment variables
+ */
 const openai = new OpenAI({
   apiKey: "org-ow5jS4YYPtV1E1cdOmNKESgA", // Updated API key
   dangerouslyAllowBrowser: true // This is for client-side usage, use server-side in production
 });
 
-// Function to get card price from CardMarket using OpenAI
+/**
+ * Gets the current market price for a Pokemon card from CardMarket using OpenAI
+ * In a production app, this would directly query CardMarket's API
+ * 
+ * @param {string} cardIdentifier - The card name and set number (e.g., "Pikachu V SWSH004/073")
+ * @returns {Promise<number|null>} The estimated current market price in euros, or null if not found
+ */
 export const getCardPriceFromCardMarket = async (cardIdentifier: string): Promise<number | null> => {
   console.log(`Suche Preis für Karte: ${cardIdentifier}`);
   
@@ -52,13 +65,22 @@ export const getCardPriceFromCardMarket = async (cardIdentifier: string): Promis
   }
 };
 
-// Fallback function to generate a mock price
+/**
+ * Generates a random price for fallback when API calls fail
+ * 
+ * @returns {number} A random price between 1 and 101 euros, with 2 decimal places
+ */
 const getFallbackPrice = (): number => {
   const mockPrice = Math.random() * 100 + 1;
   return parseFloat(mockPrice.toFixed(2));
 };
 
-// Mock-Daten für die Startseite
+/**
+ * Returns mock cards data for the homepage display
+ * In a production app, this would fetch data from an API
+ * 
+ * @returns {PokeCard[]} An array of mock Pokemon card data
+ */
 export const getMockCards = (): PokeCard[] => {
   return [
     {

@@ -1,9 +1,16 @@
 
-// Utility functions for detecting cards in video frames
+/**
+ * Utility functions for detecting Pokemon cards in video frames
+ * @module cardDetectionUtils
+ */
 
 /**
  * Checks if there's a Pokemon card in the current video frame
- * Uses simple brightness and edge contrast detection
+ * Uses simple brightness and edge contrast detection algorithm
+ * 
+ * @param {HTMLVideoElement} video - The video element containing the camera feed
+ * @param {HTMLCanvasElement} canvas - Canvas element for image processing
+ * @returns {boolean} True if a card is detected, false otherwise
  */
 export const detectCardInFrame = (
   video: HTMLVideoElement,
@@ -35,6 +42,7 @@ export const detectCardInFrame = (
     let totalBrightness = 0;
     let pixelCount = 0;
     
+    // Sample pixels at intervals to save processing time
     for (let y = startY; y < startY + centerHeight; y += 10) {
       for (let x = startX; x < startX + centerWidth; x += 10) {
         const i = (Math.floor(y) * canvas.width + Math.floor(x)) * 4;
@@ -79,7 +87,11 @@ export const detectCardInFrame = (
 
 /**
  * Captures a frame from the video element
- * Returns the image data URL
+ * Used to take a snapshot when a card is detected
+ * 
+ * @param {HTMLVideoElement} video - The video element containing the camera feed
+ * @param {HTMLCanvasElement} canvas - Canvas element for capturing the frame
+ * @returns {string|null} The image data URL in JPEG format, or null if capture fails
  */
 export const captureVideoFrame = (
   video: HTMLVideoElement,
@@ -100,4 +112,3 @@ export const captureVideoFrame = (
   // Save the image as Data URL
   return canvas.toDataURL('image/jpeg');
 };
-
