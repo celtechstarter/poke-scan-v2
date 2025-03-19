@@ -123,7 +123,7 @@ export function useCardScanning({
     if (!videoRef.current || !canvasRef.current) {
       setScanError({
         message: "Video oder Canvas nicht verfügbar",
-        type: CardDetectionErrorType.INVALID_INPUT
+        type: CardScanningErrorType.CAPTURE_FAILED
       });
       setIsScanning(false);
       return;
@@ -154,7 +154,7 @@ export function useCardScanning({
       
       if (error instanceof CardDetectionError) {
         errorMessage = error.message;
-        errorType = error.type;
+        errorType = CardScanningErrorType.CAPTURE_FAILED;
       }
       
       setScanError({

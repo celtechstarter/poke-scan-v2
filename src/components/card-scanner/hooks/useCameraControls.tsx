@@ -6,7 +6,7 @@ import {
   stopMediaStream, 
   CameraError, 
   CameraErrorType, 
-  isCameraSupported 
+  isCameraSupported as isCameraSupportedUtil
 } from '@/utils/cameraUtils';
 
 /**
@@ -32,7 +32,7 @@ export function useCameraControls() {
     setError(null);
     
     // Check if camera is supported by the browser
-    if (!isCameraSupported()) {
+    if (!isCameraSupportedUtil()) {
       const errorMessage = "Dein Browser unterstützt keine Kamerafunktionen";
       setError({ message: errorMessage, type: CameraErrorType.NOT_SUPPORTED });
       setIsCameraSupported(false);
@@ -119,7 +119,7 @@ export function useCameraControls() {
 
   // Check for camera support on initial mount
   useEffect(() => {
-    setIsCameraSupported(isCameraSupported());
+    setIsCameraSupported(isCameraSupportedUtil());
   }, []);
 
   return {
