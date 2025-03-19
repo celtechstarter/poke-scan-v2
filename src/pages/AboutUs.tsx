@@ -1,3 +1,4 @@
+
 import { TeamMember } from '@/lib/types';
 import { Github, Mail, Linkedin } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -113,7 +114,7 @@ const AboutUs = () => {
       {/* Team-Sektion */}
       <section className="mb-16">
         <h2 className="text-2xl font-bold mb-8 text-center">Unser Team</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="flex justify-center">
           {teamMembers.map(renderCard)}
         </div>
       </section>
