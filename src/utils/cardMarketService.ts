@@ -1,19 +1,61 @@
 
 import { PokeCard } from "@/lib/types";
+import OpenAI from "openai";
 
-// Diese Funktion würde später mit einer echten API-Integration ersetzt
+// Initialize OpenAI client
+// Note: In a production environment, this should be stored in environment variables
+const openai = new OpenAI({
+  apiKey: "REPLACE_WITH_YOUR_API_KEY", // Replace with your actual API key
+  dangerouslyAllowBrowser: true // This is for client-side usage, use server-side in production
+});
+
+// Function to get card price from CardMarket using OpenAI
 export const getCardPriceFromCardMarket = async (cardName: string): Promise<number | null> => {
-  // In einer realen Implementierung würde hier die CardMarket API genutzt werden
   console.log(`Suche Preis für Karte: ${cardName}`);
   
-  // Mock-Funktion zur Simulation der API-Antwort
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Zufälliger Preis zwischen 1 und 100
-      const mockPrice = Math.random() * 100 + 1;
-      resolve(parseFloat(mockPrice.toFixed(2)));
-    }, 1500); // Simuliere Netzwerklatenz
-  });
+  try {
+    // Define the system prompt for OpenAI
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini", // Using the faster and more affordable model
+      messages: [
+        {
+          role: "system",
+          content: "Du bist ein Assistent, der aktuelle Preise von Pokemon-Karten auf cardmarket.com recherchiert. Gib nur den Durchschnittspreis als Dezimalzahl zurück, ohne Text oder Währungssymbole."
+        },
+        {
+          role: "user",
+          content: `Suche den aktuellen Durchschnittspreis für die Pokemon-Karte "${cardName}" auf cardmarket.com. Gib NUR den Preis als Dezimalzahl zurück, ohne Text oder Währungssymbole.`
+        }
+      ],
+      temperature: 0.2, // Lower temperature for more consistent results
+    });
+
+    // Extract the price from the response
+    const priceText = response.choices[0].message.content?.trim();
+    
+    if (priceText) {
+      // Parse the price and ensure it's a valid number
+      const price = parseFloat(priceText.replace(',', '.'));
+      if (!isNaN(price)) {
+        return parseFloat(price.toFixed(2));
+      }
+    }
+    
+    // Fallback to mock price if OpenAI couldn't retrieve a valid price
+    console.warn("Konnte keinen gültigen Preis über OpenAI abrufen, nutze Fallback-Preis");
+    return getFallbackPrice();
+    
+  } catch (error) {
+    console.error("Fehler beim Abrufen des Kartenpreises über OpenAI:", error);
+    // Fallback to mock price if there's an error
+    return getFallbackPrice();
+  }
+};
+
+// Fallback function to generate a mock price
+const getFallbackPrice = (): number => {
+  const mockPrice = Math.random() * 100 + 1;
+  return parseFloat(mockPrice.toFixed(2));
 };
 
 // Mock-Daten für die Startseite
