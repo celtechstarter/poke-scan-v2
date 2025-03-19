@@ -1,17 +1,15 @@
-import CardSlider from '@/components/CardSlider';
-import { getMockCards } from '@/utils/cardMarketService';
+
 import { Button } from '@/components/ui/button';
 import { Camera, Award, Gift } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import PokemonSlideshow from '@/components/PokemonSlideshow';
 
 const Home = () => {
-  const mockCards = getMockCards();
-
   return (
     <div className="container mx-auto px-4 py-8">
       <section className="mb-12">
         <div className="flex flex-col items-center text-center mb-8">
-          <h1 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-pokeblue to-pokered bg-clip-text text-transparent">
+          <h1 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-pokeblue to-pokered bg-clip-text text-transparent animate-spin-slow">
             PokeScan v2
           </h1>
           <p className="text-lg md:text-xl text-gray-600 max-w-2xl mb-8">
@@ -25,9 +23,9 @@ const Home = () => {
           </Button>
         </div>
 
-        {/* Card Slider */}
+        {/* Pokemon Card Slideshow */}
         <div className="max-w-4xl mx-auto shadow-xl rounded-xl overflow-hidden">
-          <CardSlider cards={mockCards} />
+          <PokemonSlideshow />
         </div>
       </section>
 
