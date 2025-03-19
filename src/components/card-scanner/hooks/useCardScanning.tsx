@@ -67,7 +67,8 @@ export function useCardScanning({
         console.log('Card analysis aborted');
       });
       
-      const result = await analyzeCardImage(imageDataUrl, signal);
+      // Fix: Remove the second argument (signal) as analyzeCardImage only expects one argument
+      const result = await analyzeCardImage(imageDataUrl);
       
       setScanResult({
         cardName: result.cardName,
