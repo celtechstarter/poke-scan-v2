@@ -1,7 +1,11 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { detectCardInFrame } from '@/utils/cardDetectionUtils';
+import { 
+  detectCardInFrame, 
+  CardDetectionError,
+  CardDetectionErrorType
+} from '@/utils/cardDetectionUtils';
 
 /**
  * Custom hook for automatic card detection functionality
@@ -29,8 +33,13 @@ export function useCardDetection({
   onCardDetected: () => void;
 }) {
   const [autoDetectEnabled, setAutoDetectEnabled] = useState(true);
+  const [detectError, setDetectError] = useState<{message: string; type: CardDetectionErrorType} | null>(null);
   const autoDetectIntervalRef = useRef<number | null>(null);
   const { toast } = useToast();
+  
+  // Error counter to avoid spamming users with error toasts
+  const errorCountRef = useRef(0);
+  const MAX_ERRORS_BEFORE_DISABLE = 5;
 
   /**
    * Checks if a card is present in the current video frame
@@ -38,12 +47,56 @@ export function useCardDetection({
   const detectCard = useCallback(() => {
     if (!videoRef.current || !canvasRef.current || isScanning) return;
     
-    const isCardDetected = detectCardInFrame(videoRef.current, canvasRef.current);
+    // Reset error state on each detection attempt
+    setDetectError(null);
     
-    if (isCardDetected) {
-      onCardDetected();
+    try {
+      const isCardDetected = detectCardInFrame(videoRef.current, canvasRef.current);
+      
+      // Reset error counter on successful detection
+      errorCountRef.current = 0;
+      
+      if (isCardDetected) {
+        onCardDetected();
+      }
+    } catch (error) {
+      // Increment error counter
+      errorCountRef.current++;
+      
+      console.error('Fehler bei der Kartenerkennung:', error);
+      
+      let errorMessage = 'Ein unbekannter Fehler ist bei der Kartenerkennung aufgetreten';
+      let errorType = CardDetectionErrorType.PROCESSING_ERROR;
+      
+      if (error instanceof CardDetectionError) {
+        errorMessage = error.message;
+        errorType = error.type;
+      }
+      
+      setDetectError({ message: errorMessage, type: errorType });
+      
+      // Show toast only for the first error to avoid spamming
+      if (errorCountRef.current === 1) {
+        toast({
+          title: "Problem bei der Kartenerkennung",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
+      
+      // If we've reached the error threshold, disable auto detection
+      if (errorCountRef.current >= MAX_ERRORS_BEFORE_DISABLE && autoDetectEnabled) {
+        setAutoDetectEnabled(false);
+        stopAutoDetection();
+        
+        toast({
+          title: "Automatische Erkennung deaktiviert",
+          description: "Zu viele Fehler bei der Kartenerkennung. Bitte versuche es manuell.",
+          variant: "destructive",
+        });
+      }
     }
-  }, [isScanning, canvasRef, videoRef, onCardDetected]);
+  }, [isScanning, canvasRef, videoRef, onCardDetected, autoDetectEnabled, toast]);
   
   /**
    * Starts automatic card detection at regular intervals
@@ -81,6 +134,8 @@ export function useCardDetection({
     setAutoDetectEnabled(prev => {
       const newState = !prev;
       if (newState && isCameraActive) {
+        // Reset error counter when enabling
+        errorCountRef.current = 0;
         startAutoDetection();
       } else {
         stopAutoDetection();
@@ -102,8 +157,17 @@ export function useCardDetection({
     };
   }, [isCameraActive, autoDetectEnabled, startAutoDetection, stopAutoDetection]);
 
+  // Reset error state when camera is toggled
+  useEffect(() => {
+    if (!isCameraActive) {
+      setDetectError(null);
+      errorCountRef.current = 0;
+    }
+  }, [isCameraActive]);
+
   return {
     autoDetectEnabled,
+    detectError,
     toggleAutoDetection
   };
 }

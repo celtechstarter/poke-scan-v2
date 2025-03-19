@@ -17,6 +17,8 @@ export function useScannerLogic() {
   const {
     videoRef,
     isCameraActive,
+    isCameraSupported,
+    error: cameraError,
     startCamera,
     toggleCamera
   } = useCameraControls();
@@ -26,6 +28,7 @@ export function useScannerLogic() {
     isScanning,
     scanProgress,
     scanResult,
+    scanError,
     scanCard,
     cancelScan
   } = useCardScanning({
@@ -36,6 +39,7 @@ export function useScannerLogic() {
   // Automatic card detection functionality
   const {
     autoDetectEnabled,
+    detectError,
     toggleAutoDetection
   } = useCardDetection({
     videoRef,
@@ -55,16 +59,26 @@ export function useScannerLogic() {
     scanCard();
   };
 
+  // Combine errors for easier access
+  const errors = {
+    camera: cameraError,
+    detection: detectError,
+    scanning: scanError
+  };
+
   return {
     videoRef,
     canvasRef,
     isScanning,
     isCameraActive,
+    isCameraSupported,
     scanProgress,
     scanResult,
     autoDetectEnabled,
+    errors,
     scanCard: handleScanStart,
     toggleCamera,
-    toggleAutoDetection
+    toggleAutoDetection,
+    cancelScan
   };
 }
