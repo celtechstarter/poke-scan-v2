@@ -5,7 +5,7 @@ import OpenAI from "openai";
 // Initialize OpenAI client
 // Note: In a production environment, this should be stored in environment variables
 const openai = new OpenAI({
-  apiKey: "REPLACE_WITH_YOUR_API_KEY", // Replace with your actual API key
+  apiKey: "org-ow5jS4YYPtV1E1cdOmNKESgA", // Updated API key
   dangerouslyAllowBrowser: true // This is for client-side usage, use server-side in production
 });
 
