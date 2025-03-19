@@ -25,19 +25,19 @@ const AboutUs = () => {
       name: "Suheib Marzouka", 
       role: "Trainer", 
       description: "Trainer für PokeScan-Workshops.", 
-      image: "/placeholder.svg" 
+      image: "/lovable-uploads/41b2f90e-2471-4041-af8f-8512689fc003.png" 
     },
     { 
       name: "Mete Adic", 
       role: "Trainer", 
       description: "Trainer für technische Schulungen.", 
-      image: "/placeholder.svg" 
+      image: "/lovable-uploads/01c353c8-8cce-4b23-8901-c1ae768df5bb.png" 
     },
     { 
       name: "Hubertus Knobling", 
       role: "Trainer", 
       description: "Unterstützung im praktischen Bereich.", 
-      image: "/placeholder.svg" 
+      image: "/lovable-uploads/4dec274f-a45b-48b1-b97f-a8b76bdea43a.png" 
     },
   ];
 
@@ -47,13 +47,13 @@ const AboutUs = () => {
       name: "Sarah Borrell", 
       role: "Teaching Assist", 
       description: "Assistenz bei Schulungen und Workshops.", 
-      image: "/placeholder.svg" 
+      image: "/lovable-uploads/c4df948c-65c3-452c-a938-0fc94289ede4.png" 
     },
     { 
       name: "Marian Tugui", 
       role: "Teaching Assist", 
       description: "Betreuung und Nachbereitung von Inhalten.", 
-      image: "/placeholder.svg" 
+      image: "/lovable-uploads/8533bc26-7219-490e-aa30-08759e7c4f10.png" 
     },
   ];
 
