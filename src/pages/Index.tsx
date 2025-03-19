@@ -9,7 +9,7 @@ const Home = () => {
     <div className="container mx-auto px-4 py-8">
       <section className="mb-12">
         <div className="flex flex-col items-center text-center mb-8">
-          <h1 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-pokeblue to-pokered bg-clip-text text-transparent animate-spin-slow">
+          <h1 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-pokeblue to-pokered bg-clip-text text-transparent">
             PokeScan v2
           </h1>
           <p className="text-lg md:text-xl text-gray-600 max-w-2xl mb-8">
