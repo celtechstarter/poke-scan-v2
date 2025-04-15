@@ -2,10 +2,8 @@ import { Button } from '@/components/ui/button';
 import { Camera, Award, Gift } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PokemonSlideshow from '@/components/PokemonSlideshow';
-
 const Home = () => {
-  return (
-    <div className="container mx-auto px-4 py-8">
+  return <div className="container mx-auto px-4 py-8">
       <section className="mb-12">
         <div className="flex flex-col items-center text-center mb-8">
           <h1 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-pokeblue to-pokered bg-clip-text text-transparent">
@@ -27,7 +25,7 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="py-12 bg-white/90 rounded-xl mb-12 backdrop-blur-sm">
+      <section className="py-12 rounded-xl mb-12 backdrop-blur-sm bg-gray-900">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">
             Entdecke Deine Sammlung
@@ -82,8 +80,6 @@ const Home = () => {
           </Button>
         </div>
       </section>
-    </div>
-  );
+    </div>;
 };
-
 export default Home;
