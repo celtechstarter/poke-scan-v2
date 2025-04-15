@@ -48,8 +48,8 @@ const CARD_REGIONS: OcrRegion[] = [
  * @returns Initialized Tesseract worker
  */
 export const initOcrWorker = async () => {
-  // We explicitly set 'deu' (German) as the primary language, followed by 'eng'
-  const worker = await createWorker('deu+eng', 1, {
+  // We explicitly set 'deu' (German) as the ONLY primary language to ensure German cards are processed correctly
+  const worker = await createWorker('deu', 1, {
     logger: process.env.NODE_ENV === 'development' 
       ? m => console.log(m) 
       : undefined
@@ -59,7 +59,7 @@ export const initOcrWorker = async () => {
   await worker.setParameters({
     preserve_interword_spaces: '1',
     tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-/. äöüÄÖÜß',
-    tessedit_pageseg_mode: PSM.SINGLE_BLOCK, // Using proper enum value instead of string "6"
+    tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
     tessjs_create_hocr: '0',
     tessjs_create_tsv: '0',
     tessjs_create_box: '0',

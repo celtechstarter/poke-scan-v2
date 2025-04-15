@@ -29,7 +29,7 @@ export const getCardPriceFromCardMarket = async (cardIdentifier: string): Promis
   try {
     // Due to API authentication issues, we'll just use the fallback for now
     // This would be replaced with actual API call in production
-    return getFallbackPrice();
+    return getFallbackPrice(cardIdentifier);
     
     /* Original API code - commented out due to auth issues 
     // Define the system prompt for OpenAI
@@ -62,7 +62,7 @@ export const getCardPriceFromCardMarket = async (cardIdentifier: string): Promis
     
   } catch (error) {
     console.error("Fehler beim Abrufen des Kartenpreises:", error);
-    return getFallbackPrice();
+    return getFallbackPrice(cardIdentifier);
   }
 };
 
@@ -70,9 +70,10 @@ export const getCardPriceFromCardMarket = async (cardIdentifier: string): Promis
  * Generates a deterministic price for testing based on card name
  * This ensures the same card always returns the same price
  * 
+ * @param {string} cardIdentifier - The card name to generate a price for
  * @returns {number} A price between 1 and 101 euros, with 2 decimal places
  */
-const getFallbackPrice = (): number => {
+const getFallbackPrice = (cardIdentifier: string): number => {
   // For testing purposes, we use deterministic prices for specific cards
   const cardPrices: Record<string, number> = {
     "Pikachu V": 15.99,
@@ -83,14 +84,26 @@ const getFallbackPrice = (): number => {
     "Prof. Antiquas Vitalität": 22.50
   };
 
-  // For specific German cards
-  if (cardPrices["Prof. Antiquas Vitalität"]) {
-    return cardPrices["Prof. Antiquas Vitalität"];
+  // Check for exact match first
+  for (const cardName in cardPrices) {
+    if (cardIdentifier.includes(cardName)) {
+      return cardPrices[cardName];
+    }
   }
   
-  // Generate a random price for unknown cards
-  const mockPrice = Math.random() * 100 + 1;
-  return parseFloat(mockPrice.toFixed(2));
+  // Generate a deterministic but unique price for each card based on the identifier
+  // This ensures the same card always gets the same price
+  let total = 0;
+  for (let i = 0; i < cardIdentifier.length; i++) {
+    total += cardIdentifier.charCodeAt(i);
+  }
+  
+  // Generate a price between 5 and 65 euros
+  const basePrice = 5 + (total % 60);
+  const decimalPart = (total % 100) / 100;
+  const finalPrice = basePrice + decimalPart;
+  
+  return parseFloat(finalPrice.toFixed(2));
 };
 
 /**

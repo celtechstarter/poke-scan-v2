@@ -27,12 +27,19 @@ export const processCardImage = async (
       });
     }
     
+    // Clear any previous console logs to avoid confusion
+    console.clear();
+    
     const result = await analyzeCardImage(imageDataUrl);
     
+    const toastMessage = result.cardName === "Fehler beim Scannen" || result.cardName === "Text nicht erkannt" 
+      ? "Text konnte nicht gelesen werden"
+      : `${result.cardName} (${result.cardNumber || 'Keine Nummer'})${result.price ? ` - Preis: ${result.price.toFixed(2)} €` : ''}`;
+    
     toast({
-      title: "Karte erkannt!",
-      description: `${result.cardName} (${result.cardNumber || 'Keine Nummer'}) - Preis: ${result.price ? `${result.price.toFixed(2)} €` : 'Nicht verfügbar'}`,
-      variant: "default",
+      title: "Karte gescannt",
+      description: toastMessage,
+      variant: result.cardName === "Fehler beim Scannen" ? "destructive" : "default",
     });
     
     return {

@@ -12,7 +12,7 @@ const mockCards = [
   { name: "Mew EX", number: "SV2 039/149" },
   { name: "Blastoise GX", number: "SM9 026/095" },
   { name: "Gengar VMAX", number: "SWSH8 057/198" },
-  { name: "Prof. Antiquas Vitalität", number: "PAR 256/182" } // Added the card you mentioned
+  // Removed static reference to Prof. Antiquas Vitalität as a default card
 ];
 
 /**
@@ -47,7 +47,6 @@ export const analyzeCardImage = async (imageDataUrl: string): Promise<{
       };
       
       // Look up the price on CardMarket
-      // For German cards, include both the German name and the set info
       const searchQuery = `${recognizedCard.cardName} ${recognizedCard.cardNumber}`;
       console.log('Searching CardMarket with:', searchQuery);
       
@@ -119,18 +118,40 @@ export const analyzeCardImage = async (imageDataUrl: string): Promise<{
           cardNumber: matchingCard.number,
           price: price,
           imageDataUrl: imageDataUrl,
-          ocrResult: cleanedOcrResult // Include OCR results for debugging
+          ocrResult: cleanedOcrResult
         };
       }
     }
     
-    console.log('OCR failed to match with any known card, using fallback');
+    // For partial detection, use exactly what was detected - don't use fixed fallback
+    let cardName = cleanedOcrResult.cardName || "Text nicht erkannt";
+    let cardNumber = cleanedOcrResult.cardNumber || "Nummer nicht erkannt";
     
-    // If we still don't have a match, don't use random fallback, but return a clear error state
+    // Don't use "Karte nicht erkannt" as a default - use exactly what was detected
+    if (cleanedOcrResult.rawText && !cleanedOcrResult.cardName) {
+      // Try to extract something useful from the raw text if card name wasn't properly identified
+      const rawLines = cleanedOcrResult.rawText.split('\n').filter(line => line.trim().length > 3);
+      if (rawLines.length > 0) {
+        cardName = `Erkannter Text: ${rawLines[0].trim()}`;
+      }
+    }
+    
+    console.log('OCR results without matching:', { cardName, cardNumber });
+    
+    // Try to get price using whatever text we detected
+    let price = null;
+    try {
+      if (cardName !== "Text nicht erkannt") {
+        price = await getCardPriceFromCardMarket(cardName);
+      }
+    } catch (e) {
+      console.error('Price lookup failed:', e);
+    }
+
     return {
-      cardName: "Karte nicht erkannt",
-      cardNumber: "Scan fehlgeschlagen",
-      price: null,
+      cardName: cardName,
+      cardNumber: cardNumber,
+      price: price,
       imageDataUrl: imageDataUrl,
       ocrResult: cleanedOcrResult
     };

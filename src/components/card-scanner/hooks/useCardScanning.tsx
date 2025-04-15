@@ -55,7 +55,15 @@ export function useCardScanning({
       
       // Process the image
       const result = await processCardImage(imageDataUrl, signal);
-      setScanResult(result);
+      
+      // Clear any previous results to ensure we don't see stale data
+      setScanResult(null);
+      
+      // Set the new result after a brief delay to ensure UI refresh
+      setTimeout(() => {
+        setScanResult(result);
+      }, 50);
+      
     } catch (error) {
       console.error('Fehler beim Scannen:', error);
       
@@ -97,6 +105,8 @@ export function useCardScanning({
     // First cancel any ongoing scan
     cancelScan();
     
+    // Clear previous results to ensure fresh scan
+    setScanResult(null);
     setIsScanning(true);
     setScanProgress(0);
     setScanError(null);
