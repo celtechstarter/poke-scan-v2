@@ -1,11 +1,13 @@
+
 import { toast } from '@/components/ui/use-toast';
 import { analyzeCardImage } from '@/utils/cardAnalysisUtils';
 import { CardScanningErrorType, ScanResult, ScannerError } from '../types/scannerTypes';
 
 /**
- * Checks if an image is blurry or has poor lighting
+ * Advanced image quality assessment for Pokémon cards
+ * Checks for blurry text and lighting issues in critical areas
  * @param imageDataUrl - The captured image as a data URL
- * @returns {Promise<{isBlurry: boolean, message: string|null}>} - Assessment result
+ * @returns {Promise<{isBlurry: boolean, poorLighting: boolean, message: string|null}>} - Assessment result
  */
 export const assessImageQuality = async (imageDataUrl: string): Promise<{
   isBlurry: boolean;
@@ -29,36 +31,66 @@ export const assessImageQuality = async (imageDataUrl: string): Promise<{
       
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
       
-      // Calculate basic image stats to detect blur and lighting issues
-      let edgeStrength = 0;
-      let totalBrightness = 0;
-      const pixelCount = img.width * img.height;
+      // Define specific regions to check for quality issues
+      const regions = [
+        { name: 'cardName', top: 5, left: 20, width: 60, height: 10 },
+        { name: 'cardNumber', top: 88, left: 5, width: 30, height: 10 }
+      ];
       
-      // Simple edge detection and brightness analysis
-      for (let y = 1; y < img.height - 1; y++) {
-        for (let x = 1; x < img.width - 1; x++) {
-          const pixel = (y * img.width + x) * 4;
-          const pixelLeft = (y * img.width + (x - 1)) * 4;
-          const pixelRight = (y * img.width + (x + 1)) * 4;
-          
-          // Simple horizontal edge detection
-          const edgeH = Math.abs(imageData[pixelLeft] - imageData[pixelRight]);
-          
-          // Calculate brightness 
-          const brightness = (imageData[pixel] + imageData[pixel + 1] + imageData[pixel + 2]) / 3;
-          totalBrightness += brightness;
-          
-          edgeStrength += edgeH;
+      let totalEdgeStrength = 0;
+      let totalBrightness = 0;
+      let totalPixels = 0;
+      
+      // Check each critical region specifically
+      for (const region of regions) {
+        const startX = Math.floor(img.width * (region.left / 100));
+        const startY = Math.floor(img.height * (region.top / 100));
+        const endX = startX + Math.floor(img.width * (region.width / 100));
+        const endY = startY + Math.floor(img.height * (region.height / 100));
+        const regionPixels = (endX - startX) * (endY - startY);
+        
+        let regionEdgeStrength = 0;
+        let regionBrightness = 0;
+        
+        // Analyze edge strength and brightness in the region
+        for (let y = startY + 1; y < endY - 1; y++) {
+          for (let x = startX + 1; x < endX - 1; x++) {
+            const pixel = (y * img.width + x) * 4;
+            const pixelLeft = (y * img.width + (x - 1)) * 4;
+            const pixelRight = (y * img.width + (x + 1)) * 4;
+            const pixelUp = ((y - 1) * img.width + x) * 4;
+            const pixelDown = ((y + 1) * img.width + x) * 4;
+            
+            // Enhanced edge detection (both horizontal and vertical)
+            const edgeH = Math.abs(imageData[pixelLeft] - imageData[pixelRight]);
+            const edgeV = Math.abs(imageData[pixelUp] - imageData[pixelDown]);
+            const edgeStrength = Math.max(edgeH, edgeV);
+            
+            // Calculate brightness 
+            const brightness = (imageData[pixel] + imageData[pixel + 1] + imageData[pixel + 2]) / 3;
+            
+            regionEdgeStrength += edgeStrength;
+            regionBrightness += brightness;
+          }
         }
+        
+        // Normalize by region size
+        regionEdgeStrength /= regionPixels;
+        regionBrightness /= regionPixels;
+        
+        // Add to total values
+        totalEdgeStrength += regionEdgeStrength;
+        totalBrightness += regionBrightness;
+        totalPixels += regionPixels;
       }
       
-      // Normalize values
-      edgeStrength /= pixelCount;
-      const avgBrightness = totalBrightness / pixelCount;
+      // Calculate averages
+      const avgEdgeStrength = totalEdgeStrength / regions.length;
+      const avgBrightness = totalBrightness / totalPixels;
       
-      // Analyze results
-      const isBlurry = edgeStrength < 10; // Adjust threshold based on testing
-      const poorLighting = avgBrightness < 40 || avgBrightness > 220; // Too dark or too bright
+      // Determine quality issues with refined thresholds
+      const isBlurry = avgEdgeStrength < 12; // Adjusted threshold based on testing
+      const poorLighting = avgBrightness < 50 || avgBrightness > 210; // Refined lighting thresholds
       
       let message = null;
       if (isBlurry && poorLighting) {

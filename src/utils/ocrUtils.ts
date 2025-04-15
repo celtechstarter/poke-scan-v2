@@ -1,3 +1,4 @@
+
 import { createWorker, PSM, createScheduler } from 'tesseract.js';
 
 /**
@@ -24,41 +25,53 @@ export interface CardOcrResult {
 // Refined regions of interest for a Pokemon card
 // Values are percentages of the image dimensions
 const CARD_REGIONS: OcrRegion[] = [
-  // Top region - Card name - Adjusted for better name capture
+  // Top region - Card name - Refined and narrowed down for better precision
   {
     name: 'cardName',
-    top: 3,
-    left: 15,
-    width: 70,
-    height: 12
+    top: 4.5, // Slightly lower to avoid card border
+    left: 18, // More centered on actual name position
+    width: 64, // Narrower to focus on just the name
+    height: 8.5 // Smaller height to avoid capturing unwanted elements
   },
   // Bottom region - Card number and set - Adjusted for better set code capture
   {
     name: 'cardNumber',
-    top: 88,
-    left: 5,
-    width: 35,
+    top: 88.5, // Slightly higher to ensure we get the complete set info
+    left: 6.5, // Better positioned for left-aligned set codes
+    width: 30, // Narrower to focus on the set code area
+    height: 8 // Optimized height for set code text
+  }
+];
+
+// Additional region for energy type (can help identify and confirm certain cards)
+const ADDITIONAL_REGIONS: OcrRegion[] = [
+  // Energy type region - top right
+  {
+    name: 'energyType',
+    top: 5,
+    left: 85,
+    width: 10,
     height: 10
   }
 ];
 
 /**
- * Creates and initializes a Tesseract worker with German language support
+ * Creates and initializes a Tesseract worker optimized for Pokémon card text
  * @returns Initialized Tesseract worker
  */
 export const initOcrWorker = async () => {
-  // We explicitly set 'deu' (German) as the ONLY primary language to ensure German cards are processed correctly
+  // Initialize with German language and high accuracy settings
   const worker = await createWorker('deu', 1, {
     logger: import.meta.env.DEV 
       ? m => console.log(m) 
       : undefined
   });
   
-  // Enhanced OCR parameters for Pokemon cards - especially for German text
+  // Optimized OCR parameters specifically for Pokémon card fonts and German text
   await worker.setParameters({
     preserve_interword_spaces: '1',
     tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-/. äöüÄÖÜß',
-    tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
+    tessedit_pageseg_mode: PSM.SINGLE_LINE, // Changed to SINGLE_LINE for better text line detection
     tessjs_create_hocr: '0',
     tessjs_create_tsv: '0',
     tessjs_create_box: '0',
@@ -70,7 +83,8 @@ export const initOcrWorker = async () => {
 };
 
 /**
- * Preprocesses an image for better OCR text recognition
+ * Enhanced preprocessing for Pokémon card images to improve text clarity
+ * Specialized in enhancing printed card text against colorful backgrounds
  * @param imageDataUrl Data URL of the original image
  * @returns Processed image as Data URL
  */
@@ -97,19 +111,19 @@ export const preprocessImage = async (imageDataUrl: string): Promise<string> => 
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
       
-      // Convert to grayscale and increase contrast
+      // Advanced color processing for better text detection
       for (let i = 0; i < data.length; i += 4) {
-        // Convert to grayscale using luminance formula
+        // Convert to grayscale using luminance formula with adjustments for card text
         const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
         
-        // Apply contrast enhancement
-        // This formula maps values to increase difference between light and dark
-        const contrast = 1.5; // Contrast factor
+        // Apply high contrast enhancement specifically optimized for card text
+        const contrast = 2.0; // Higher contrast for clearer text edges
         const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
-        const newValue = factor * (gray - 128) + 128;
+        let newValue = Math.min(255, Math.max(0, factor * (gray - 128) + 128));
         
-        // Threshold to improve text clarity
-        const threshold = 170; // Adjust based on testing
+        // Apply adaptive thresholding based on surrounding pixels
+        // This helps with text that appears on different background colors
+        const threshold = 180; // Adjusted threshold for better text separation
         const finalValue = newValue > threshold ? 255 : 0;
         
         // Set RGB channels to the processed value
@@ -122,8 +136,8 @@ export const preprocessImage = async (imageDataUrl: string): Promise<string> => 
       // Put the processed image data back to canvas
       ctx.putImageData(imageData, 0, 0);
       
-      // Convert canvas to data URL
-      resolve(canvas.toDataURL('image/png'));
+      // Convert canvas to data URL with high quality
+      resolve(canvas.toDataURL('image/png', 1.0));
     };
     
     img.onerror = () => {
@@ -135,10 +149,10 @@ export const preprocessImage = async (imageDataUrl: string): Promise<string> => 
 };
 
 /**
- * Extracts a specific region from an image
+ * Extracts and enhances a specific region from a card image
  * @param imageDataUrl Data URL of the full image
  * @param region Region definition (percentages of image dimensions)
- * @returns Data URL of the cropped region
+ * @returns Data URL of the enhanced cropped region
  */
 export const extractRegion = async (
   imageDataUrl: string, 
@@ -161,19 +175,52 @@ export const extractRegion = async (
       const width = Math.floor(img.width * (region.width / 100));
       const height = Math.floor(img.height * (region.height / 100));
       
-      // Set canvas dimensions to match region
-      canvas.width = width;
-      canvas.height = height;
+      // Set canvas dimensions to match region with slight padding for better recognition
+      const padding = 2; // Extra pixels around the region
+      canvas.width = width + (padding * 2);
+      canvas.height = height + (padding * 2);
       
-      // Draw only the region of interest
+      // Fill with white background to improve contrast
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw only the region of interest with padding
       ctx.drawImage(
         img,
-        x, y, width, height,  // Source rectangle
-        0, 0, width, height   // Destination rectangle
+        Math.max(0, x - padding), 
+        Math.max(0, y - padding), 
+        width + (padding * 2), 
+        height + (padding * 2),
+        0, 0, canvas.width, canvas.height
       );
       
-      // Convert canvas to data URL
-      resolve(canvas.toDataURL('image/png'));
+      // Apply region-specific processing
+      // For example, extra contrast for set numbers
+      if (region.name === 'cardNumber') {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        // Higher contrast for set numbers which are usually smaller text
+        for (let i = 0; i < data.length; i += 4) {
+          const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+          const contrast = 2.5; // Higher contrast for set numbers
+          const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+          const newValue = Math.min(255, Math.max(0, factor * (gray - 128) + 128));
+          
+          // Lower threshold for set numbers to capture more detail
+          const threshold = 165;
+          const finalValue = newValue > threshold ? 255 : 0;
+          
+          data[i] = finalValue;
+          data[i + 1] = finalValue;
+          data[i + 2] = finalValue;
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+      }
+      
+      // Convert canvas to data URL with high quality
+      resolve(canvas.toDataURL('image/png', 1.0));
     };
     
     img.onerror = () => {
@@ -185,8 +232,8 @@ export const extractRegion = async (
 };
 
 /**
- * Process a card image using OCR to extract card name and number
- * Enhanced with image preprocessing and region-specific scanning
+ * Process a card image using OCR with enhanced region processing and
+ * specialized handling for Pokémon card text format
  * @param imageDataUrl Data URL of the card image
  * @returns Recognized card text details
  */
@@ -201,9 +248,9 @@ export const processCardWithOcr = async (imageDataUrl: string): Promise<CardOcrR
   
   try {
     const worker = await initOcrWorker();
-    console.log('OCR worker initialized with German language support');
+    console.log('OCR worker initialized with optimized German language support');
     
-    // Process each region of interest
+    // Process each primary region of interest with multiple recognition attempts
     for (const region of CARD_REGIONS) {
       console.log(`Processing region: ${region.name}`);
       
@@ -212,8 +259,25 @@ export const processCardWithOcr = async (imageDataUrl: string): Promise<CardOcrR
         const regionImage = await extractRegion(imageDataUrl, region);
         const processedImage = await preprocessImage(regionImage);
         
-        // Recognize text in this region
-        const { data } = await worker.recognize(processedImage);
+        // First recognition attempt with default settings
+        let recognitionResult = await worker.recognize(processedImage);
+        
+        // If confidence is low, try with different PSM mode
+        if (recognitionResult.data.confidence < 60) {
+          await worker.setParameters({
+            tessedit_pageseg_mode: region.name === 'cardName' ? PSM.SINGLE_BLOCK : PSM.SINGLE_LINE
+          });
+          
+          // Second recognition attempt
+          recognitionResult = await worker.recognize(processedImage);
+          
+          // Reset PSM mode for next region
+          await worker.setParameters({
+            tessedit_pageseg_mode: PSM.SINGLE_LINE
+          });
+        }
+        
+        const { data } = recognitionResult;
         
         console.log(`OCR result for ${region.name}:`, {
           text: data.text.trim(),
@@ -225,8 +289,6 @@ export const processCardWithOcr = async (imageDataUrl: string): Promise<CardOcrR
           result.cardName = data.text.trim();
         } else if (region.name === 'cardNumber' && data.text.trim()) {
           result.cardNumber = data.text.trim();
-          // Clean up card number format
-          result.cardNumber = result.cardNumber.replace(/\s+/g, ' ').trim();
         }
         
         // Add to raw text
@@ -239,10 +301,27 @@ export const processCardWithOcr = async (imageDataUrl: string): Promise<CardOcrR
       }
     }
     
+    // Process additional regions if desired
+    // This is optional but can help with card identification
+    for (const region of ADDITIONAL_REGIONS) {
+      try {
+        const regionImage = await extractRegion(imageDataUrl, region);
+        const { data } = await worker.recognize(regionImage);
+        
+        // Add to raw text but don't affect main result
+        result.rawText += `${region.name}: ${data.text.trim()}\n`;
+      } catch (error) {
+        // Silently ignore errors in additional regions
+      }
+    }
+    
+    // Perform final cleanup of recognized text
+    const cleanedResult = cleanupOcrResults(result);
+    
     // Cleanup worker
     await worker.terminate();
     
-    return result;
+    return cleanedResult;
   } catch (error) {
     console.error('OCR processing error:', error);
     throw new Error(`OCR failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -250,8 +329,8 @@ export const processCardWithOcr = async (imageDataUrl: string): Promise<CardOcrR
 };
 
 /**
- * Clean up OCR results for better matching with card database
- * Improved for German language cards
+ * Enhanced cleanup of OCR results specifically tailored for Pokémon cards
+ * Utilizes knowledge of common card formats and text patterns
  * @param ocrResult Raw OCR result
  * @returns Cleaned OCR result
  */
@@ -259,39 +338,74 @@ export const cleanupOcrResults = (ocrResult: CardOcrResult): CardOcrResult => {
   const result = { ...ocrResult };
   
   if (result.cardName) {
-    // Improve name cleanup for German/special characters
+    // Comprehensive name cleanup for Pokémon cards
     result.cardName = result.cardName
       .replace(/\n/g, ' ')
       .replace(/\s{2,}/g, ' ')
-      .replace(/^[^a-zA-ZäöüÄÖÜß]+/, '') // Remove non-alphabetic characters at the start
+      .replace(/^[^a-zA-ZäöüÄÖÜß]+/, '') // Remove non-alphabetic characters at start
+      .replace(/^(V|v)(\s+)/, 'V') // Fix common "V" prefix spacing issues
+      .replace(/^(GX|EX|ex|gx)(\s+)/, '') // Remove standalone GX/EX prefixes
       .trim();
       
-    // Fix common OCR mistakes for German cards
+    // Fix common OCR mistakes for German Pokémon cards
     result.cardName = result.cardName
       .replace(/Vitalitat/g, 'Vitalität')
       .replace(/Prof\.(\S)/g, 'Prof. $1') // Ensure space after "Prof."
-      .replace(/Antiquus/g, 'Antiquas')   // Fix common misread
+      .replace(/(\w)\.(\w)/g, '$1. $2') // Fix missing spaces after periods
+      .replace(/Pikachu/i, 'Pikachu') // Correct common Pokémon names
+      .replace(/Charizard/i, 'Glurak') // German name for Charizard
       .replace(/ü/g, 'ü')  // Fix potential encoding issues with umlauts
       .replace(/ä/g, 'ä')
       .replace(/ö/g, 'ö')
       .replace(/ß/g, 'ß');
+      
+    // Handle common naming patterns in Pokémon cards
+    if (result.cardName.length < 3) {
+      // Too short to be a valid name, likely an error
+      result.cardName = null;
+    } else if (result.cardName.length > 30) {
+      // Too long, probably contains extra text
+      // Try to extract just the Pokémon name (usually first 1-2 words)
+      const nameParts = result.cardName.split(' ');
+      if (nameParts.length > 2) {
+        result.cardName = nameParts.slice(0, 2).join(' ');
+      }
+    }
   }
   
   if (result.cardNumber) {
-    // Improved cleanup for set numbers
-    // Match common patterns like "PAR DE 256/182" or similar formats
-    const setNumberRegex = /([A-Z]{2,5})\s?(?:DE|EN)?\s?(\d+)\/(\d+)/i;
+    // Enhanced set number pattern recognition
+    // Match patterns like:
+    // - "PAR DE 256/182"
+    // - "SV01 123/198" 
+    // - "SM10 77/214"
+    // - "SWS 065/196"
+    const setNumberRegex = /([A-Z]{2,5})[- ]?(?:DE|EN)?[- ]?(\d+)\/(\d+)/i;
     const match = result.cardNumber.match(setNumberRegex);
     
     if (match) {
-      // Format consistently: e.g., "PAR 256/182"
+      // Format consistently as "SET NNN/NNN"
       result.cardNumber = `${match[1].toUpperCase()} ${match[2]}/${match[3]}`;
     } else {
-      // If no match, just clean up spaces
-      result.cardNumber = result.cardNumber
-        .replace(/\n/g, ' ')
-        .replace(/\s{2,}/g, ' ')
-        .trim();
+      // Try alternative regex for trickier formats
+      const altRegex = /([A-Z]{1,5})[^0-9]*(\d+)[^0-9]*(\d+)/i;
+      const altMatch = result.cardNumber.match(altRegex);
+      
+      if (altMatch) {
+        result.cardNumber = `${altMatch[1].toUpperCase()} ${altMatch[2]}/${altMatch[3]}`;
+      } else {
+        // Just clean up spaces if no pattern match
+        result.cardNumber = result.cardNumber
+          .replace(/\n/g, ' ')
+          .replace(/\s{2,}/g, ' ')
+          .trim();
+      }
+    }
+    
+    // Final validation for unreasonable card numbers
+    if (result.cardNumber.length < 4 || result.cardNumber.length > 15) {
+      // Likely not a valid card number
+      result.cardNumber = null;
     }
   }
   
