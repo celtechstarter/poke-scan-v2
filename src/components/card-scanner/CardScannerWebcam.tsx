@@ -21,7 +21,7 @@ const CardScannerWebcam = () => {
   } = useScannerLogic();
 
   return (
-    <div className="container max-w-4xl mx-auto p-4">
+    <div className="container max-w-md mx-auto p-4">
       <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -33,7 +33,7 @@ const CardScannerWebcam = () => {
           </CardDescription>
         </CardHeader>
         
-        <CardContent className="p-0 relative">
+        <CardContent className="p-4 relative">
           <VideoPreview 
             videoRef={videoRef}
             isScanning={isScanning}
