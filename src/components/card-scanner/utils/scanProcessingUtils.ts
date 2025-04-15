@@ -4,7 +4,86 @@ import { analyzeCardImage } from '@/utils/cardAnalysisUtils';
 import { CardScanningErrorType, ScanResult, ScannerError } from '../types/scannerTypes';
 
 /**
+ * Checks if an image is blurry or has poor lighting
+ * @param imageDataUrl - The captured image as a data URL
+ * @returns {Promise<{isBlurry: boolean, message: string|null}>} - Assessment result
+ */
+export const assessImageQuality = async (imageDataUrl: string): Promise<{
+  isBlurry: boolean;
+  poorLighting: boolean;
+  message: string | null;
+}> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        resolve({ isBlurry: false, poorLighting: false, message: null });
+        return;
+      }
+      
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      
+      // Calculate basic image stats to detect blur and lighting issues
+      let edgeStrength = 0;
+      let totalBrightness = 0;
+      const pixelCount = img.width * img.height;
+      
+      // Simple edge detection and brightness analysis
+      for (let y = 1; y < img.height - 1; y++) {
+        for (let x = 1; x < img.width - 1; x++) {
+          const pixel = (y * img.width + x) * 4;
+          const pixelLeft = (y * img.width + (x - 1)) * 4;
+          const pixelRight = (y * img.width + (x + 1)) * 4;
+          
+          // Simple horizontal edge detection
+          const edgeH = Math.abs(imageData[pixelLeft] - imageData[pixelRight]);
+          
+          // Calculate brightness 
+          const brightness = (imageData[pixel] + imageData[pixel + 1] + imageData[pixel + 2]) / 3;
+          totalBrightness += brightness;
+          
+          edgeStrength += edgeH;
+        }
+      }
+      
+      // Normalize values
+      edgeStrength /= pixelCount;
+      const avgBrightness = totalBrightness / pixelCount;
+      
+      // Analyze results
+      const isBlurry = edgeStrength < 10; // Adjust threshold based on testing
+      const poorLighting = avgBrightness < 40 || avgBrightness > 220; // Too dark or too bright
+      
+      let message = null;
+      if (isBlurry && poorLighting) {
+        message = "Bild ist unscharf und hat schlechte Lichtverhältnisse";
+      } else if (isBlurry) {
+        message = "Bild ist unscharf, bitte halte die Kamera still";
+      } else if (poorLighting) {
+        message = "Schlechte Lichtverhältnisse, bitte für bessere Beleuchtung sorgen";
+      }
+      
+      resolve({ isBlurry, poorLighting, message });
+    };
+    
+    img.onerror = () => {
+      resolve({ isBlurry: false, poorLighting: false, message: null });
+    };
+    
+    img.src = imageDataUrl;
+  });
+};
+
+/**
  * Process the captured card image through analysis
+ * Enhanced with image quality assessment
  * @param {string} imageDataUrl - The captured image as a data URL
  * @param {AbortSignal} signal - Signal for aborting the operation
  * @returns {Promise<ScanResult>} - The scan result
@@ -16,7 +95,7 @@ export const processCardImage = async (
 ): Promise<ScanResult> => {
   toast({
     title: "Bild aufgenommen",
-    description: "Analysiere Pokemon-Karte...",
+    description: "Überprüfe Bildqualität und analysiere Karte...",
   });
   
   try {
@@ -25,6 +104,19 @@ export const processCardImage = async (
       signal.addEventListener('abort', () => {
         console.log('Card analysis aborted');
       });
+    }
+    
+    // First assess image quality
+    const { isBlurry, poorLighting, message } = await assessImageQuality(imageDataUrl);
+    
+    if (isBlurry || poorLighting) {
+      console.warn('Image quality issues detected:', message);
+      toast({
+        title: "Bildqualitätsprobleme",
+        description: message || "Bildqualität könnte besser sein",
+        variant: "warning",
+      });
+      // We continue with the analysis despite quality issues, but warn the user
     }
     
     // Clear any previous console logs to avoid confusion

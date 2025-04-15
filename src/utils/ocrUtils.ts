@@ -1,5 +1,4 @@
-
-import { createWorker, PSM } from 'tesseract.js';
+import { createWorker, PSM, createScheduler } from 'tesseract.js';
 
 /**
  * OCR configuration for Pokemon card recognition
@@ -44,13 +43,13 @@ const CARD_REGIONS: OcrRegion[] = [
 ];
 
 /**
- * Creates and initializes a Tesseract worker
+ * Creates and initializes a Tesseract worker with German language support
  * @returns Initialized Tesseract worker
  */
 export const initOcrWorker = async () => {
   // We explicitly set 'deu' (German) as the ONLY primary language to ensure German cards are processed correctly
   const worker = await createWorker('deu', 1, {
-    logger: process.env.NODE_ENV === 'development' 
+    logger: import.meta.env.DEV 
       ? m => console.log(m) 
       : undefined
   });
@@ -71,7 +70,123 @@ export const initOcrWorker = async () => {
 };
 
 /**
+ * Preprocesses an image for better OCR text recognition
+ * @param imageDataUrl Data URL of the original image
+ * @returns Processed image as Data URL
+ */
+export const preprocessImage = async (imageDataUrl: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        reject(new Error('Could not create canvas context'));
+        return;
+      }
+      
+      // Set canvas dimensions to match image
+      canvas.width = img.width;
+      canvas.height = img.height;
+      
+      // Draw original image
+      ctx.drawImage(img, 0, 0);
+      
+      // Get image data for processing
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      // Convert to grayscale and increase contrast
+      for (let i = 0; i < data.length; i += 4) {
+        // Convert to grayscale using luminance formula
+        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        
+        // Apply contrast enhancement
+        // This formula maps values to increase difference between light and dark
+        const contrast = 1.5; // Contrast factor
+        const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+        const newValue = factor * (gray - 128) + 128;
+        
+        // Threshold to improve text clarity
+        const threshold = 170; // Adjust based on testing
+        const finalValue = newValue > threshold ? 255 : 0;
+        
+        // Set RGB channels to the processed value
+        data[i] = finalValue;
+        data[i + 1] = finalValue;
+        data[i + 2] = finalValue;
+        // Alpha channel remains unchanged
+      }
+      
+      // Put the processed image data back to canvas
+      ctx.putImageData(imageData, 0, 0);
+      
+      // Convert canvas to data URL
+      resolve(canvas.toDataURL('image/png'));
+    };
+    
+    img.onerror = () => {
+      reject(new Error('Failed to load image for preprocessing'));
+    };
+    
+    img.src = imageDataUrl;
+  });
+};
+
+/**
+ * Extracts a specific region from an image
+ * @param imageDataUrl Data URL of the full image
+ * @param region Region definition (percentages of image dimensions)
+ * @returns Data URL of the cropped region
+ */
+export const extractRegion = async (
+  imageDataUrl: string, 
+  region: OcrRegion
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        reject(new Error('Could not create canvas context'));
+        return;
+      }
+      
+      // Calculate region dimensions in pixels
+      const x = Math.floor(img.width * (region.left / 100));
+      const y = Math.floor(img.height * (region.top / 100));
+      const width = Math.floor(img.width * (region.width / 100));
+      const height = Math.floor(img.height * (region.height / 100));
+      
+      // Set canvas dimensions to match region
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Draw only the region of interest
+      ctx.drawImage(
+        img,
+        x, y, width, height,  // Source rectangle
+        0, 0, width, height   // Destination rectangle
+      );
+      
+      // Convert canvas to data URL
+      resolve(canvas.toDataURL('image/png'));
+    };
+    
+    img.onerror = () => {
+      reject(new Error('Failed to load image for region extraction'));
+    };
+    
+    img.src = imageDataUrl;
+  });
+};
+
+/**
  * Process a card image using OCR to extract card name and number
+ * Enhanced with image preprocessing and region-specific scanning
  * @param imageDataUrl Data URL of the card image
  * @returns Recognized card text details
  */
@@ -86,51 +201,42 @@ export const processCardWithOcr = async (imageDataUrl: string): Promise<CardOcrR
   
   try {
     const worker = await initOcrWorker();
-    
-    // Create an image element to get dimensions
-    const img = new Image();
-    img.src = imageDataUrl;
-    
-    // Wait for the image to load to get its dimensions
-    await new Promise((resolve) => {
-      img.onload = resolve;
-    });
-    
-    const width = img.width;
-    const height = img.height;
+    console.log('OCR worker initialized with German language support');
     
     // Process each region of interest
     for (const region of CARD_REGIONS) {
-      // Calculate pixel coordinates from percentages
-      const rectangle = {
-        left: Math.floor(width * (region.left / 100)),
-        top: Math.floor(height * (region.top / 100)),
-        width: Math.floor(width * (region.width / 100)),
-        height: Math.floor(height * (region.height / 100))
-      };
-
-      // Recognize text in this region
-      const { data } = await worker.recognize(imageDataUrl, { rectangle });
+      console.log(`Processing region: ${region.name}`);
       
-      console.log(`OCR result for ${region.name}:`, {
-        text: data.text.trim(),
-        confidence: data.confidence
-      });
-      
-      // Store recognized text based on region
-      if (region.name === 'cardName' && data.text.trim()) {
-        result.cardName = data.text.trim();
-      } else if (region.name === 'cardNumber' && data.text.trim()) {
-        result.cardNumber = data.text.trim();
-        // Clean up card number format
-        result.cardNumber = result.cardNumber.replace(/\s+/g, ' ').trim();
+      try {
+        // Extract and preprocess just the region of interest
+        const regionImage = await extractRegion(imageDataUrl, region);
+        const processedImage = await preprocessImage(regionImage);
+        
+        // Recognize text in this region
+        const { data } = await worker.recognize(processedImage);
+        
+        console.log(`OCR result for ${region.name}:`, {
+          text: data.text.trim(),
+          confidence: data.confidence
+        });
+        
+        // Store recognized text based on region
+        if (region.name === 'cardName' && data.text.trim()) {
+          result.cardName = data.text.trim();
+        } else if (region.name === 'cardNumber' && data.text.trim()) {
+          result.cardNumber = data.text.trim();
+          // Clean up card number format
+          result.cardNumber = result.cardNumber.replace(/\s+/g, ' ').trim();
+        }
+        
+        // Add to raw text
+        result.rawText += data.text.trim() + '\n';
+        
+        // Update confidence (average of all regions)
+        result.confidence = (result.confidence + data.confidence) / 2;
+      } catch (regionError) {
+        console.error(`Error processing region ${region.name}:`, regionError);
       }
-      
-      // Add to raw text
-      result.rawText += data.text + '\n';
-      
-      // Update confidence (average of all regions)
-      result.confidence = (result.confidence + data.confidence) / 2;
     }
     
     // Cleanup worker
@@ -145,6 +251,7 @@ export const processCardWithOcr = async (imageDataUrl: string): Promise<CardOcrR
 
 /**
  * Clean up OCR results for better matching with card database
+ * Improved for German language cards
  * @param ocrResult Raw OCR result
  * @returns Cleaned OCR result
  */
@@ -162,7 +269,12 @@ export const cleanupOcrResults = (ocrResult: CardOcrResult): CardOcrResult => {
     // Fix common OCR mistakes for German cards
     result.cardName = result.cardName
       .replace(/Vitalitat/g, 'Vitalität')
-      .replace(/Prof\.(\S)/g, 'Prof. $1'); // Ensure space after "Prof."
+      .replace(/Prof\.(\S)/g, 'Prof. $1') // Ensure space after "Prof."
+      .replace(/Antiquus/g, 'Antiquas')   // Fix common misread
+      .replace(/ü/g, 'ü')  // Fix potential encoding issues with umlauts
+      .replace(/ä/g, 'ä')
+      .replace(/ö/g, 'ö')
+      .replace(/ß/g, 'ß');
   }
   
   if (result.cardNumber) {

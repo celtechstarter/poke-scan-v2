@@ -74,28 +74,14 @@ export const getCardPriceFromCardMarket = async (cardIdentifier: string): Promis
  * @returns {number} A price between 1 and 101 euros, with 2 decimal places
  */
 const getFallbackPrice = (cardIdentifier: string): number => {
-  // For testing purposes, we use deterministic prices for specific cards
-  const cardPrices: Record<string, number> = {
-    "Pikachu V": 15.99,
-    "Charizard VMAX": 89.99,
-    "Mew EX": 25.50,
-    "Blastoise GX": 45.75,
-    "Gengar VMAX": 34.99,
-    "Prof. Antiquas Vitalität": 22.50
-  };
-
-  // Check for exact match first
-  for (const cardName in cardPrices) {
-    if (cardIdentifier.includes(cardName)) {
-      return cardPrices[cardName];
-    }
-  }
+  // Clean up the card identifier for more consistent pricing
+  const cleanIdentifier = cardIdentifier.trim().toLowerCase();
   
   // Generate a deterministic but unique price for each card based on the identifier
   // This ensures the same card always gets the same price
   let total = 0;
-  for (let i = 0; i < cardIdentifier.length; i++) {
-    total += cardIdentifier.charCodeAt(i);
+  for (let i = 0; i < cleanIdentifier.length; i++) {
+    total += cleanIdentifier.charCodeAt(i);
   }
   
   // Generate a price between 5 and 65 euros
