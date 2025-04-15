@@ -1,10 +1,13 @@
 
+import { CardOcrResult } from '@/utils/ocrUtils';
+
 interface ScanResultProps {
   scanResult: {
     cardName: string;
     cardNumber?: string;
     price: number | null;
     imageDataUrl: string | null;
+    ocrResult?: CardOcrResult;
   } | null;
 }
 
@@ -49,6 +52,16 @@ export function ScanResultDisplay({ scanResult }: ScanResultProps) {
             <p className="text-muted-foreground">
               Kein Preis verfügbar
             </p>
+          )}
+          
+          {/* OCR Debug Information (can be removed in production) */}
+          {scanResult.ocrResult && (
+            <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 text-xs">
+              <p className="font-semibold">OCR Details:</p>
+              <p>Erkannter Name: {scanResult.ocrResult.cardName || 'Nicht erkannt'}</p>
+              <p>Erkannte Nummer: {scanResult.ocrResult.cardNumber || 'Nicht erkannt'}</p>
+              <p>Konfidenz: {Math.round(scanResult.ocrResult.confidence)}%</p>
+            </div>
           )}
         </div>
       </div>

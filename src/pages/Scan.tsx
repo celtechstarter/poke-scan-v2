@@ -7,6 +7,7 @@ const Scan = () => {
       <h1 className="text-3xl font-bold mb-6 text-center">Pokemon Karten Scanner</h1>
       <p className="text-center text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
         Nutze deine Webcam, um Pokemon-Karten zu scannen und ihren aktuellen Marktwert zu ermitteln.
+        Der Scanner erkennt automatisch den Namen und die Set-Nummer der Karte.
       </p>
       
       <CardScannerWebcam />
@@ -17,15 +18,19 @@ const Scan = () => {
           <li>Starte die Kamera mit einem Klick auf "Kamera starten"</li>
           <li>Halte deine Pokemon-Karte <strong>aufrecht</strong> vor die Kamera im markierten Bereich</li>
           <li>Klicke auf "Karte scannen" und halte die Karte ruhig</li>
-          <li>Warte, bis der Scan abgeschlossen ist</li>
+          <li>Warte, bis der Scan und die Texterkennung abgeschlossen sind</li>
           <li>Erhalte den aktuellen Preis und Details zu deiner Karte</li>
         </ol>
         
         <div className="mt-6 bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-pokeyellow p-4">
           <p className="text-sm text-gray-700 dark:text-gray-300">
             <strong className="text-gray-900 dark:text-gray-100">Hinweis:</strong> Sorge für gute Lichtverhältnisse und halte die Karte <strong>senkrecht</strong>, damit 
-            Text und Bild klar erkennbar sind. Je besser die Aufnahmequalität, desto genauer das Ergebnis.
+            Text und Bild klar erkennbar sind. Die Texterkennung fokussiert sich auf:
           </p>
+          <ul className="mt-2 list-disc pl-5 text-sm text-gray-700 dark:text-gray-300">
+            <li>Den Namen des Pokemons (oben auf der Karte)</li>
+            <li>Die Set-Nummer (unten links auf der Karte)</li>
+          </ul>
         </div>
       </div>
     </div>

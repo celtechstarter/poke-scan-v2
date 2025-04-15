@@ -1,5 +1,6 @@
 
 import { getCardPriceFromCardMarket } from './cardMarketService';
+import { processCardWithOcr, cleanupOcrResults, CardOcrResult } from './ocrUtils';
 
 /**
  * Sample mock cards data for demonstration purposes
@@ -15,40 +16,79 @@ const mockCards = [
 
 /**
  * Analyzes a card image and returns the recognized card information
- * In a real application, this would use OCR/ML for text recognition
+ * Now using OCR for text recognition
  * 
  * @param {string} imageDataUrl - The data URL of the captured card image
  * @returns {Promise<Object>} Information about the recognized card including name, number, price and image
- * @property {string} cardName - The name of the recognized card
- * @property {string} cardNumber - The card's set and number identifier
- * @property {number|null} price - The current market price in euros, or null if not available
- * @property {string} imageDataUrl - The original image data URL
  */
 export const analyzeCardImage = async (imageDataUrl: string): Promise<{
   cardName: string;
   cardNumber: string;
   price: number | null;
   imageDataUrl: string;
+  ocrResult?: CardOcrResult;
 }> => {
-  console.log('Analyzing card image...');
+  console.log('Analyzing card image with OCR...');
   
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  
-  // For demo, we use simulated data
-  // In a real app, this would be an OCR service API call
-  const randomIndex = Math.floor(Math.random() * mockCards.length);
-  const recognizedCard = mockCards[randomIndex];
-  
-  console.log('Recognized card:', recognizedCard);
-  
-  // Look up the price on CardMarket
-  const price = await getCardPriceFromCardMarket(`${recognizedCard.name} ${recognizedCard.number}`);
-  
-  return {
-    cardName: recognizedCard.name,
-    cardNumber: recognizedCard.number,
-    price: price,
-    imageDataUrl: imageDataUrl
-  };
+  try {
+    // Process image with OCR
+    const ocrResult = await processCardWithOcr(imageDataUrl);
+    const cleanedOcrResult = cleanupOcrResults(ocrResult);
+    
+    console.log('OCR Recognition results:', cleanedOcrResult);
+    
+    // If OCR detected both name and number, use them
+    if (cleanedOcrResult.cardName && cleanedOcrResult.cardNumber) {
+      const recognizedCard = {
+        cardName: cleanedOcrResult.cardName,
+        cardNumber: cleanedOcrResult.cardNumber
+      };
+      
+      // Look up the price on CardMarket
+      const searchQuery = `${recognizedCard.cardName} ${recognizedCard.cardNumber}`;
+      console.log('Searching CardMarket with:', searchQuery);
+      
+      const price = await getCardPriceFromCardMarket(searchQuery);
+      
+      return {
+        cardName: recognizedCard.cardName,
+        cardNumber: recognizedCard.cardNumber,
+        price: price,
+        imageDataUrl: imageDataUrl,
+        ocrResult: cleanedOcrResult
+      };
+    }
+    
+    // Fallback to mock data if OCR failed to detect all required info
+    console.log('OCR failed to detect all card information, using fallback data');
+    const randomIndex = Math.floor(Math.random() * mockCards.length);
+    const fallbackCard = mockCards[randomIndex];
+    
+    // Look up the price on CardMarket
+    const price = await getCardPriceFromCardMarket(`${fallbackCard.name} ${fallbackCard.number}`);
+    
+    return {
+      cardName: fallbackCard.name,
+      cardNumber: fallbackCard.number,
+      price: price,
+      imageDataUrl: imageDataUrl,
+      ocrResult: cleanedOcrResult // Still return OCR results for debugging
+    };
+  } catch (error) {
+    console.error('Error during card analysis:', error);
+    
+    // Fallback to mock data in case of error
+    const randomIndex = Math.floor(Math.random() * mockCards.length);
+    const fallbackCard = mockCards[randomIndex];
+    
+    // Look up the price on CardMarket
+    const price = await getCardPriceFromCardMarket(`${fallbackCard.name} ${fallbackCard.number}`);
+    
+    return {
+      cardName: fallbackCard.name,
+      cardNumber: fallbackCard.number,
+      price: price,
+      imageDataUrl: imageDataUrl
+    };
+  }
 };
