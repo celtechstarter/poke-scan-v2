@@ -25,7 +25,7 @@ export function ScannerOverlay({ isScanning, scanProgress, isCameraActive }: Sca
       {/* Hilfsrahmen beim Scannen - Portrait-Orientation */}
       {isCameraActive && !isScanning && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="border-4 border-dashed border-pokeyellow/70 w-3/5 h-4/5 rounded-lg flex items-center justify-center" style={{ aspectRatio: '2/3' }}>
+          <div className="border-4 border-dashed border-pokeyellow/70 w-4/5 h-4/5 rounded-lg flex items-center justify-center" style={{ aspectRatio: '2/3' }}>
             <p className="bg-black/60 text-white px-4 py-2 rounded-lg text-center">
               Platziere die Pokemon-Karte innerhalb des Rahmens
             </p>
