@@ -1,4 +1,3 @@
-
 import { toast } from '@/components/ui/use-toast';
 import { analyzeCardImage } from '@/utils/cardAnalysisUtils';
 import { CardScanningErrorType, ScanResult, ScannerError } from '../types/scannerTypes';
@@ -114,7 +113,7 @@ export const processCardImage = async (
       toast({
         title: "Bildqualitätsprobleme",
         description: message || "Bildqualität könnte besser sein",
-        variant: "warning",
+        variant: "default",
       });
       // We continue with the analysis despite quality issues, but warn the user
     }
