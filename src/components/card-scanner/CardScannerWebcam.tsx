@@ -20,7 +20,8 @@ const CardScannerWebcam = () => {
     scanCard,
     toggleCamera,
     toggleAutoDetection,
-    toggleFocusMode
+    toggleFocusMode,
+    errors
   } = useScannerLogic();
 
   return (

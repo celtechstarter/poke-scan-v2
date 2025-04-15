@@ -1,76 +1,34 @@
 
-import { useRef } from 'react';
-import { useCameraControls } from './hooks/useCameraControls';
-import { useCardDetection } from './hooks/useCardDetection';
-import { useCardScanning } from './hooks/useCardScanning';
+import { useScanCoordinator } from './hooks/useScanCoordinator';
 import { ScannerError } from './types/scannerTypes';
-import { CameraFocusMode } from '@/utils/cameraUtils';
 
 /**
  * Main hook for Pokemon card scanner logic
- * Combines camera controls, card detection, and scanning functionality
+ * This is now a thin wrapper around our coordinator hook
+ * for backwards compatibility
  * 
  * @returns {Object} Combined scanner state and functions
  */
 export function useScannerLogic() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  
-  // Camera control functionality
   const {
-    videoRef,
-    isCameraActive,
-    isCameraSupported,
-    error: cameraError,
-    focusMode,
-    focusCapabilities,
-    startCamera,
-    toggleCamera,
-    toggleFocusMode
-  } = useCameraControls();
-  
-  // Card scanning functionality
-  const {
-    isScanning,
-    scanProgress,
-    scanResult,
-    scanError,
-    scanCard,
-    cancelScan
-  } = useCardScanning({
-    videoRef,
-    canvasRef
-  });
-  
-  // Automatic card detection functionality
-  const {
-    autoDetectEnabled,
-    detectError,
-    toggleAutoDetection
-  } = useCardDetection({
     videoRef,
     canvasRef,
-    isCameraActive,
     isScanning,
-    onCardDetected: scanCard
-  });
+    isCameraActive,
+    isCameraSupported,
+    scanProgress,
+    scanResult,
+    autoDetectEnabled,
+    focusMode,
+    focusCapabilities,
+    errors,
+    scanCard,
+    toggleCamera,
+    toggleAutoDetection,
+    toggleFocusMode,
+    cancelScan
+  } = useScanCoordinator();
   
-  // Handle scan initiation, checking camera status first
-  const handleScanStart = () => {
-    if (!isCameraActive) {
-      startCamera();
-      return;
-    }
-    
-    scanCard();
-  };
-
-  // Combine errors for easier access
-  const errors = {
-    camera: cameraError,
-    detection: detectError,
-    scanning: scanError as ScannerError | null
-  };
-
   return {
     videoRef,
     canvasRef,
@@ -83,7 +41,7 @@ export function useScannerLogic() {
     focusMode,
     focusCapabilities,
     errors,
-    scanCard: handleScanStart,
+    scanCard,
     toggleCamera,
     toggleAutoDetection,
     toggleFocusMode,
