@@ -15,6 +15,16 @@ export enum CameraErrorType {
 }
 
 /**
+ * Focus modes for camera
+ */
+export enum CameraFocusMode {
+  AUTO = 'auto',
+  CONTINUOUS = 'continuous',
+  MANUAL = 'manual',
+  FIXED = 'fixed'
+}
+
+/**
  * Custom error class for camera-related errors
  */
 export class CameraError extends Error {
@@ -28,14 +38,37 @@ export class CameraError extends Error {
 }
 
 /**
- * Starts the camera with the environment-facing camera if available
+ * Camera configuration options
+ */
+export interface CameraOptions {
+  facingMode?: 'user' | 'environment';
+  width?: number;
+  height?: number;
+  focusMode?: CameraFocusMode;
+  focusDistance?: number; // 0.0 to 1.0, only used for manual focus
+}
+
+/**
+ * Default camera configuration
+ */
+const DEFAULT_CAMERA_OPTIONS: CameraOptions = {
+  facingMode: 'environment',
+  width: 1280,
+  height: 720,
+  focusMode: CameraFocusMode.AUTO
+};
+
+/**
+ * Starts the camera with the specified configuration options
  * 
  * @param {React.RefObject<HTMLVideoElement>} videoRef - Reference to the video element where the stream will be displayed
+ * @param {CameraOptions} options - Camera configuration options
  * @returns {Promise<MediaStream | null>} The media stream if successful, null otherwise
  * @throws {CameraError} When camera access is denied or unavailable
  */
 export const startCamera = async (
-  videoRef: React.RefObject<HTMLVideoElement>
+  videoRef: React.RefObject<HTMLVideoElement>,
+  options: CameraOptions = DEFAULT_CAMERA_OPTIONS
 ): Promise<MediaStream> => {
   try {
     // Check if mediaDevices API is supported
@@ -46,20 +79,51 @@ export const startCamera = async (
       );
     }
     
+    // Build constraints based on options
+    const constraints: MediaStreamConstraints = {
+      video: {
+        facingMode: { ideal: options.facingMode || 'environment' },
+        width: { ideal: options.width || 1280 },
+        height: { ideal: options.height || 720 }
+      }
+    };
+    
+    // Add advanced focus constraints if supported
+    // @ts-ignore - focusMode is not in standard type definitions but works in modern browsers
+    if ((constraints.video as MediaTrackConstraints).advanced === undefined) {
+      (constraints.video as MediaTrackConstraints).advanced = [];
+    }
+    
+    if (options.focusMode) {
+      // @ts-ignore - focusMode property
+      (constraints.video as MediaTrackConstraints).advanced?.push({
+        focusMode: options.focusMode
+      });
+    }
+    
     // Attempt to get the camera stream
-    const stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { 
-        facingMode: { ideal: 'environment' },
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
-      } 
-    });
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
     
     if (!stream) {
       throw new CameraError(
         'Kamera konnte nicht aktiviert werden',
         CameraErrorType.GENERAL_ERROR
       );
+    }
+    
+    // Apply manual focus if needed and supported
+    if (options.focusMode === CameraFocusMode.MANUAL && options.focusDistance !== undefined) {
+      try {
+        const videoTrack = stream.getVideoTracks()[0];
+        if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
+          // @ts-ignore - focusDistance property
+          await videoTrack.applyConstraints({
+            advanced: [{ focusDistance: options.focusDistance }]
+          });
+        }
+      } catch (focusError) {
+        console.warn('Manual focus not supported:', focusError);
+      }
     }
     
     if (videoRef.current) {
@@ -117,6 +181,77 @@ export const startCamera = async (
       'Ein unbekannter Fehler ist beim Zugriff auf die Kamera aufgetreten.',
       CameraErrorType.GENERAL_ERROR
     );
+  }
+};
+
+/**
+ * Updates camera focus settings on an active stream
+ * 
+ * @param {MediaStream} stream - The active media stream
+ * @param {CameraFocusMode} focusMode - Focus mode to apply
+ * @param {number} focusDistance - Distance for manual focus (0.0 to 1.0)
+ * @returns {Promise<boolean>} Whether the update was successful
+ */
+export const updateCameraFocus = async (
+  stream: MediaStream,
+  focusMode: CameraFocusMode,
+  focusDistance?: number
+): Promise<boolean> => {
+  try {
+    const videoTrack = stream.getVideoTracks()[0];
+    
+    if (!videoTrack || typeof videoTrack.applyConstraints !== 'function') {
+      console.warn('Cannot update focus: No video track or applyConstraints not supported');
+      return false;
+    }
+    
+    const constraints: any = {
+      advanced: [{ focusMode }]
+    };
+    
+    // Add focus distance for manual mode
+    if (focusMode === CameraFocusMode.MANUAL && focusDistance !== undefined) {
+      constraints.advanced[0].focusDistance = focusDistance;
+    }
+    
+    await videoTrack.applyConstraints(constraints);
+    return true;
+  } catch (error) {
+    console.error('Error updating camera focus:', error);
+    return false;
+  }
+};
+
+/**
+ * Gets camera capabilities including available focus modes
+ * 
+ * @param {MediaStream} stream - The active media stream
+ * @returns {Object} Object containing camera capabilities
+ */
+export const getCameraCapabilities = (stream: MediaStream): {
+  supportsFocusMode: boolean;
+  supportedFocusModes: string[];
+} => {
+  try {
+    const videoTrack = stream.getVideoTracks()[0];
+    
+    if (!videoTrack || !videoTrack.getCapabilities) {
+      return { supportsFocusMode: false, supportedFocusModes: [] };
+    }
+    
+    const capabilities = videoTrack.getCapabilities();
+    
+    // @ts-ignore - focusMode property
+    const supportedFocusModes = capabilities.focusMode || [];
+    
+    return {
+      // @ts-ignore - focusMode property
+      supportsFocusMode: Array.isArray(capabilities.focusMode) && capabilities.focusMode.length > 0,
+      supportedFocusModes: Array.isArray(supportedFocusModes) ? supportedFocusModes : []
+    };
+  } catch (error) {
+    console.error('Error getting camera capabilities:', error);
+    return { supportsFocusMode: false, supportedFocusModes: [] };
   }
 };
 

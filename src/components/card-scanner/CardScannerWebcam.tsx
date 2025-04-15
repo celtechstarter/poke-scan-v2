@@ -15,9 +15,12 @@ const CardScannerWebcam = () => {
     scanProgress,
     scanResult,
     autoDetectEnabled,
+    focusMode,
+    focusCapabilities,
     scanCard,
     toggleCamera,
-    toggleAutoDetection
+    toggleAutoDetection,
+    toggleFocusMode
   } = useScannerLogic();
 
   return (
@@ -50,9 +53,12 @@ const CardScannerWebcam = () => {
             isCameraActive={isCameraActive}
             isScanning={isScanning}
             autoDetectEnabled={autoDetectEnabled}
+            focusMode={focusMode}
+            focusCapabilities={focusCapabilities}
             onCameraToggle={toggleCamera}
             onScanStart={scanCard}
             onAutoDetectToggle={toggleAutoDetection}
+            onFocusModeToggle={toggleFocusMode}
           />
           
           <ScanResultDisplay scanResult={scanResult} />

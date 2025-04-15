@@ -4,6 +4,7 @@ import { useCameraControls } from './hooks/useCameraControls';
 import { useCardDetection } from './hooks/useCardDetection';
 import { useCardScanning } from './hooks/useCardScanning';
 import { ScannerError } from './types/scannerTypes';
+import { CameraFocusMode } from '@/utils/cameraUtils';
 
 /**
  * Main hook for Pokemon card scanner logic
@@ -20,8 +21,11 @@ export function useScannerLogic() {
     isCameraActive,
     isCameraSupported,
     error: cameraError,
+    focusMode,
+    focusCapabilities,
     startCamera,
-    toggleCamera
+    toggleCamera,
+    toggleFocusMode
   } = useCameraControls();
   
   // Card scanning functionality
@@ -76,10 +80,13 @@ export function useScannerLogic() {
     scanProgress,
     scanResult,
     autoDetectEnabled,
+    focusMode,
+    focusCapabilities,
     errors,
     scanCard: handleScanStart,
     toggleCamera,
     toggleAutoDetection,
+    toggleFocusMode,
     cancelScan
   };
 }

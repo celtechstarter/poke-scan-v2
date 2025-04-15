@@ -32,6 +32,21 @@ const Scan = () => {
             <li>Die Set-Nummer (unten links auf der Karte)</li>
           </ul>
         </div>
+        
+        <div className="mt-4 bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-4">
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            <strong className="text-gray-900 dark:text-gray-100">Fokus-Modus:</strong> Wenn deine Kamera dies unterstützt, kannst du den Fokus-Modus ändern:
+          </p>
+          <ul className="mt-2 list-disc pl-5 text-sm text-gray-700 dark:text-gray-300">
+            <li><strong>Autofokus:</strong> Die Kamera fokussiert automatisch (Standard)</li>
+            <li><strong>Fester Fokus:</strong> Hilfreich wenn die Set-Nummer nicht scharf ist</li>
+            <li><strong>Kontinuierlicher Fokus:</strong> Passt den Fokus ständig an</li>
+            <li><strong>Manueller Fokus:</strong> Erweiterte Einstellung (falls unterstützt)</li>
+          </ul>
+          <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+            Probiere bei unscharfen Scans den "Festen Fokus" und halte die Karte in optimaler Entfernung.
+          </p>
+        </div>
       </div>
     </div>
   );
