@@ -1,14 +1,7 @@
-
-import { CardOcrResult } from '@/utils/ocrUtils';
+import { ScanResult } from './types/scannerTypes';
 
 interface ScanResultProps {
-  scanResult: {
-    cardName: string;
-    cardNumber?: string;
-    price: number | null;
-    imageDataUrl: string | null;
-    ocrResult?: CardOcrResult;
-  } | null;
+  scanResult: ScanResult | null;
 }
 
 export function ScanResultDisplay({ scanResult }: ScanResultProps) {

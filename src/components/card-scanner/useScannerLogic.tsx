@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import { useCameraControls } from './hooks/useCameraControls';
 import { useCardDetection } from './hooks/useCardDetection';
 import { useCardScanning } from './hooks/useCardScanning';
+import { ScannerError } from './types/scannerTypes';
 
 /**
  * Main hook for Pokemon card scanner logic
@@ -63,7 +64,7 @@ export function useScannerLogic() {
   const errors = {
     camera: cameraError,
     detection: detectError,
-    scanning: scanError
+    scanning: scanError as ScannerError | null
   };
 
   return {

@@ -1,17 +1,9 @@
 
 import { useState, useRef, useCallback } from 'react';
-import { useToast } from '@/components/ui/use-toast';
-import { captureVideoFrame, CardDetectionError, CardDetectionErrorType } from '@/utils/cardDetectionUtils';
-import { analyzeCardImage } from '@/utils/cardAnalysisUtils';
-
-/**
- * Error types specific to card scanning
- */
-export enum CardScanningErrorType {
-  CAPTURE_FAILED = 'capture_failed',
-  ANALYSIS_FAILED = 'analysis_failed',
-  PRICE_LOOKUP_FAILED = 'price_lookup_failed'
-}
+import { toast } from '@/components/ui/use-toast';
+import { CardDetectionError } from '@/utils/cardDetectionUtils';
+import { ScanResult, ScannerError, CardScanningErrorType } from '../types/scannerTypes';
+import { processCardImage, captureFrameUtil } from '../utils/scanProcessingUtils';
 
 /**
  * Custom hook for card scanning functionality
@@ -29,96 +21,14 @@ export function useCardScanning({
   videoRef: React.RefObject<HTMLVideoElement>;
   canvasRef: React.RefObject<HTMLCanvasElement>;
 }) {
-  const { toast } = useToast();
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
-  const [scanError, setScanError] = useState<{
-    message: string;
-    type: CardScanningErrorType | CardDetectionErrorType;
-  } | null>(null);
-  const [scanResult, setScanResult] = useState<{
-    cardName: string;
-    cardNumber?: string;
-    price: number | null;
-    imageDataUrl: string | null;
-  } | null>(null);
-  const scanIntervalRef = useRef<number | null>(null);
+  const [scanError, setScanError] = useState<ScannerError | null>(null);
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const scanAbortControllerRef = useRef<AbortController | null>(null);
 
   /**
-   * Process the captured card image through analysis
-   * @param {string} imageDataUrl - The captured image as a data URL
-   */
-  const processCardImage = useCallback(async (imageDataUrl: string) => {
-    toast({
-      title: "Bild aufgenommen",
-      description: "Analysiere Pokemon-Karte...",
-    });
-    
-    setScanError(null);
-    
-    try {
-      // Create abort controller for this analysis
-      scanAbortControllerRef.current = new AbortController();
-      const signal = scanAbortControllerRef.current.signal;
-      
-      // Set up abort handling
-      signal.addEventListener('abort', () => {
-        console.log('Card analysis aborted');
-      });
-      
-      // Fix: Remove the second argument (signal) as analyzeCardImage only expects one argument
-      const result = await analyzeCardImage(imageDataUrl);
-      
-      setScanResult({
-        cardName: result.cardName,
-        cardNumber: result.cardNumber,
-        price: result.price,
-        imageDataUrl: imageDataUrl
-      });
-      
-      toast({
-        title: "Karte erkannt!",
-        description: `${result.cardName} (${result.cardNumber || 'Keine Nummer'}) - Preis: ${result.price ? `${result.price.toFixed(2)} €` : 'Nicht verfügbar'}`,
-        variant: "default",
-      });
-    } catch (error) {
-      console.error('Fehler bei der Kartenanalyse:', error);
-      
-      let errorType = CardScanningErrorType.ANALYSIS_FAILED;
-      let errorMessage = "Die Karte konnte nicht erkannt werden. Bitte versuche es erneut.";
-      
-      // Check if the error is due to abort - in which case we don't show an error toast
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        console.log('Analyse abgebrochen');
-        return;
-      }
-      
-      // Check for more specific error types
-      if (error instanceof Error) {
-        if (error.message.includes('price') || error.message.includes('Preis')) {
-          errorType = CardScanningErrorType.PRICE_LOOKUP_FAILED;
-          errorMessage = "Karte erkannt, aber der Preis konnte nicht ermittelt werden.";
-        }
-      }
-      
-      setScanError({
-        message: errorMessage,
-        type: errorType
-      });
-      
-      toast({
-        title: "Fehler bei der Analyse",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      scanAbortControllerRef.current = null;
-    }
-  }, [toast]);
-
-  /**
-   * Captures a frame from the video and processes it
+   * Processes the captured frame and handles the scanning workflow
    */
   const captureFrame = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) {
@@ -131,51 +41,57 @@ export function useCardScanning({
     }
     
     try {
-      const imageDataUrl = captureVideoFrame(videoRef.current, canvasRef.current);
+      // Capture frame using utility
+      const imageDataUrl = await captureFrameUtil(videoRef, canvasRef, setScanError);
       
-      if (imageDataUrl) {
-        await processCardImage(imageDataUrl);
-      } else {
+      if (!imageDataUrl) {
+        setIsScanning(false);
+        return;
+      }
+      
+      // Create abort controller for this analysis
+      scanAbortControllerRef.current = new AbortController();
+      const signal = scanAbortControllerRef.current.signal;
+      
+      // Process the image
+      const result = await processCardImage(imageDataUrl, signal);
+      setScanResult(result);
+    } catch (error) {
+      console.error('Fehler beim Scannen:', error);
+      
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        console.log('Scan abgebrochen');
+        return;
+      }
+      
+      // Check if error is already a ScannerError
+      if (error && typeof error === 'object' && 'type' in error && 'message' in error) {
+        setScanError(error as ScannerError);
+      } else if (error instanceof CardDetectionError) {
         setScanError({
-          message: "Bild konnte nicht aufgenommen werden",
+          message: error.message,
           type: CardScanningErrorType.CAPTURE_FAILED
         });
         
         toast({
           title: "Scanfehler",
-          description: "Bild konnte nicht aufgenommen werden. Bitte versuche es erneut.",
+          description: error.message,
           variant: "destructive",
         });
+      } else {
+        setScanError({
+          message: "Ein unbekannter Fehler ist aufgetreten",
+          type: CardScanningErrorType.GENERAL_ERROR as any
+        });
       }
-    } catch (error) {
-      console.error('Fehler beim Erfassen des Bildes:', error);
-      
-      let errorMessage = "Fehler beim Erfassen des Bildes";
-      let errorType = CardScanningErrorType.CAPTURE_FAILED;
-      
-      if (error instanceof CardDetectionError) {
-        errorMessage = error.message;
-        errorType = CardScanningErrorType.CAPTURE_FAILED;
-      }
-      
-      setScanError({
-        message: errorMessage,
-        type: errorType
-      });
-      
-      toast({
-        title: "Scanfehler",
-        description: errorMessage,
-        variant: "destructive",
-      });
     } finally {
+      scanAbortControllerRef.current = null;
       setIsScanning(false);
     }
-  }, [videoRef, canvasRef, processCardImage, toast]);
+  }, [videoRef, canvasRef]);
 
   /**
    * Initiates the card scanning process
-   * MODIFIED: Now captures frame immediately instead of showing progress
    */
   const scanCard = useCallback(() => {
     // First cancel any ongoing scan
@@ -185,7 +101,6 @@ export function useCardScanning({
     setScanProgress(0);
     setScanError(null);
     
-    // Instead of a progress simulation, capture immediately
     toast({
       title: "Scan gestartet",
       description: "Karte wird sofort erfasst...",
@@ -197,18 +112,12 @@ export function useCardScanning({
       captureFrame();
     }, 100);
     
-  }, [captureFrame, toast]);
+  }, [captureFrame]);
 
   /**
    * Cancels an ongoing scan
    */
   const cancelScan = useCallback(() => {
-    // Clear progress interval
-    if (scanIntervalRef.current) {
-      clearInterval(scanIntervalRef.current);
-      scanIntervalRef.current = null;
-    }
-    
     // Abort any ongoing analysis
     if (scanAbortControllerRef.current) {
       scanAbortControllerRef.current.abort();
