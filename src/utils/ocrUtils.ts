@@ -1,5 +1,5 @@
 
-import { createWorker } from 'tesseract.js';
+import { createWorker, PSM } from 'tesseract.js';
 
 /**
  * OCR configuration for Pokemon card recognition
@@ -58,7 +58,7 @@ export const initOcrWorker = async () => {
   await worker.setParameters({
     preserve_interword_spaces: '1',
     tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-/. äöüÄÖÜß',
-    tessedit_pageseg_mode: '6', // Assume a single uniform block of text
+    tessedit_pageseg_mode: PSM.SINGLE_BLOCK, // Using proper enum value instead of string "6"
     tessjs_create_hocr: '0',
     tessjs_create_tsv: '0',
     tessjs_create_box: '0',
