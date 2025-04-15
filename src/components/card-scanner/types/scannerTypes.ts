@@ -8,7 +8,8 @@ import { CardOcrResult } from '@/utils/ocrUtils';
 export enum CardScanningErrorType {
   CAPTURE_FAILED = 'capture_failed',
   ANALYSIS_FAILED = 'analysis_failed',
-  PRICE_LOOKUP_FAILED = 'price_lookup_failed'
+  PRICE_LOOKUP_FAILED = 'price_lookup_failed',
+  GENERAL_ERROR = 'general_error'
 }
 
 /**
