@@ -12,7 +12,7 @@ import OpenAI from "openai";
  * Note: In production, this should use a proper API key from environment variables
  */
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || "sk-placeholder-key", // Use environment variable or placeholder
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY || "sk-placeholder-key", // Use Vite environment variable
   dangerouslyAllowBrowser: true // This is for client-side usage, use server-side in production
 });
 
