@@ -1,4 +1,3 @@
-
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { 
@@ -11,7 +10,7 @@ import {
   updateCameraFocus,
   getCameraCapabilities,
   CameraOptions
-} from '@/utils/cameraUtils';
+} from '@/utils/camera';
 
 /**
  * Custom hook for camera controls in the scanner application
