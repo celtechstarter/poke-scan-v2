@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button';
 import { Camera, Award, Gift } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -23,13 +22,11 @@ const Home = () => {
           </Button>
         </div>
 
-        {/* Pokemon Card Slideshow */}
         <div className="max-w-4xl mx-auto shadow-xl rounded-xl overflow-hidden">
           <PokemonSlideshow />
         </div>
       </section>
 
-      {/* Features Section */}
       <section className="py-12 bg-white/90 rounded-xl mb-12 backdrop-blur-sm">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">
@@ -37,32 +34,32 @@ const Home = () => {
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-6 rounded-lg shadow-md flex flex-col items-center text-center">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex flex-col items-center text-center">
               <div className="p-3 bg-pokeblue-light rounded-full mb-4">
                 <Camera className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Schnelle Erkennung</h3>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-gray-700 dark:text-gray-200">
                 Halte deine Karten vor die Kamera und erhalte in Sekundenschnelle die Kartendaten.
               </p>
             </div>
             
-            <div className="bg-white p-6 rounded-lg shadow-md flex flex-col items-center text-center">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex flex-col items-center text-center">
               <div className="p-3 bg-pokered-light rounded-full mb-4">
                 <Award className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Präzise Werte</h3>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-gray-700 dark:text-gray-200">
                 Aktuelle Preise direkt von CardMarket.com für eine realistische Bewertung.
               </p>
             </div>
             
-            <div className="bg-white p-6 rounded-lg shadow-md flex flex-col items-center text-center">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex flex-col items-center text-center">
               <div className="p-3 bg-pokeyellow rounded-full mb-4">
                 <Gift className="h-8 w-8 text-black" />
               </div>
               <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Sammler-Freundlich</h3>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-gray-700 dark:text-gray-200">
                 Benutzerfreundliches Design für Sammler jeden Alters und jeder Erfahrungsstufe.
               </p>
             </div>
@@ -70,7 +67,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
       <section className="mb-12 bg-gradient-to-r from-pokeblue to-pokered p-8 rounded-xl text-white">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
@@ -91,4 +87,3 @@ const Home = () => {
 };
 
 export default Home;
-
