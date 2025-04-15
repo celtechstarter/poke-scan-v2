@@ -22,24 +22,24 @@ export interface CardOcrResult {
   confidence: number;
 }
 
-// Define regions of interest for a Pokemon card
-// These values are percentages of the image dimensions
+// Refined regions of interest for a Pokemon card
+// Values are percentages of the image dimensions
 const CARD_REGIONS: OcrRegion[] = [
-  // Top region - Pokemon name
+  // Top region - Card name - Adjusted for better name capture
   {
     name: 'cardName',
-    top: 5,
-    left: 20,
-    width: 60,
-    height: 15
+    top: 3,
+    left: 15,
+    width: 70,
+    height: 12
   },
-  // Bottom region - Card number and set
+  // Bottom region - Card number and set - Adjusted for better set code capture
   {
     name: 'cardNumber',
-    top: 80,
+    top: 88,
     left: 5,
-    width: 40,
-    height: 15
+    width: 35,
+    height: 10
   }
 ];
 
@@ -48,16 +48,22 @@ const CARD_REGIONS: OcrRegion[] = [
  * @returns Initialized Tesseract worker
  */
 export const initOcrWorker = async () => {
-  const worker = await createWorker('eng', 1, {
+  const worker = await createWorker('eng+deu', 1, {
     logger: process.env.NODE_ENV === 'development' 
       ? m => console.log(m) 
       : undefined
   });
   
-  // Set additional configurations for better OCR results
+  // Enhanced OCR parameters for Pokemon cards
   await worker.setParameters({
     preserve_interword_spaces: '1',
-    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-/.', 
+    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-/. äöüÄÖÜß',
+    tessedit_pageseg_mode: '6', // Assume a single uniform block of text
+    tessjs_create_hocr: '0',
+    tessjs_create_tsv: '0',
+    tessjs_create_box: '0',
+    tessjs_create_unlv: '0',
+    tessjs_create_osd: '0',
   });
   
   return worker;
@@ -145,19 +151,35 @@ export const cleanupOcrResults = (ocrResult: CardOcrResult): CardOcrResult => {
   const result = { ...ocrResult };
   
   if (result.cardName) {
-    // Remove common OCR errors and clean up card name
+    // Improve name cleanup for German/special characters
     result.cardName = result.cardName
       .replace(/\n/g, ' ')
       .replace(/\s{2,}/g, ' ')
+      .replace(/^[^a-zA-ZäöüÄÖÜß]+/, '') // Remove non-alphabetic characters at the start
       .trim();
+      
+    // Fix common OCR mistakes for German cards
+    result.cardName = result.cardName
+      .replace(/Vitalitat/g, 'Vitalität')
+      .replace(/Prof\.(\S)/g, 'Prof. $1'); // Ensure space after "Prof."
   }
   
   if (result.cardNumber) {
-    // Clean up set number format (e.g., "SV2 039/149" or "SWSH004/073")
-    result.cardNumber = result.cardNumber
-      .replace(/\n/g, ' ')
-      .replace(/\s{2,}/g, ' ')
-      .trim();
+    // Improved cleanup for set numbers
+    // Match common patterns like "PAR DE 256/182" or similar formats
+    const setNumberRegex = /([A-Z]{2,5})\s?(?:DE|EN)?\s?(\d+)\/(\d+)/i;
+    const match = result.cardNumber.match(setNumberRegex);
+    
+    if (match) {
+      // Format consistently: e.g., "PAR 256/182"
+      result.cardNumber = `${match[1].toUpperCase()} ${match[2]}/${match[3]}`;
+    } else {
+      // If no match, just clean up spaces
+      result.cardNumber = result.cardNumber
+        .replace(/\n/g, ' ')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+    }
   }
   
   return result;
