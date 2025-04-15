@@ -16,7 +16,7 @@ export function VideoPreview({
   isCameraActive
 }: VideoPreviewProps) {
   return (
-    <div className="relative aspect-video bg-black">
+    <div className="relative bg-black" style={{ aspectRatio: '3/4' }}>
       <video 
         ref={videoRef}
         className="w-full h-full object-cover" 
