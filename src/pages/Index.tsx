@@ -41,8 +41,8 @@ const Home = () => {
               <div className="p-3 bg-pokeblue-light rounded-full mb-4">
                 <Camera className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Schnelle Erkennung</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Schnelle Erkennung</h3>
+              <p className="text-gray-600 dark:text-gray-300">
                 Halte deine Karten vor die Kamera und erhalte in Sekundenschnelle die Kartendaten.
               </p>
             </div>
@@ -51,8 +51,8 @@ const Home = () => {
               <div className="p-3 bg-pokered-light rounded-full mb-4">
                 <Award className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Präzise Werte</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Präzise Werte</h3>
+              <p className="text-gray-600 dark:text-gray-300">
                 Aktuelle Preise direkt von CardMarket.com für eine realistische Bewertung.
               </p>
             </div>
@@ -61,8 +61,8 @@ const Home = () => {
               <div className="p-3 bg-pokeyellow rounded-full mb-4">
                 <Gift className="h-8 w-8 text-black" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Sammler-Freundlich</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Sammler-Freundlich</h3>
+              <p className="text-gray-600 dark:text-gray-300">
                 Benutzerfreundliches Design für Sammler jeden Alters und jeder Erfahrungsstufe.
               </p>
             </div>
@@ -91,3 +91,4 @@ const Home = () => {
 };
 
 export default Home;
+
