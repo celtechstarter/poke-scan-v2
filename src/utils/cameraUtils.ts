@@ -89,16 +89,20 @@ export const startCamera = async (
     };
     
     // Add advanced focus constraints if supported
-    // @ts-ignore - focusMode is not in standard type definitions but works in modern browsers
-    if ((constraints.video as MediaTrackConstraints).advanced === undefined) {
-      (constraints.video as MediaTrackConstraints).advanced = [];
-    }
+    // We need to use any type here because these focus properties
+    // are not part of the standard MediaTrackConstraints
+    const advancedConstraints: any[] = [];
     
     if (options.focusMode) {
-      // @ts-ignore - focusMode property
-      (constraints.video as MediaTrackConstraints).advanced?.push({
+      advancedConstraints.push({
+        // Use any type to bypass TypeScript's type checking
         focusMode: options.focusMode
       });
+    }
+    
+    // Apply advanced constraints if any exist
+    if (advancedConstraints.length > 0) {
+      (constraints.video as any).advanced = advancedConstraints;
     }
     
     // Attempt to get the camera stream
@@ -116,9 +120,11 @@ export const startCamera = async (
       try {
         const videoTrack = stream.getVideoTracks()[0];
         if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
-          // @ts-ignore - focusDistance property
+          // Use any type because focusDistance isn't in standard type definitions
           await videoTrack.applyConstraints({
-            advanced: [{ focusDistance: options.focusDistance }]
+            advanced: [{
+              focusDistance: options.focusDistance
+            } as any]
           });
         }
       } catch (focusError) {
@@ -205,16 +211,20 @@ export const updateCameraFocus = async (
       return false;
     }
     
-    const constraints: any = {
-      advanced: [{ focusMode }]
-    };
+    // Use any type to bypass TypeScript's type checking
+    const advancedConstraints: any[] = [{
+      focusMode: focusMode
+    }];
     
     // Add focus distance for manual mode
     if (focusMode === CameraFocusMode.MANUAL && focusDistance !== undefined) {
-      constraints.advanced[0].focusDistance = focusDistance;
+      advancedConstraints[0].focusDistance = focusDistance;
     }
     
-    await videoTrack.applyConstraints(constraints);
+    await videoTrack.applyConstraints({
+      advanced: advancedConstraints
+    });
+    
     return true;
   } catch (error) {
     console.error('Error updating camera focus:', error);
@@ -239,14 +249,12 @@ export const getCameraCapabilities = (stream: MediaStream): {
       return { supportsFocusMode: false, supportedFocusModes: [] };
     }
     
-    const capabilities = videoTrack.getCapabilities();
+    const capabilities = videoTrack.getCapabilities() as any;
     
-    // @ts-ignore - focusMode property
     const supportedFocusModes = capabilities.focusMode || [];
     
     return {
-      // @ts-ignore - focusMode property
-      supportsFocusMode: Array.isArray(capabilities.focusMode) && capabilities.focusMode.length > 0,
+      supportsFocusMode: Array.isArray(supportedFocusModes) && supportedFocusModes.length > 0,
       supportedFocusModes: Array.isArray(supportedFocusModes) ? supportedFocusModes : []
     };
   } catch (error) {
