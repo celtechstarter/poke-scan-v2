@@ -48,13 +48,14 @@ const CARD_REGIONS: OcrRegion[] = [
  * @returns Initialized Tesseract worker
  */
 export const initOcrWorker = async () => {
-  const worker = await createWorker('eng+deu', 1, {
+  // We explicitly set 'deu' (German) as the primary language, followed by 'eng'
+  const worker = await createWorker('deu+eng', 1, {
     logger: process.env.NODE_ENV === 'development' 
       ? m => console.log(m) 
       : undefined
   });
   
-  // Enhanced OCR parameters for Pokemon cards
+  // Enhanced OCR parameters for Pokemon cards - especially for German text
   await worker.setParameters({
     preserve_interword_spaces: '1',
     tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-/. äöüÄÖÜß',

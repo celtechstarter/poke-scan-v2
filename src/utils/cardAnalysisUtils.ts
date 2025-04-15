@@ -38,8 +38,9 @@ export const analyzeCardImage = async (imageDataUrl: string): Promise<{
     
     console.log('OCR Recognition results:', cleanedOcrResult);
     
-    // If OCR detected both name and number, use them
+    // If OCR detected both name and number, use them directly
     if (cleanedOcrResult.cardName && cleanedOcrResult.cardNumber) {
+      console.log('OCR successfully detected card name and number');
       const recognizedCard = {
         cardName: cleanedOcrResult.cardName,
         cardNumber: cleanedOcrResult.cardNumber
@@ -67,22 +68,49 @@ export const analyzeCardImage = async (imageDataUrl: string): Promise<{
       
       // Check if we can match with any of the mock cards using partial information
       const matchingCard = mockCards.find(card => {
-        // Match by name if we have it
-        if (cleanedOcrResult.cardName && 
-            card.name.toLowerCase().includes(cleanedOcrResult.cardName.toLowerCase())) {
-          return true;
+        // Match by name if we have it - use more accurate fuzzy matching
+        if (cleanedOcrResult.cardName) {
+          const cardNameLower = card.name.toLowerCase();
+          const ocrNameLower = cleanedOcrResult.cardName.toLowerCase();
+          
+          // Check for direct substring match or significant word overlap
+          if (cardNameLower.includes(ocrNameLower) || 
+              ocrNameLower.includes(cardNameLower) ||
+              // Check for key words match (e.g., "Antiquas" in "Prof. Antiquas Vitalität")
+              cardNameLower.split(' ').some(word => 
+                word.length > 3 && ocrNameLower.includes(word)) ||
+              ocrNameLower.split(' ').some(word => 
+                word.length > 3 && cardNameLower.includes(word))) {
+            return true;
+          }
         }
         
-        // Match by number if we have it
-        if (cleanedOcrResult.cardNumber && 
-            card.number.replace(/\s+/g, '').includes(cleanedOcrResult.cardNumber.replace(/\s+/g, ''))) {
-          return true;
+        // Match by number if we have it - more exact matching for set codes
+        if (cleanedOcrResult.cardNumber) {
+          // Normalize strings for comparison
+          const normalizedCardNumber = card.number.replace(/\s+/g, '').toUpperCase();
+          const normalizedOcrNumber = cleanedOcrResult.cardNumber.replace(/\s+/g, '').toUpperCase();
+          
+          // Check if either contains the other
+          if (normalizedCardNumber.includes(normalizedOcrNumber) || 
+              normalizedOcrNumber.includes(normalizedCardNumber)) {
+            return true;
+          }
+          
+          // Check for set code match (e.g., "PAR" in "PAR 256/182")
+          const cardSetCode = normalizedCardNumber.match(/^([A-Z]{2,5})/)?.[1];
+          const ocrSetCode = normalizedOcrNumber.match(/^([A-Z]{2,5})/)?.[1];
+          
+          if (cardSetCode && ocrSetCode && cardSetCode === ocrSetCode) {
+            return true;
+          }
         }
         
         return false;
       });
       
       if (matchingCard) {
+        console.log('Found matching card in database:', matchingCard);
         // Use matched card for price lookup
         const price = await getCardPriceFromCardMarket(`${matchingCard.name} ${matchingCard.number}`);
         
@@ -96,35 +124,24 @@ export const analyzeCardImage = async (imageDataUrl: string): Promise<{
       }
     }
     
-    // Fallback to mock data if OCR failed to provide enough information
-    console.log('OCR failed to detect all card information, using fallback data');
-    const randomIndex = Math.floor(Math.random() * mockCards.length);
-    const fallbackCard = mockCards[randomIndex];
+    console.log('OCR failed to match with any known card, using fallback');
     
-    // Look up the price on CardMarket
-    const price = await getCardPriceFromCardMarket(`${fallbackCard.name} ${fallbackCard.number}`);
-    
+    // If we still don't have a match, don't use random fallback, but return a clear error state
     return {
-      cardName: fallbackCard.name,
-      cardNumber: fallbackCard.number,
-      price: price,
+      cardName: "Karte nicht erkannt",
+      cardNumber: "Scan fehlgeschlagen",
+      price: null,
       imageDataUrl: imageDataUrl,
-      ocrResult: cleanedOcrResult // Still return OCR results for debugging
+      ocrResult: cleanedOcrResult
     };
   } catch (error) {
     console.error('Error during card analysis:', error);
     
-    // Fallback to mock data in case of error
-    const randomIndex = Math.floor(Math.random() * mockCards.length);
-    const fallbackCard = mockCards[randomIndex];
-    
-    // Look up the price on CardMarket
-    const price = await getCardPriceFromCardMarket(`${fallbackCard.name} ${fallbackCard.number}`);
-    
+    // Return a clear error message instead of random card
     return {
-      cardName: fallbackCard.name,
-      cardNumber: fallbackCard.number,
-      price: price,
+      cardName: "Fehler beim Scannen",
+      cardNumber: "Bitte erneut versuchen",
+      price: null,
       imageDataUrl: imageDataUrl
     };
   }
