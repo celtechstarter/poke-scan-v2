@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 // Mock canvas for testing
 const originalGetContext = HTMLCanvasElement.prototype.getContext;
 
-// Override the getContext method with a properly typed version
+// Override the getContext method to properly type and only mock 2D context
 Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
   value: function(
     contextId: string,
@@ -15,7 +15,7 @@ Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
       // Return a mock 2D context with required methods
       return {
         // Required minimum properties for our tests
-        willReadFrequently: true,
+        willReadFrequently: options?.willReadFrequently || false,
         canvas: this,
         getImageData: () => ({
           data: new Uint8ClampedArray(100 * 100 * 4),
@@ -67,22 +67,22 @@ Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
         createConicGradient: () => ({ addColorStop: () => {} }),
         filter: 'none',
         imageSmoothingEnabled: true,
-        imageSmoothingQuality: 'low',
-        lineCap: 'butt',
+        imageSmoothingQuality: 'low' as CanvasImageSmoothingQuality,
+        lineCap: 'butt' as CanvasLineCap,
         lineDashOffset: 0,
-        lineJoin: 'miter',
+        lineJoin: 'miter' as CanvasLineJoin,
         lineWidth: 1,
         miterLimit: 10,
         shadowBlur: 0,
         shadowColor: 'rgba(0,0,0,0)',
         shadowOffsetX: 0,
         shadowOffsetY: 0,
-        textAlign: 'start',
-        textBaseline: 'alphabetic',
-        direction: 'ltr',
-        fontKerning: 'auto',
-        fontStretch: 'normal',
-        fontVariantCaps: 'normal',
+        textAlign: 'start' as CanvasTextAlign,
+        textBaseline: 'alphabetic' as CanvasTextBaseline,
+        direction: 'ltr' as CanvasDirection,
+        fontKerning: 'auto' as CanvasFontKerning,
+        fontStretch: 'normal' as CanvasFontStretch,
+        fontVariantCaps: 'normal' as CanvasFontVariantCaps,
         letterSpacing: '0px',
         textRendering: 'auto',
         wordSpacing: '0px',

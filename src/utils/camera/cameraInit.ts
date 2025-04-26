@@ -22,12 +22,12 @@ export const startCamera = async (
       );
     }
     
-    // Build constraints based on options - now enforcing 4:3 aspect ratio for better card scanning
+    // Build constraints based on options - now enforcing higher resolution for better OCR
     const constraints: MediaStreamConstraints = {
       video: {
         facingMode: { ideal: options.facingMode || 'environment' },
-        width: { min: 1280, ideal: 1920 },
-        height: { min: 960, ideal: 1440 },
+        width: { min: 1280, ideal: 1920, max: 2560 },
+        height: { min: 960, ideal: 1440, max: 1920 },
         aspectRatio: { ideal: 4/3 }
       }
     };
@@ -94,12 +94,12 @@ export const startCamera = async (
         // Set higher sharpness if available
         if (capabilities.hasOwnProperty('sharpness')) {
           const max = (capabilities as any).sharpness.max;
-          if (max) optimalSettings.sharpness = max * 0.8; // 80% of max sharpness
+          if (max) optimalSettings.sharpness = max * 0.9; // 90% of max sharpness
         }
         
         // Enable noise reduction if available (medium setting)
         if (capabilities.hasOwnProperty('noiseReduction')) {
-          optimalSettings.noiseReduction = 'medium';
+          optimalSettings.noiseReduction = 'high';
         }
         
         // Apply optimal settings if we found any
