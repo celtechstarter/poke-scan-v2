@@ -4,7 +4,7 @@ import { useCameraControls } from './useCameraControls';
 import { useCardDetection } from './useCardDetection';
 import { useCardScanning } from './useCardScanning';
 import { useScannerState } from './useScannerState';
-import { CameraFocusMode } from '@/utils/camera';
+import { CameraFocusMode, CameraOptions } from '@/utils/camera';
 import { CardRegionAdjustment } from '../types/adjustmentTypes';
 
 /**
@@ -17,7 +17,15 @@ export function useScanCoordinator(manualAdjustment: CardRegionAdjustment | null
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const { errors, setError } = useScannerState();
   
-  // Camera control functionality
+  // Optimal camera settings for card scanning
+  const optimalCameraOptions: CameraOptions = {
+    facingMode: 'environment',
+    width: 1920,
+    height: 1440,
+    focusMode: CameraFocusMode.CONTINUOUS
+  };
+  
+  // Camera control functionality with optimal settings
   const {
     videoRef,
     isCameraActive,
@@ -75,12 +83,23 @@ export function useScanCoordinator(manualAdjustment: CardRegionAdjustment | null
   // Handle scan initiation, checking camera status first
   const scanCard = useCallback(() => {
     if (!isCameraActive) {
-      startCamera();
+      // Start camera with optimal settings for card scanning
+      startCamera(optimalCameraOptions);
       return;
     }
     
     originalScanCard();
-  }, [isCameraActive, startCamera, originalScanCard]);
+  }, [isCameraActive, startCamera, originalScanCard, optimalCameraOptions]);
+
+  // Enhanced camera toggle to use optimal settings
+  const enhancedToggleCamera = useCallback(() => {
+    if (isCameraActive) {
+      toggleCamera();
+    } else {
+      // When turning camera on, use optimal settings
+      startCamera(optimalCameraOptions);
+    }
+  }, [isCameraActive, toggleCamera, startCamera, optimalCameraOptions]);
 
   return {
     // Refs
@@ -100,7 +119,7 @@ export function useScanCoordinator(manualAdjustment: CardRegionAdjustment | null
     
     // Actions
     scanCard,
-    toggleCamera,
+    toggleCamera: enhancedToggleCamera,
     toggleAutoDetection,
     toggleFocusMode,
     cancelScan

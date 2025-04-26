@@ -92,20 +92,28 @@ const CardScannerWebcam = () => {
         </CardContent>
         
         <CardFooter className="flex flex-col p-4 space-y-4">
-          <ScannerControls 
-            isCameraActive={isCameraActive}
-            isScanning={isScanning}
-            autoDetectEnabled={autoDetectEnabled}
-            focusMode={focusMode}
-            focusCapabilities={focusCapabilities}
-            onCameraToggle={toggleCamera}
-            onScanStart={scanCard}
-            onAutoDetectToggle={toggleAutoDetection}
-            onFocusModeToggle={toggleFocusMode}
-            onManualAdjust={handleManualAdjust}
-          />
+          {/* Ensure controls are always visible and usable */}
+          <div className="w-full">
+            <ScannerControls 
+              isCameraActive={isCameraActive}
+              isScanning={isScanning}
+              autoDetectEnabled={autoDetectEnabled}
+              focusMode={focusMode}
+              focusCapabilities={focusCapabilities}
+              onCameraToggle={toggleCamera}
+              onScanStart={scanCard}
+              onAutoDetectToggle={toggleAutoDetection}
+              onFocusModeToggle={toggleFocusMode}
+              onManualAdjust={handleManualAdjust}
+            />
+          </div>
           
-          <ScanResultDisplay scanResult={scanResult} />
+          {/* Only show results if we have them */}
+          {scanResult && (
+            <div className="w-full mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+              <ScanResultDisplay scanResult={scanResult} />
+            </div>
+          )}
         </CardFooter>
       </Card>
 

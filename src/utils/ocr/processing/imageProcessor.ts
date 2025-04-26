@@ -1,3 +1,4 @@
+
 import { adaptivePreprocess } from './preprocessingSteps/adaptivePreprocess';
 import { applyBlur } from './preprocessingSteps/blurProcessor';
 import { applyContrast } from './preprocessingSteps/contrastProcessor';
@@ -74,53 +75,51 @@ export const preprocessImage = async (imageDataUrl: string): Promise<string> => 
           });
         }
         
-        // Apply preprocessing steps sequentially with error handling
-        console.log('Applying blur processing...');
-        const blurredData = applyBlur(imageContext.imageData, quality);
-        
-        console.log('Applying adaptive preprocessing...');
-        const processedData = adaptivePreprocess(blurredData, quality);
-        
-        console.log('Applying enhanced contrast...');
-        // Use stronger contrast for better text recognition (especially for small printed text)
+        // IMPROVED PREPROCESSING FOR CARD TEXT
+        // Apply much stronger contrast enhancement for small card text
         const contrastFactor = quality.poorLighting ? 3.2 : 2.8;
-        
-        // Apply more aggressive thresholding specifically for card text
         const ctx = imageContext.ctx;
         const canvas = imageContext.canvas;
         
-        // Apply enhanced contrast
-        const enhancedData = new Uint8ClampedArray(processedData.data);
+        // Step 1: Subtle blur to remove noise (1.5px radius)
+        ctx.filter = 'blur(1.5px)';
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        ctx.filter = 'none';
+        
+        // Step 2: Apply unsharp mask for text sharpening
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const sharpenedData = applyUnsharpMask(imageData, 0.5, 2.0);
+        ctx.putImageData(sharpenedData, 0, 0);
+        
+        // Step 3: Optimized contrast enhancement specifically for card text
+        const enhancedData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = enhancedData.data;
         const factor = (259 * (contrastFactor + 255)) / (255 * (259 - contrastFactor));
         
-        for (let i = 0; i < enhancedData.length; i += 4) {
-          // Enhanced contrast with lower threshold (140-150) for better text extraction
-          for (let c = 0; c < 3; c++) {
-            // Apply contrast adjustment
-            let newValue = Math.min(255, Math.max(0, factor * (enhancedData[i + c] - 128) + 128));
+        // Apply lower thresholding for card text (140 instead of 170)
+        for (let i = 0; i < data.length; i += 4) {
+          for (let j = 0; j < 3; j++) {
+            let newValue = Math.min(255, Math.max(0, factor * (data[i + j] - 128) + 128));
             
-            // Apply thresholding for better text extraction
-            if (newValue < 150) { // Lower threshold than before (was 170-180)
-              newValue = 0; // Make darker pixels pure black
-            } else if (newValue > 220) { // Higher threshold at the top end
-              newValue = 255; // Make lighter pixels pure white
+            // More aggressive thresholding for card text
+            if (newValue < 140) { // Lower threshold specifically for card text
+              newValue = 0; // Make dark pixels pure black
+            } else if (newValue > 220) {
+              newValue = 255; // Make light pixels pure white
             }
             
-            enhancedData[i + c] = newValue;
+            data[i + j] = newValue;
           }
         }
         
-        // Create ImageData from the enhanced data
-        const finalData = new ImageData(enhancedData, processedData.width, processedData.height);
+        ctx.putImageData(enhancedData, 0, 0);
         
-        // Put the processed data back on the canvas
-        ctx.putImageData(finalData, 0, 0);
-        
-        // Apply unsharp mask for better text sharpness
-        applyUnsharpMask(ctx, canvas.width, canvas.height, 0.7, 1.0);
+        // Step 4: Additional adaptive local contrast enhancement for text areas
+        // This is particularly effective for small set numbers
+        const enhancedImage = adaptiveLocalContrast(canvas);
         
         console.log('Preprocessing completed successfully');
-        resolve(canvas.toDataURL('image/png', 1.0));
+        resolve(enhancedImage);
         
       } catch (error) {
         console.error('Preprocessing failed:', error);
@@ -138,67 +137,134 @@ export const preprocessImage = async (imageDataUrl: string): Promise<string> => 
 };
 
 /**
- * Apply unsharp mask filter to sharpen image
- * This significantly improves OCR text recognition for small text
+ * Apply unsharp mask filter to enhance small text on cards
+ * @param imageData Original image data
+ * @param radius Radius for the unsharp mask
+ * @param strength Strength of the effect (1.0-3.0)
+ * @returns Enhanced image data
  */
-function applyUnsharpMask(ctx: CanvasRenderingContext2D, width: number, height: number, radius: number, strength: number): void {
-  // Get original image data
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const origData = new Uint8ClampedArray(imageData.data);
+function applyUnsharpMask(imageData: ImageData, radius: number, strength: number): ImageData {
+  const width = imageData.width;
+  const height = imageData.height;
+  const data = imageData.data;
   
-  // Create a simple blur function for the unsharp mask
-  const blur = (data: Uint8ClampedArray, radius: number): Uint8ClampedArray => {
-    const result = new Uint8ClampedArray(data.length);
-    const size = radius * 2 + 1;
-    
-    // Simple box blur
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        let r = 0, g = 0, b = 0;
-        let count = 0;
-        
-        // Average pixels in the kernel
-        for (let ky = -radius; ky <= radius; ky++) {
-          for (let kx = -radius; kx <= radius; kx++) {
-            const px = x + kx;
-            const py = y + ky;
-            
-            if (px >= 0 && px < width && py >= 0 && py < height) {
-              const idx = (py * width + px) * 4;
-              r += data[idx];
-              g += data[idx + 1];
-              b += data[idx + 2];
-              count++;
-            }
-          }
-        }
-        
-        // Write the blurred result
-        const idx = (y * width + x) * 4;
-        result[idx] = r / count;
-        result[idx + 1] = g / count;
-        result[idx + 2] = b / count;
-        result[idx + 3] = data[idx + 3]; // Keep alpha unchanged
+  // Create a copy for the blurred version
+  const blurred = new Uint8ClampedArray(data.length);
+  
+  // Simple box blur implementation
+  const boxSize = Math.floor(radius * 2) + 1;
+  const halfBox = Math.floor(boxSize / 2);
+  
+  // Apply horizontal blur
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let r = 0, g = 0, b = 0;
+      let count = 0;
+      
+      for (let i = -halfBox; i <= halfBox; i++) {
+        const curX = Math.min(Math.max(x + i, 0), width - 1);
+        const idx = (y * width + curX) * 4;
+        r += data[idx];
+        g += data[idx + 1];
+        b += data[idx + 2];
+        count++;
       }
+      
+      const idx = (y * width + x) * 4;
+      blurred[idx] = r / count;
+      blurred[idx + 1] = g / count;
+      blurred[idx + 2] = b / count;
+      blurred[idx + 3] = data[idx + 3]; // Keep alpha
     }
-    
-    return result;
-  };
-  
-  // Apply a blur to create the mask
-  const blurred = blur(origData, radius);
-  
-  // Apply the unsharp mask
-  for (let i = 0; i < imageData.data.length; i += 4) {
-    // For each RGB channel
-    for (let c = 0; c < 3; c++) {
-      // Calculate the sharpened value: original + (original - blurred) * strength
-      const sharpened = origData[i + c] + (origData[i + c] - blurred[i + c]) * strength;
-      // Clamp to valid RGB range
-      imageData.data[i + c] = Math.max(0, Math.min(255, sharpened));
-    }
-    // Alpha channel remains unchanged
   }
   
-  ctx.putImageData(imageData, 0, 0);
+  // Apply vertical blur on the horizontal blur result
+  const finalBlur = new Uint8ClampedArray(data.length);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let r = 0, g = 0, b = 0;
+      let count = 0;
+      
+      for (let j = -halfBox; j <= halfBox; j++) {
+        const curY = Math.min(Math.max(y + j, 0), height - 1);
+        const idx = (curY * width + x) * 4;
+        r += blurred[idx];
+        g += blurred[idx + 1];
+        b += blurred[idx + 2];
+        count++;
+      }
+      
+      const idx = (y * width + x) * 4;
+      finalBlur[idx] = r / count;
+      finalBlur[idx + 1] = g / count;
+      finalBlur[idx + 2] = b / count;
+      finalBlur[idx + 3] = data[idx + 3]; // Keep alpha
+    }
+  }
+  
+  // Apply unsharp mask: original + (original - blurred) * strength
+  const result = new ImageData(new Uint8ClampedArray(data.length), width, height);
+  for (let i = 0; i < data.length; i += 4) {
+    for (let c = 0; c < 3; c++) {
+      const val = data[i + c] + (data[i + c] - finalBlur[i + c]) * strength;
+      result.data[i + c] = Math.max(0, Math.min(255, val));
+    }
+    result.data[i + 3] = data[i + 3]; // Keep alpha
+  }
+  
+  return result;
+}
+
+/**
+ * Apply adaptive local contrast enhancement specifically for text regions
+ * This helps with small printed text on Pokémon cards
+ */
+function adaptiveLocalContrast(canvas: HTMLCanvasElement): string {
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return canvas.toDataURL('image/png');
+  
+  const width = canvas.width;
+  const height = canvas.height;
+  
+  // Process the top 20% (card name area) and bottom 15% (set number area) with enhanced contrast
+  const topRegionHeight = Math.round(height * 0.2);
+  const bottomRegionHeight = Math.round(height * 0.15);
+  
+  // Process top region (card name)
+  const topData = ctx.getImageData(0, 0, width, topRegionHeight);
+  const enhancedTop = enhanceTextRegion(topData);
+  ctx.putImageData(enhancedTop, 0, 0);
+  
+  // Process bottom region (set number)
+  const bottomData = ctx.getImageData(0, height - bottomRegionHeight, width, bottomRegionHeight);
+  const enhancedBottom = enhanceTextRegion(bottomData);
+  ctx.putImageData(enhancedBottom, 0, height - bottomRegionHeight);
+  
+  return canvas.toDataURL('image/png', 1.0);
+}
+
+/**
+ * Enhance text regions with specialized processing for card text
+ */
+function enhanceTextRegion(imageData: ImageData): ImageData {
+  const data = imageData.data;
+  
+  // Apply specialized text enhancement
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    
+    // Calculate grayscale value
+    const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+    
+    // Apply more aggressive thresholding for text
+    const threshold = 150; // Optimal for card text
+    const newVal = gray < threshold ? 0 : 255;
+    
+    // Apply to all channels
+    data[i] = data[i + 1] = data[i + 2] = newVal;
+  }
+  
+  return imageData;
 }

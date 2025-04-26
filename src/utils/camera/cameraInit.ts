@@ -22,25 +22,32 @@ export const startCamera = async (
       );
     }
     
-    // Build constraints based on options
+    // Build constraints based on options - now enforcing 4:3 aspect ratio for better card scanning
     const constraints: MediaStreamConstraints = {
       video: {
         facingMode: { ideal: options.facingMode || 'environment' },
-        width: { ideal: options.width || 1280 },
-        height: { ideal: options.height || 720 }
+        width: { min: 1280, ideal: 1920 },
+        height: { min: 960, ideal: 1440 },
+        aspectRatio: { ideal: 4/3 }
       }
     };
     
     // Add advanced focus constraints if supported
-    // We need to use any type here because these focus properties
-    // are not part of the standard MediaTrackConstraints
     const advancedConstraints: any[] = [];
     
+    // Use continuous focus by default for card scanning
     if (options.focusMode) {
       advancedConstraints.push({
         // Use any type to bypass TypeScript's type checking
         focusMode: options.focusMode
       });
+      
+      // If no specific focus mode is set, prioritize continuous focus for cards
+      if (!options.focusMode && !advancedConstraints.some(c => c.focusMode)) {
+        advancedConstraints.push({
+          focusMode: CameraFocusMode.CONTINUOUS
+        });
+      }
     }
     
     // Apply advanced constraints if any exist
@@ -73,6 +80,35 @@ export const startCamera = async (
       } catch (focusError) {
         console.warn('Manual focus not supported:', focusError);
       }
+    }
+    
+    // Apply additional camera settings for better card recognition
+    try {
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack && videoTrack.getCapabilities && videoTrack.applyConstraints) {
+        const capabilities = videoTrack.getCapabilities();
+        
+        // Set optimal camera settings for card reading if available
+        const optimalSettings: any = {};
+        
+        // Set higher sharpness if available
+        if (capabilities.hasOwnProperty('sharpness')) {
+          const max = (capabilities as any).sharpness.max;
+          if (max) optimalSettings.sharpness = max * 0.8; // 80% of max sharpness
+        }
+        
+        // Enable noise reduction if available (medium setting)
+        if (capabilities.hasOwnProperty('noiseReduction')) {
+          optimalSettings.noiseReduction = 'medium';
+        }
+        
+        // Apply optimal settings if we found any
+        if (Object.keys(optimalSettings).length > 0) {
+          await videoTrack.applyConstraints({ advanced: [optimalSettings] });
+        }
+      }
+    } catch (settingsError) {
+      console.warn('Could not apply optimal camera settings:', settingsError);
     }
     
     if (videoRef.current) {

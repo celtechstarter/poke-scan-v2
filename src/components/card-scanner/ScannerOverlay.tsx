@@ -13,7 +13,7 @@ export function ScannerOverlay({ isScanning, scanProgress, isCameraActive }: Sca
     <>
       {/* Overlay während des Scannens */}
       {isScanning && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm z-20">
           <RefreshCw className="animate-spin h-12 w-12 text-white mb-4" />
           <p className="text-white text-xl font-bold">Scanne Karte...</p>
           <div className="w-64 mt-4">
@@ -22,16 +22,16 @@ export function ScannerOverlay({ isScanning, scanProgress, isCameraActive }: Sca
         </div>
       )}
       
-      {/* Enhanced guidance frame for card positioning with edge detection visual cue */}
+      {/* Optimized card positioning frame */}
       {isCameraActive && !isScanning && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          {/* Improved scan frame with card aspect ratio - now using 95% height */}
+          {/* Adjusted scan frame - now using 75% height and centered */}
           <div 
-            className="relative border-4 border-dashed border-pokeyellow/70 rounded-lg flex items-center justify-center" 
+            className="relative border-4 border-dashed border-pokeyellow/80 rounded-lg flex items-center justify-center" 
             style={{ 
-              aspectRatio: '2/3', 
-              height: '95%',
-              maxWidth: '95%'
+              aspectRatio: '2.5/3.5', // Standard Pokémon card aspect ratio
+              height: '75%',
+              maxWidth: '75%'
             }}
           >
             {/* Edge detection visual cue */}
@@ -42,9 +42,9 @@ export function ScannerOverlay({ isScanning, scanProgress, isCameraActive }: Sca
               <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-blue-400"></div>
             </div>
             
-            <div className="bg-black/60 text-white px-4 py-2 rounded-lg text-center flex items-center gap-2">
+            <div className="bg-black/70 text-white px-4 py-2 rounded-lg text-center flex items-center gap-2">
               <Square className="h-4 w-4" />
-              <p>Karte für automatische Kantenerkennung hier platzieren</p>
+              <p>Zentriere die Karte im Rahmen</p>
             </div>
             
             {/* Corner guides to help with positioning */}

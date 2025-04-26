@@ -17,8 +17,8 @@ export function VideoPreview({
   isCameraActive
 }: VideoPreviewProps) {
   return (
-    <div className="relative bg-black max-w-xs mx-auto rounded-lg overflow-hidden shadow-lg">
-      <AspectRatio ratio={3/4} className="bg-black">
+    <div className="relative bg-black max-w-md mx-auto rounded-lg overflow-hidden shadow-lg">
+      <AspectRatio ratio={4/3} className="bg-black">
         <video 
           ref={videoRef}
           className="w-full h-full object-contain" 
@@ -34,9 +34,9 @@ export function VideoPreview({
         />
 
         {isCameraActive && !isScanning && (
-          <div className="absolute top-4 left-0 right-0 text-center">
-            <div className="inline-block bg-black/40 text-white text-sm px-3 py-1 rounded-full backdrop-blur-sm">
-              Halte die Karte ins Bild für automatische Erkennung
+          <div className="absolute top-4 left-0 right-0 text-center z-10">
+            <div className="inline-block bg-black/60 text-white text-sm px-3 py-1 rounded-full backdrop-blur-sm">
+              Halte die Karte so, dass sie den gelben Rahmen vollständig ausfüllt
             </div>
           </div>
         )}
