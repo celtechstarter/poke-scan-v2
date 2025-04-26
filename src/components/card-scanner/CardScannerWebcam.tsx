@@ -1,4 +1,3 @@
-
 import { Camera } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useState } from 'react';
@@ -8,6 +7,7 @@ import { ScannerControls } from './ScannerControls';
 import { ScanResultDisplay } from './ScanResultDisplay';
 import { ManualAdjustment } from './ManualAdjustment';
 import { CardRegionAdjustment } from './types/adjustmentTypes';
+import { toast } from '@/hooks/use-toast';
 
 const CardScannerWebcam = () => {
   const [showManualAdjust, setShowManualAdjust] = useState(false);
@@ -41,7 +41,6 @@ const CardScannerWebcam = () => {
       return;
     }
     
-    // Capture current frame for adjustment
     if (videoRef.current && canvasRef.current) {
       const canvas = canvasRef.current;
       const video = videoRef.current;
@@ -61,7 +60,6 @@ const CardScannerWebcam = () => {
 
   const handleApplyAdjustment = (adjustment: CardRegionAdjustment) => {
     setManualAdjustment(adjustment);
-    // The adjustment will be used in the next scan
     toast({
       title: "Anpassung gespeichert",
       description: "Die manuelle Anpassung wird beim nächsten Scan verwendet.",
