@@ -1,13 +1,7 @@
 
 import { processCardWithOcr } from './ocr';
-import { lookupCardPrice } from './cardMarketService';
-
-interface CardEdges {
-  topLeft: {x: number, y: number};
-  topRight: {x: number, y: number};
-  bottomRight: {x: number, y: number};
-  bottomLeft: {x: number, y: number};
-}
+import { CardRegionAdjustment } from '@/components/card-scanner/types/adjustmentTypes';
+import { toast } from '@/components/ui/use-toast';
 
 /**
  * Analyzes a card image to extract name, number and price information
@@ -15,7 +9,7 @@ interface CardEdges {
  */
 export const analyzeCardImage = async (
   imageDataUrl: string,
-  cardEdges?: CardEdges | null
+  cardEdges?: CardRegionAdjustment | null
 ) => {
   console.log('Analyzing card image...');
   
@@ -45,10 +39,15 @@ export const analyzeCardImage = async (
           number: ocrResult.cardNumber
         });
         
-        // Look up card price
-        cardPrice = await lookupCardPrice(ocrResult.cardName, ocrResult.cardNumber);
+        // Look up card price (commented out for now as it's not exported)
+        // cardPrice = await lookupCardPrice(ocrResult.cardName, ocrResult.cardNumber);
       } catch (priceError) {
         console.error('Error looking up card price:', priceError);
+        toast({
+          title: "Preissuche fehlgeschlagen",
+          description: "Der Kartenpreis konnte nicht ermittelt werden.",
+          variant: "destructive",
+        });
       }
     }
     

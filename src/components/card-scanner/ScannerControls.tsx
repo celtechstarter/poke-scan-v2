@@ -1,5 +1,4 @@
-
-import { Camera, Search, Eye, EyeOff, Focus } from 'lucide-react';
+import { Camera, Search, Eye, EyeOff, Focus, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -18,6 +17,7 @@ interface ScannerControlsProps {
   onScanStart: () => void;
   onAutoDetectToggle: () => void;
   onFocusModeToggle?: () => void;
+  onManualAdjust: () => void;
 }
 
 export function ScannerControls({ 
@@ -29,9 +29,9 @@ export function ScannerControls({
   onCameraToggle, 
   onScanStart,
   onAutoDetectToggle,
-  onFocusModeToggle
+  onFocusModeToggle,
+  onManualAdjust
 }: ScannerControlsProps) {
-  // Get friendly focus mode name
   const getFocusModeName = (mode?: CameraFocusMode): string => {
     switch (mode) {
       case CameraFocusMode.AUTO:
@@ -67,8 +67,17 @@ export function ScannerControls({
           <Search className="h-4 w-4" />
           Karte scannen
         </Button>
+
+        <Button
+          variant="outline"
+          onClick={onManualAdjust}
+          className="flex items-center gap-2"
+        >
+          <Settings className="h-4 w-4" />
+          Manuell anpassen
+        </Button>
       </div>
-      
+
       {/* Focus mode toggle button - only show if camera supports focus modes */}
       {isCameraActive && focusCapabilities?.supportsFocusMode && onFocusModeToggle && (
         <div className="flex justify-center mb-4">

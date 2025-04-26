@@ -1,12 +1,19 @@
 
 import { Camera } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from 'react';
 import { useScannerLogic } from './useScannerLogic';
 import { VideoPreview } from './VideoPreview';
 import { ScannerControls } from './ScannerControls';
 import { ScanResultDisplay } from './ScanResultDisplay';
+import { ManualAdjustment } from './ManualAdjustment';
+import { CardRegionAdjustment } from './types/adjustmentTypes';
 
 const CardScannerWebcam = () => {
+  const [showManualAdjust, setShowManualAdjust] = useState(false);
+  const [manualAdjustment, setManualAdjustment] = useState<CardRegionAdjustment | null>(null);
+  const [lastCapturedImage, setLastCapturedImage] = useState<string | null>(null);
+  
   const {
     videoRef,
     canvasRef,
@@ -23,6 +30,43 @@ const CardScannerWebcam = () => {
     toggleFocusMode,
     errors
   } = useScannerLogic();
+
+  const handleManualAdjust = () => {
+    if (!isCameraActive) {
+      toast({
+        title: "Kamera erforderlich",
+        description: "Bitte aktivieren Sie zuerst die Kamera.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Capture current frame for adjustment
+    if (videoRef.current && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0);
+        const imageUrl = canvas.toDataURL('image/png');
+        setLastCapturedImage(imageUrl);
+        setShowManualAdjust(true);
+      }
+    }
+  };
+
+  const handleApplyAdjustment = (adjustment: CardRegionAdjustment) => {
+    setManualAdjustment(adjustment);
+    // The adjustment will be used in the next scan
+    toast({
+      title: "Anpassung gespeichert",
+      description: "Die manuelle Anpassung wird beim nächsten Scan verwendet.",
+    });
+  };
 
   return (
     <div className="container max-w-md mx-auto p-4">
@@ -45,7 +89,6 @@ const CardScannerWebcam = () => {
             isCameraActive={isCameraActive}
           />
           
-          {/* Versteckter Canvas für Bilderfassung und Analyse */}
           <canvas ref={canvasRef} className="hidden"></canvas>
         </CardContent>
         
@@ -60,11 +103,21 @@ const CardScannerWebcam = () => {
             onScanStart={scanCard}
             onAutoDetectToggle={toggleAutoDetection}
             onFocusModeToggle={toggleFocusMode}
+            onManualAdjust={handleManualAdjust}
           />
           
           <ScanResultDisplay scanResult={scanResult} />
         </CardFooter>
       </Card>
+
+      {showManualAdjust && lastCapturedImage && (
+        <ManualAdjustment
+          isOpen={showManualAdjust}
+          onClose={() => setShowManualAdjust(false)}
+          onApply={handleApplyAdjustment}
+          imageUrl={lastCapturedImage}
+        />
+      )}
     </div>
   );
 };
