@@ -5,7 +5,7 @@ import { preprocessImage, extractRegion, assessImageQuality } from './imagePrepr
 import { initOcrWorker } from './worker';
 import { cleanupOcrResults } from './textCleanup';
 import { PSM } from 'tesseract.js';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 export * from './types';
 
@@ -15,7 +15,8 @@ export * from './types';
  */
 export const processCardWithOcr = async (
   imageDataUrl: string,
-  cardEdges?: { topLeft: {x: number, y: number}, topRight: {x: number, y: number}, bottomRight: {x: number, y: number}, bottomLeft: {x: number, y: number} } | null
+  cardEdges?: { topLeft: {x: number, y: number}, topRight: {x: number, y: number}, bottomRight: {x: number, y: number}, bottomLeft: {x: number, y: number} } | null,
+  useStrictCrop: boolean = false
 ): Promise<CardOcrResult> => {
   const result: CardOcrResult = {
     cardName: null,
@@ -36,44 +37,53 @@ export const processCardWithOcr = async (
     let totalConfidence = 0;
     let regionsProcessed = 0;
     
+    // Enhanced OCR for card name and number with multiple attempts
     for (const region of CARD_REGIONS) {
       console.log(`Processing region: ${region.name}`);
       
       try {
         // Pass cardEdges to region extraction for more precise cropping
-        const regionImage = await extractRegion(imageDataUrl, region, cardEdges);
+        const regionImage = await extractRegion(imageDataUrl, region, cardEdges, useStrictCrop);
         const processedImage = await preprocessImage(regionImage);
         
-        // Initial recognition attempt with SPARSE_TEXT
-        let recognitionResult = await worker.recognize(processedImage);
-        let bestResult = recognitionResult;
+        // Try multiple PSM modes to get the best result
+        const psmModes = [
+          PSM.SPARSE_TEXT,        // Default mode - detects text throughout the image
+          region.name === 'cardName' ? PSM.SINGLE_BLOCK : PSM.SINGLE_LINE,  // Region-specific mode
+          PSM.AUTO                 // Let Tesseract decide
+        ];
         
-        // If confidence is low, try alternative PSM modes
-        if (recognitionResult.data.confidence < 60) {
-          console.log(`Low confidence (${recognitionResult.data.confidence}) for ${region.name}, trying alternative PSM mode`);
-          
+        let bestResult = null;
+        let bestConfidence = 0;
+        
+        for (const psmMode of psmModes) {
           await worker.setParameters({
-            tessedit_pageseg_mode: region.name === 'cardName' ? PSM.SINGLE_BLOCK : PSM.SINGLE_LINE
+            tessedit_pageseg_mode: psmMode
           });
           
-          const retryResult = await worker.recognize(processedImage);
+          const recognitionResult = await worker.recognize(processedImage);
+          console.log(`OCR with PSM ${psmMode} for ${region.name}: Confidence=${recognitionResult.data.confidence}%`);
           
-          // Keep the result with higher confidence
-          if (retryResult.data.confidence > recognitionResult.data.confidence) {
-            bestResult = retryResult;
-            console.log(`Improved confidence to ${retryResult.data.confidence} using alternative PSM mode`);
+          if (recognitionResult.data.confidence > bestConfidence) {
+            bestResult = recognitionResult;
+            bestConfidence = recognitionResult.data.confidence;
           }
           
-          // Reset to SPARSE_TEXT for next region
-          await worker.setParameters({
-            tessedit_pageseg_mode: PSM.SPARSE_TEXT
-          });
+          // If we already got a good result, no need to try more modes
+          if (bestConfidence > 85) break;
         }
+        
+        // Reset to default mode
+        await worker.setParameters({
+          tessedit_pageseg_mode: PSM.SPARSE_TEXT
+        });
+        
+        if (!bestResult) continue;
         
         const { data } = bestResult;
         const cleanText = data.text.trim();
         
-        console.log(`OCR result for ${region.name}:`, {
+        console.log(`Best OCR result for ${region.name}:`, {
           text: cleanText,
           confidence: data.confidence
         });
@@ -94,7 +104,7 @@ export const processCardWithOcr = async (
             result.cardNumber = cleanText;
           }
           
-          result.rawText += `${cleanText}\n`;
+          result.rawText += `${region.name}: ${cleanText}\n`;
           totalConfidence += data.confidence;
           regionsProcessed++;
         }
@@ -107,7 +117,7 @@ export const processCardWithOcr = async (
     // Process additional regions with default PSM
     for (const region of ADDITIONAL_REGIONS) {
       try {
-        const regionImage = await extractRegion(imageDataUrl, region, cardEdges);
+        const regionImage = await extractRegion(imageDataUrl, region, cardEdges, useStrictCrop);
         const { data } = await worker.recognize(regionImage);
         
         if (data.text.trim()) {

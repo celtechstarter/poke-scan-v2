@@ -1,12 +1,14 @@
 
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { analyzeCardImage } from '@/utils/cardAnalysisUtils';
 import { CardScanningErrorType, ScanResult, ScannerError } from '../../types/scannerTypes';
 import { assessImageQuality } from '../quality/imageQualityUtils';
+import { CardRegionAdjustment } from '../../types/adjustmentTypes';
 
 export const processCardImage = async (
   imageDataUrl: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  manualAdjustment?: CardRegionAdjustment | null
 ): Promise<ScanResult> => {
   toast({
     title: "Bild aufgenommen",
@@ -20,6 +22,40 @@ export const processCardImage = async (
       });
     }
     
+    // If we have manual adjustment, use it directly
+    if (manualAdjustment) {
+      console.log('Using manual card adjustment:', manualAdjustment);
+      // Convert manual adjustment to card edges format expected by the analyzer
+      const cardEdges = {
+        topLeft: manualAdjustment.topLeft,
+        topRight: manualAdjustment.topRight,
+        bottomLeft: manualAdjustment.bottomLeft,
+        bottomRight: manualAdjustment.bottomRight
+      };
+      
+      // Pass the manual adjustment directly to the analyzer
+      const result = await analyzeCardImage(imageDataUrl, cardEdges, true);
+      
+      const toastMessage = result.cardName === "Fehler beim Scannen" || result.cardName === "Text nicht erkannt" 
+        ? "Text konnte nicht gelesen werden"
+        : `${result.cardName} (${result.cardNumber || 'Keine Nummer'})${result.price ? ` - Preis: ${result.price.toFixed(2)} €` : ''}`;
+      
+      toast({
+        title: "Karte gescannt",
+        description: toastMessage,
+        variant: result.cardName === "Fehler beim Scannen" ? "destructive" : "default",
+      });
+      
+      return {
+        cardName: result.cardName,
+        cardNumber: result.cardNumber,
+        price: result.price,
+        imageDataUrl: imageDataUrl,
+        ocrResult: result.ocrResult
+      };
+    }
+    
+    // If no manual adjustment, use automatic detection
     // First assess image quality with enhanced card detection
     const { isBlurry, poorLighting, message, isCardVisible, cardEdges } = await assessImageQuality(imageDataUrl);
     

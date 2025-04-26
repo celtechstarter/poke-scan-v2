@@ -1,9 +1,10 @@
 
 import { useState, useRef, useCallback } from 'react';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { CardDetectionError } from '@/utils/cardDetectionUtils';
 import { ScanResult, ScannerError, CardScanningErrorType } from '../types/scannerTypes';
 import { processCardImage, captureFrameUtil } from '../utils/scanProcessingUtils';
+import { CardRegionAdjustment } from '../types/adjustmentTypes';
 
 /**
  * Custom hook for card scanning functionality
@@ -12,14 +13,17 @@ import { processCardImage, captureFrameUtil } from '../utils/scanProcessingUtils
  * @param {Object} params - Parameters object
  * @param {React.RefObject<HTMLVideoElement>} params.videoRef - Reference to video element
  * @param {React.RefObject<HTMLCanvasElement>} params.canvasRef - Reference to canvas element
+ * @param {CardRegionAdjustment|null} params.manualAdjustment - Manual adjustment for card region
  * @returns {Object} Scanning state and functions
  */
 export function useCardScanning({
   videoRef,
-  canvasRef
+  canvasRef,
+  manualAdjustment = null
 }: {
   videoRef: React.RefObject<HTMLVideoElement>;
   canvasRef: React.RefObject<HTMLCanvasElement>;
+  manualAdjustment?: CardRegionAdjustment | null;
 }) {
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
@@ -53,8 +57,8 @@ export function useCardScanning({
       scanAbortControllerRef.current = new AbortController();
       const signal = scanAbortControllerRef.current.signal;
       
-      // Process the image
-      const result = await processCardImage(imageDataUrl, signal);
+      // Process the image with manual adjustment if available
+      const result = await processCardImage(imageDataUrl, signal, manualAdjustment);
       
       // Clear any previous results to ensure we don't see stale data
       setScanResult(null);
@@ -96,7 +100,7 @@ export function useCardScanning({
       scanAbortControllerRef.current = null;
       setIsScanning(false);
     }
-  }, [videoRef, canvasRef]);
+  }, [videoRef, canvasRef, manualAdjustment]);
 
   /**
    * Initiates the card scanning process

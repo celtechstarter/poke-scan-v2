@@ -1,6 +1,7 @@
 
 import { useScanCoordinator } from './hooks/useScanCoordinator';
 import { ScannerError } from './types/scannerTypes';
+import { CardRegionAdjustment } from './types/adjustmentTypes';
 
 /**
  * Main hook for Pokemon card scanner logic
@@ -9,7 +10,7 @@ import { ScannerError } from './types/scannerTypes';
  * 
  * @returns {Object} Combined scanner state and functions
  */
-export function useScannerLogic() {
+export function useScannerLogic(manualAdjustment: CardRegionAdjustment | null = null) {
   const {
     videoRef,
     canvasRef,
@@ -27,7 +28,7 @@ export function useScannerLogic() {
     toggleAutoDetection,
     toggleFocusMode,
     cancelScan
-  } = useScanCoordinator();
+  } = useScanCoordinator(manualAdjustment);
   
   return {
     videoRef,

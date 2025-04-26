@@ -1,4 +1,3 @@
-
 import { OcrRegion } from '../types';
 
 /**
@@ -23,14 +22,15 @@ interface CardEdges {
 export const extractRegion = async (
   imageDataUrl: string, 
   region: OcrRegion,
-  cardEdges?: CardEdges | null
+  cardEdges?: CardEdges | null,
+  useStrictCrop: boolean = false
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         if (!ctx) {
           reject(new Error('Could not create canvas context'));
@@ -39,7 +39,7 @@ export const extractRegion = async (
         
         if (cardEdges) {
           // Use the detected card edges for precise cropping
-          const extractedImage = extractUsingCardEdges(img, region, cardEdges, ctx);
+          const extractedImage = extractUsingCardEdges(img, region, cardEdges, ctx, useStrictCrop);
           resolve(extractedImage);
           return;
         }
@@ -116,9 +116,10 @@ function extractUsingCardEdges(
   img: HTMLImageElement,
   region: OcrRegion,
   cardEdges: CardEdges,
-  ctx: CanvasRenderingContext2D
+  ctx: CanvasRenderingContext2D,
+  useStrictCrop: boolean = false
 ): string {
-  console.log('Extracting region using detected card edges:', region.name);
+  console.log('Extracting region using detected card edges:', region.name, useStrictCrop ? '(strict crop)' : '');
   
   // Use card edges to calculate the actual card dimensions
   const cardWidth = Math.max(
@@ -133,7 +134,7 @@ function extractUsingCardEdges(
   
   // Create a new canvas for the perspective-corrected card
   const correctedCardCanvas = document.createElement('canvas');
-  const correctedCardCtx = correctedCardCanvas.getContext('2d');
+  const correctedCardCtx = correctedCardCanvas.getContext('2d', { willReadFrequently: true });
   
   if (!correctedCardCtx) {
     throw new Error('Could not create corrected card canvas context');
@@ -150,22 +151,39 @@ function extractUsingCardEdges(
   correctedCardCtx.fillStyle = 'white';
   correctedCardCtx.fillRect(0, 0, standardWidth, standardHeight);
   
-  // Perspective transformation
+  // Perspective transformation - this flattens the card
   correctPerspective(img, correctedCardCanvas, correctedCardCtx, cardEdges);
   
   // Now extract the specific region from the perspective-corrected card
   const regionCanvas = document.createElement('canvas');
-  const regionCtx = regionCanvas.getContext('2d');
+  const regionCtx = regionCanvas.getContext('2d', { willReadFrequently: true });
   
   if (!regionCtx) {
     throw new Error('Could not create region canvas context');
   }
   
-  // Calculate region position on the corrected card
-  const regionX = standardWidth * (region.left / 100);
-  const regionY = standardHeight * (region.top / 100);
-  const regionWidth = standardWidth * (region.width / 100);
-  const regionHeight = standardHeight * (region.height / 100);
+  // For strict crop, adjust the region positions based on region type
+  let regionX = standardWidth * (region.left / 100);
+  let regionY = standardHeight * (region.top / 100);
+  let regionWidth = standardWidth * (region.width / 100);
+  let regionHeight = standardHeight * (region.height / 100);
+  
+  if (useStrictCrop) {
+    // Apply stricter cropping for manual adjustments
+    if (region.name === 'cardName') {
+      // For card name, focus on the top ~15% of the card where names usually are
+      regionY = standardHeight * 0.05;  // 5% from the top
+      regionHeight = standardHeight * 0.15; // 15% of card height
+      regionX = standardWidth * 0.1;   // 10% from left
+      regionWidth = standardWidth * 0.8; // 80% of card width
+    } else if (region.name === 'cardNumber') {
+      // For card number, focus on the bottom left where card numbers usually are
+      regionY = standardHeight * 0.85; // 85% from the top
+      regionHeight = standardHeight * 0.1; // 10% of card height
+      regionX = standardWidth * 0.05;  // 5% from left
+      regionWidth = standardWidth * 0.6; // 60% of card width
+    }
+  }
   
   // Add small padding to avoid edge issues
   const padding = 4;
@@ -186,7 +204,7 @@ function extractUsingCardEdges(
     0, 0, regionCanvas.width, regionCanvas.height
   );
   
-  // Apply region-specific enhancements
+  // Apply region-specific enhancements with improved parameters
   if (region.name === 'cardNumber') {
     enhanceCardNumber(regionCanvas, regionCtx);
   } else if (region.name === 'cardName') {
@@ -234,7 +252,7 @@ function correctPerspective(
   ctx.fillRect(0, 0, width, height);
   
   const tempCanvas = document.createElement('canvas');
-  const tempCtx = tempCanvas.getContext('2d');
+  const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
   
   if (!tempCtx) {
     throw new Error('Could not create temporary canvas context');
@@ -418,23 +436,46 @@ function enhanceCardNumber(canvas: HTMLCanvasElement, ctx: CanvasRenderingContex
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = imageData.data;
   
-  // Enhanced contrast and binarization specifically for card numbers
-  for (let i = 0; i < data.length; i += 4) {
-    const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-    const contrast = 3.0; // Higher contrast for better number recognition
+  // First pass: Convert to grayscale and estimate average brightness
+  let totalBrightness = 0;
+  const grayValues = new Array(data.length / 4);
+  
+  for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+    // Calculate grayscale using weighted RGB (human eye perception)
+    const gray = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+    grayValues[j] = gray;
+    totalBrightness += gray;
+  }
+  
+  const avgBrightness = totalBrightness / grayValues.length;
+  
+  // Second pass: Adaptive contrast and binarization
+  const adaptiveThreshold = avgBrightness * 0.75; // Dynamic threshold based on image brightness
+  const blackMin = 0;    // Pure black
+  const whiteMax = 255;  // Pure white
+  
+  // Enhance contrast significantly before binarization
+  const contrast = 3.5; // Higher contrast for better number recognition
+  
+  for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+    // Apply strong contrast enhancement
     const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
-    const newValue = Math.min(255, Math.max(0, factor * (gray - 128) + 128));
+    const newValue = Math.min(255, Math.max(0, factor * (grayValues[j] - 128) + 128));
     
-    // Adaptive threshold based on the region type
-    const threshold = 170; // Slightly higher threshold for numbers
-    const finalValue = newValue > threshold ? 255 : 0;
+    // Apply Otsu's binarization (simplified)
+    const binarizedValue = newValue < adaptiveThreshold ? blackMin : whiteMax;
     
-    data[i] = finalValue;
-    data[i + 1] = finalValue;
-    data[i + 2] = finalValue;
+    // Set RGB channels to the binarized value
+    data[i] = binarizedValue;     // R
+    data[i + 1] = binarizedValue; // G
+    data[i + 2] = binarizedValue; // B
+    // Alpha remains unchanged
   }
   
   ctx.putImageData(imageData, 0, 0);
+  
+  // Optional: Apply modest sharpening for crisper edges
+  applyUnsharpMask(ctx, canvas.width, canvas.height, 0.5, 0.5);
 }
 
 /**
@@ -444,20 +485,110 @@ function enhanceCardName(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = imageData.data;
   
-  // Different contrast settings for card names
-  for (let i = 0; i < data.length; i += 4) {
-    const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-    const contrast = 2.5; // Improved contrast for card names
+  // First pass: Convert to grayscale and estimate average brightness
+  let totalBrightness = 0;
+  const grayValues = new Array(data.length / 4);
+  
+  for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+    // Calculate grayscale using weighted RGB
+    const gray = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+    grayValues[j] = gray;
+    totalBrightness += gray;
+  }
+  
+  const avgBrightness = totalBrightness / grayValues.length;
+  
+  // Second pass: Apply adaptive threshold
+  // For card names, we use a milder threshold than card numbers
+  const adaptiveThreshold = avgBrightness * 0.65; 
+  const blackMin = 0;    // Pure black
+  const whiteMax = 255;  // Pure white
+  
+  // Use slightly less contrast for card names compared to numbers
+  const contrast = 3.0;
+  
+  for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+    // Apply contrast enhancement
     const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
-    const newValue = Math.min(255, Math.max(0, factor * (gray - 128) + 128));
+    const newValue = Math.min(255, Math.max(0, factor * (grayValues[j] - 128) + 128));
     
-    // Different threshold for card names
-    const threshold = 160;
-    const finalValue = newValue > threshold ? 255 : 0;
+    // Apply binarization with some thresholding
+    const binarizedValue = newValue < adaptiveThreshold ? blackMin : whiteMax;
     
-    data[i] = finalValue;
-    data[i + 1] = finalValue;
-    data[i + 2] = finalValue;
+    // Set RGB channels to the binarized value
+    data[i] = binarizedValue;
+    data[i + 1] = binarizedValue;
+    data[i + 2] = binarizedValue;
+    // Alpha remains unchanged
+  }
+  
+  ctx.putImageData(imageData, 0, 0);
+  
+  // Apply sharpening for clearer text
+  applyUnsharpMask(ctx, canvas.width, canvas.height, 0.5, 0.7);
+}
+
+/**
+ * Apply unsharp mask filter to sharpen image
+ */
+function applyUnsharpMask(ctx: CanvasRenderingContext2D, width: number, height: number, radius: number, strength: number): void {
+  // Get original image data
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const origData = new Uint8ClampedArray(imageData.data);
+  
+  // Create a simple blur function for the unsharp mask
+  const blur = (data: Uint8ClampedArray, radius: number): Uint8ClampedArray => {
+    const result = new Uint8ClampedArray(data.length);
+    const size = radius * 2 + 1;
+    const divisor = size * size;
+    
+    // Simple box blur
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        let r = 0, g = 0, b = 0;
+        let count = 0;
+        
+        // Average pixels in the kernel
+        for (let ky = -radius; ky <= radius; ky++) {
+          for (let kx = -radius; kx <= radius; kx++) {
+            const px = x + kx;
+            const py = y + ky;
+            
+            if (px >= 0 && px < width && py >= 0 && py < height) {
+              const idx = (py * width + px) * 4;
+              r += data[idx];
+              g += data[idx + 1];
+              b += data[idx + 2];
+              count++;
+            }
+          }
+        }
+        
+        // Write the blurred result
+        const idx = (y * width + x) * 4;
+        result[idx] = r / count;
+        result[idx + 1] = g / count;
+        result[idx + 2] = b / count;
+        result[idx + 3] = data[idx + 3]; // Keep alpha unchanged
+      }
+    }
+    
+    return result;
+  };
+  
+  // Apply a blur to create the mask
+  const blurred = blur(origData, radius);
+  
+  // Apply the unsharp mask
+  for (let i = 0; i < imageData.data.length; i += 4) {
+    // For each RGB channel
+    for (let c = 0; c < 3; c++) {
+      // Calculate the sharpened value: original + (original - blurred) * strength
+      const sharpened = origData[i + c] + (origData[i + c] - blurred[i + c]) * strength;
+      // Clamp to valid RGB range
+      imageData.data[i + c] = Math.max(0, Math.min(255, sharpened));
+    }
+    // Alpha channel remains unchanged
   }
   
   ctx.putImageData(imageData, 0, 0);

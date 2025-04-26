@@ -5,6 +5,7 @@ import { useCardDetection } from './useCardDetection';
 import { useCardScanning } from './useCardScanning';
 import { useScannerState } from './useScannerState';
 import { CameraFocusMode } from '@/utils/camera';
+import { CardRegionAdjustment } from '../types/adjustmentTypes';
 
 /**
  * Coordinator hook for the card scanner
@@ -12,7 +13,7 @@ import { CameraFocusMode } from '@/utils/camera';
  * 
  * @returns {Object} Combined scanner state and functions
  */
-export function useScanCoordinator() {
+export function useScanCoordinator(manualAdjustment: CardRegionAdjustment | null = null) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const { errors, setError } = useScannerState();
   
@@ -44,7 +45,8 @@ export function useScanCoordinator() {
     cancelScan
   } = useCardScanning({
     videoRef,
-    canvasRef
+    canvasRef,
+    manualAdjustment
   });
   
   // Update error state when scan error changes
