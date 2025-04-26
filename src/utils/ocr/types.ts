@@ -19,3 +19,12 @@ export interface CardOcrResult {
   rawText: string;
   confidence: number;
 }
+
+/**
+ * Result of image quality assessment
+ */
+export interface ImageQualityResult {
+  isBlurry: boolean;
+  poorLighting: boolean;
+  message: string | null;
+}
