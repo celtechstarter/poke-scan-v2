@@ -9,7 +9,7 @@ export const applyContrast = (imageData: ImageData, quality: ImageQualityResult,
     // Calculate contrast factor based on quality and boost
     let contrastFactor = quality.poorLighting ? 2.5 : 2.0;
     
-    // Apply the additional boost (25-30% more contrast)
+    // Apply the additional boost (30% more contrast)
     contrastFactor *= boostFactor;
     
     console.log('Using contrast factor:', contrastFactor);

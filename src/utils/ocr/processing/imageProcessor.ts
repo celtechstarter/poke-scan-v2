@@ -43,7 +43,7 @@ export const preprocessImage = async (imageDataUrl: string): Promise<string> => 
         const ctx = imageContext.ctx;
         
         // Enhanced preprocessing steps with optimization for OCR
-        // Step 1: Apply increased contrast (25-30% boost)
+        // Step 1: Apply increased contrast (30% boost)
         ctx.putImageData(applyContrast(imageContext.imageData, quality, 1.3), 0, 0);
         console.log('Applied boosted contrast (30%)');
         
