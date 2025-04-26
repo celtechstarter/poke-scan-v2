@@ -1,4 +1,5 @@
 import { OcrRegion } from '../types';
+import { createCanvasWithContext2D, createSafeCanvasContext2D } from '@/utils/canvas/safeCanvasContext';
 
 /**
  * Interface for card edge points
@@ -29,13 +30,8 @@ export const extractRegion = async (
     const img = new Image();
     img.onload = () => {
       try {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        
-        if (!ctx) {
-          reject(new Error('Could not create canvas context'));
-          return;
-        }
+        // Use the safe canvas context creation helper
+        const { canvas, ctx } = createCanvasWithContext2D(1, 1, { willReadFrequently: true });
         
         if (cardEdges) {
           // Use the detected card edges for precise cropping
@@ -60,7 +56,7 @@ export const extractRegion = async (
         const x = Math.floor(img.width * (region.left / 100)) + Math.floor(widthDifference / 2);
         const y = Math.floor(img.height * (region.top / 100)) + Math.floor(heightDifference / 2);
         
-        // Set canvas size with padding for clean edges
+        // Resize the canvas for the actual region
         canvas.width = regionWidth + (padding * 2);
         canvas.height = regionHeight + (padding * 2);
         
@@ -133,12 +129,7 @@ function extractUsingCardEdges(
   );
   
   // Create a new canvas for the perspective-corrected card
-  const correctedCardCanvas = document.createElement('canvas');
-  const correctedCardCtx = correctedCardCanvas.getContext('2d', { willReadFrequently: true });
-  
-  if (!correctedCardCtx) {
-    throw new Error('Could not create corrected card canvas context');
-  }
+  const { canvas: correctedCardCanvas, ctx: correctedCardCtx } = createCanvasWithContext2D(1, 1, { willReadFrequently: true });
   
   // Set standard dimensions for the corrected card
   const standardWidth = 350; // Standard width for a corrected card
@@ -155,12 +146,7 @@ function extractUsingCardEdges(
   correctPerspective(img, correctedCardCanvas, correctedCardCtx, cardEdges);
   
   // Now extract the specific region from the perspective-corrected card
-  const regionCanvas = document.createElement('canvas');
-  const regionCtx = regionCanvas.getContext('2d', { willReadFrequently: true });
-  
-  if (!regionCtx) {
-    throw new Error('Could not create region canvas context');
-  }
+  const { canvas: regionCanvas, ctx: regionCtx } = createCanvasWithContext2D(1, 1, { willReadFrequently: true });
   
   // For strict crop, adjust the region positions based on region type
   let regionX = standardWidth * (region.left / 100);
@@ -204,7 +190,7 @@ function extractUsingCardEdges(
     0, 0, regionCanvas.width, regionCanvas.height
   );
   
-  // Apply region-specific enhancements with improved parameters
+  // Apply region-specific enhancements
   if (region.name === 'cardNumber') {
     enhanceCardNumber(regionCanvas, regionCtx);
   } else if (region.name === 'cardName') {

@@ -1,6 +1,6 @@
 
 import { optimizeImageForOcr } from './preprocessingSteps/optimizeForOcr';
-import { createImageContext } from './preprocessingSteps/imageContext';
+import { createCanvasWithContext2D } from '@/utils/canvas/safeCanvasContext';
 import { ImageQualityResult } from '../types';
 import { assessImageQuality } from '../quality/imageQualityAssessor';
 import { toast } from '@/hooks/use-toast';
@@ -19,11 +19,13 @@ export const preprocessImage = async (imageDataUrl: string): Promise<string> => 
       try {
         console.log('Image loaded, dimensions:', img.width, 'x', img.height);
         
-        // Create image context and assess quality
-        const imageContext = createImageContext(img);
+        // Create image context using our safe helper
+        const { canvas, ctx } = createCanvasWithContext2D(img.width, img.height, { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         console.log('Created image context');
         
-        const quality = assessImageQuality(imageContext.imageData);
+        const quality = assessImageQuality(imageData);
         console.log('Image quality assessment:', quality);
         
         if (quality.message) {

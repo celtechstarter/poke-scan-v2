@@ -3,7 +3,7 @@ import '@testing-library/jest-dom';
 
 // Mock canvas for testing
 global.HTMLCanvasElement.prototype.getContext = function(
-  contextId: string,
+  contextId: "2d" | "bitmaprenderer" | "webgl" | "webgl2",
   _options?: any
 ): CanvasRenderingContext2D | ImageBitmapRenderingContext | WebGLRenderingContext | WebGL2RenderingContext | null {
   // We only implement the '2d' context for testing, all others return null

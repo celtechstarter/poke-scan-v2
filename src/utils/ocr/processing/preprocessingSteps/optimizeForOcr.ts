@@ -3,6 +3,7 @@ import { ImageQualityResult } from '../../types';
 import { applyContrast } from './contrastProcessor';
 import { applyUnsharpMask } from './unsharpMask';
 import { applyBinaryThreshold } from './binaryThreshold';
+import { createCanvasWithContext2D } from '@/utils/canvas/safeCanvasContext';
 
 /**
  * Optimizes an image for OCR by applying a series of preprocessing steps
@@ -17,15 +18,8 @@ export const optimizeImageForOcr = async (imageDataUrl: string): Promise<string>
     
     img.onload = () => {
       try {
-        // Create canvas context
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          throw new Error('Failed to get canvas context');
-        }
+        // Create canvas with safe context
+        const { canvas, ctx } = createCanvasWithContext2D(img.width, img.height, { willReadFrequently: true });
         
         // Draw original image
         ctx.drawImage(img, 0, 0);
