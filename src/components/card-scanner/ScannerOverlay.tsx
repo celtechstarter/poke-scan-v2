@@ -25,10 +25,14 @@ export function ScannerOverlay({ isScanning, scanProgress, isCameraActive }: Sca
       {/* Enhanced guidance frame for card positioning with edge detection visual cue */}
       {isCameraActive && !isScanning && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          {/* Improved scan frame with card aspect ratio */}
+          {/* Improved scan frame with card aspect ratio - now using 95% height */}
           <div 
-            className="relative border-4 border-dashed border-pokeyellow/70 w-4/5 h-4/5 rounded-lg flex items-center justify-center" 
-            style={{ aspectRatio: '2/3' }}
+            className="relative border-4 border-dashed border-pokeyellow/70 rounded-lg flex items-center justify-center" 
+            style={{ 
+              aspectRatio: '2/3', 
+              height: '95%',
+              maxWidth: '95%'
+            }}
           >
             {/* Edge detection visual cue */}
             <div className="absolute inset-0 border-2 border-transparent">

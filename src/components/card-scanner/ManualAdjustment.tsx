@@ -28,15 +28,22 @@ export function ManualAdjustment({ isOpen, onClose, onApply, imageUrl }: ManualA
     if (!isOpen || !canvasRef.current || !imageUrl) return;
     
     const img = new Image();
-    imageRef.current = img;
-    
     img.onload = () => {
+      imageRef.current = img;
       const canvas = canvasRef.current;
       if (!canvas) return;
       
       // Set canvas size to match image
       canvas.width = img.width;
       canvas.height = img.height;
+      
+      // Initialize corners to default rectangle positions
+      setCorners({
+        topLeft: { x: 0.2, y: 0.2 },
+        topRight: { x: 0.8, y: 0.2 },
+        bottomLeft: { x: 0.2, y: 0.8 },
+        bottomRight: { x: 0.8, y: 0.8 }
+      });
       
       // Draw image and corner points
       refreshCanvas();
@@ -96,14 +103,14 @@ export function ManualAdjustment({ isOpen, onClose, onApply, imageUrl }: ManualA
     ctx.lineWidth = 2;
     ctx.stroke();
     
-    // Draw corner points
+    // Draw corner points with increased hit area
     Object.entries(corners).forEach(([key, point]) => {
       const x = point.x * canvas.width;
       const y = point.y * canvas.height;
       
-      // Draw point
+      // Draw larger point for better touch/clicking
       ctx.beginPath();
-      ctx.arc(x, y, 10, 0, 2 * Math.PI);
+      ctx.arc(x, y, 12, 0, 2 * Math.PI);
       ctx.fillStyle = activePoint === key ? '#ea384c' : '#fde047';
       ctx.fill();
       ctx.strokeStyle = 'white';
@@ -111,7 +118,7 @@ export function ManualAdjustment({ isOpen, onClose, onApply, imageUrl }: ManualA
       ctx.stroke();
       
       // Add label to help identify corners
-      ctx.fillStyle = 'white';
+      ctx.fillStyle = 'black';
       ctx.font = '12px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -126,24 +133,13 @@ export function ManualAdjustment({ isOpen, onClose, onApply, imageUrl }: ManualA
       
       ctx.fillText(label, x, y);
     });
-    
-    // Draw connection lines between points
-    ctx.beginPath();
-    ctx.moveTo(points[0].x, points[0].y);
-    for (let i = 1; i < points.length; i++) {
-      ctx.lineTo(points[i].x, points[i].y);
-    }
-    ctx.closePath();
-    ctx.strokeStyle = '#fde047';
-    ctx.lineWidth = 2;
-    ctx.stroke();
   };
 
   const getCornerAtPosition = (x: number, y: number): string | null => {
     if (!canvasRef.current) return null;
     
     const canvas = canvasRef.current;
-    const threshold = 20; // Detection radius in pixels
+    const threshold = 25; // Increased detection radius for better touch
     
     // Check each corner point
     for (const [key, point] of Object.entries(corners)) {
@@ -168,8 +164,16 @@ export function ManualAdjustment({ isOpen, onClose, onApply, imageUrl }: ManualA
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     
+    // Calculate scale factors if the canvas is displayed at a different size than its natural dimensions
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    // Apply scaling to get the actual coordinates on the canvas
+    const actualX = x * scaleX;
+    const actualY = y * scaleY;
+    
     // Find which corner was clicked (if any)
-    const cornerKey = getCornerAtPosition(x, y);
+    const cornerKey = getCornerAtPosition(actualX, actualY);
     setActivePoint(cornerKey);
     
     // Capture pointer to improve dragging
@@ -184,9 +188,17 @@ export function ManualAdjustment({ isOpen, onClose, onApply, imageUrl }: ManualA
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
     
+    // Calculate scale factors
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    // Apply scaling to get the actual coordinates
+    const actualX = (e.clientX - rect.left) * scaleX;
+    const actualY = (e.clientY - rect.top) * scaleY;
+    
     // Calculate normalized position (0-1)
-    const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / canvas.width));
-    const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / canvas.height));
+    const x = Math.max(0, Math.min(1, actualX / canvas.width));
+    const y = Math.max(0, Math.min(1, actualY / canvas.height));
     
     // Update the active corner
     setCorners(prev => ({
@@ -282,6 +294,51 @@ export function ManualAdjustment({ isOpen, onClose, onApply, imageUrl }: ManualA
     return isOrderedX && isOrderedY;
   };
 
+  // Generate preview of what the OCR will see
+  const generatePreview = () => {
+    if (!canvasRef.current || !imageRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const previewCanvas = document.createElement('canvas');
+    const previewCtx = previewCanvas.getContext('2d');
+    
+    if (!previewCtx) return;
+    
+    // Standard dimensions for preview
+    previewCanvas.width = 350;
+    previewCanvas.height = 500;
+    
+    // Fill preview with white
+    previewCtx.fillStyle = 'white';
+    previewCtx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+    
+    // Source points (from current corner selection)
+    const srcPoints = [
+      { x: corners.topLeft.x * canvas.width, y: corners.topLeft.y * canvas.height },
+      { x: corners.topRight.x * canvas.width, y: corners.topRight.y * canvas.height },
+      { x: corners.bottomRight.x * canvas.width, y: corners.bottomRight.y * canvas.height },
+      { x: corners.bottomLeft.x * canvas.width, y: corners.bottomLeft.y * canvas.height }
+    ];
+    
+    // Destination points (rectangle)
+    const dstPoints = [
+      { x: 0, y: 0 },
+      { x: previewCanvas.width, y: 0 },
+      { x: previewCanvas.width, y: previewCanvas.height },
+      { x: 0, y: previewCanvas.height }
+    ];
+    
+    // Use existing perspective transform from regionExtractor
+    // (This would require refactoring to extract that function)
+    // For now, just show a basic preview
+    
+    // Show preview in a toast
+    toast({
+      title: "Vorschau der Auswahl",
+      description: "Die ausgewählten Eckpunkte definieren den zu scannenden Bereich.",
+    });
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -308,7 +365,7 @@ export function ManualAdjustment({ isOpen, onClose, onApply, imageUrl }: ManualA
           />
         </div>
         
-        <div className="flex justify-between gap-2 mb-4">
+        <div className="flex flex-wrap justify-between gap-2 mb-4">
           <Button variant="secondary" onClick={autoAlignCorners}>
             Automatisch ausrichten
           </Button>

@@ -91,7 +91,7 @@ const CardScannerWebcam = () => {
           <canvas ref={canvasRef} className="hidden"></canvas>
         </CardContent>
         
-        <CardFooter className="flex flex-col p-4">
+        <CardFooter className="flex flex-col p-4 space-y-4">
           <ScannerControls 
             isCameraActive={isCameraActive}
             isScanning={isScanning}

@@ -21,7 +21,7 @@ export function VideoPreview({
       <AspectRatio ratio={3/4} className="bg-black">
         <video 
           ref={videoRef}
-          className="w-full h-full object-cover" 
+          className="w-full h-full object-contain" 
           autoPlay 
           playsInline
           aria-label="Kamera-Vorschau"
