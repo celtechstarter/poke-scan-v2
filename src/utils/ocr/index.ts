@@ -1,7 +1,7 @@
 
 import { CardOcrResult } from './types';
 import { CARD_REGIONS, ADDITIONAL_REGIONS } from './regions';
-import { preprocessImage, extractRegion } from './imagePreprocessing';
+import { preprocessImage, extractRegion, assessImageQuality } from './imagePreprocessing';
 import { initOcrWorker } from './worker';
 import { cleanupOcrResults } from './textCleanup';
 import { PSM } from 'tesseract.js';
@@ -127,3 +127,4 @@ export const processCardWithOcr = async (imageDataUrl: string): Promise<CardOcrR
     throw new Error(`OCR failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
+
