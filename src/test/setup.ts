@@ -2,7 +2,10 @@
 import '@testing-library/jest-dom';
 
 // Mock canvas for testing
-global.HTMLCanvasElement.prototype.getContext = function(
+const originalGetContext = HTMLCanvasElement.prototype.getContext;
+
+// Create a type-safe mock for 2D context
+HTMLCanvasElement.prototype.getContext = function(
   contextId: "2d" | "bitmaprenderer" | "webgl" | "webgl2",
   options?: CanvasRenderingContext2DSettings | ImageBitmapRenderingContextSettings | WebGLContextAttributes
 ): CanvasRenderingContext2D | ImageBitmapRenderingContext | WebGLRenderingContext | WebGL2RenderingContext | null {
@@ -84,5 +87,7 @@ global.HTMLCanvasElement.prototype.getContext = function(
       font: '10px sans-serif'
     } as unknown as CanvasRenderingContext2D;
   }
+  
+  // For all other context types, return null
   return null;
 };
