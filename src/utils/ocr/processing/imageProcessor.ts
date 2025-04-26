@@ -8,6 +8,7 @@ import { assessImageQuality } from '../quality/imageQualityAssessor';
 import { toast } from '@/hooks/use-toast';
 import { applyUnsharpMask } from './preprocessingSteps/unsharpMask';
 import { adaptiveLocalContrast } from './preprocessingSteps/adaptiveLocalContrast';
+import { applyBinaryThreshold } from './preprocessingSteps/binaryThreshold';
 
 /**
  * Enhanced preprocessing for Pokémon card images with improved noise reduction
@@ -41,11 +42,20 @@ export const preprocessImage = async (imageDataUrl: string): Promise<string> => 
         const canvas = imageContext.canvas;
         const ctx = imageContext.ctx;
         
-        // Enhanced preprocessing steps
-        ctx.putImageData(applyContrast(imageContext.imageData, quality), 0, 0);
-        ctx.putImageData(applyUnsharpMask(ctx.getImageData(0, 0, canvas.width, canvas.height), 1.5, 2.0), 0, 0);
+        // Enhanced preprocessing steps with optimization for OCR
+        // Step 1: Apply increased contrast (25-30% boost)
+        ctx.putImageData(applyContrast(imageContext.imageData, quality, 1.3), 0, 0);
+        console.log('Applied boosted contrast (30%)');
         
-        // Apply final adaptive local contrast
+        // Step 2: Apply unsharp mask for text sharpening
+        ctx.putImageData(applyUnsharpMask(ctx.getImageData(0, 0, canvas.width, canvas.height), 1.5, 2.0), 0, 0);
+        console.log('Applied unsharp mask filter');
+        
+        // Step 3: Apply binary thresholding with ~140 threshold
+        ctx.putImageData(applyBinaryThreshold(ctx.getImageData(0, 0, canvas.width, canvas.height), 140), 0, 0);
+        console.log('Applied binary thresholding');
+        
+        // Step 4: Apply final adaptive local contrast
         const enhancedImage = adaptiveLocalContrast(canvas);
         
         console.log('Preprocessing completed successfully');

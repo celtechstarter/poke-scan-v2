@@ -31,7 +31,7 @@ export const processCardWithOcr = async (
     
     // Set initial PSM mode for general text recognition
     await worker.setParameters({
-      tessedit_pageseg_mode: PSM.SPARSE_TEXT
+      tessedit_pageseg_mode: PSM.SPARSE_TEXT_OSD
     });
     
     let totalConfidence = 0;
@@ -48,7 +48,7 @@ export const processCardWithOcr = async (
         
         // Try multiple PSM modes to get the best result
         const psmModes = [
-          PSM.SPARSE_TEXT,        // Default mode - detects text throughout the image
+          PSM.SPARSE_TEXT_OSD,    // Main mode with orientation detection
           region.name === 'cardName' ? PSM.SINGLE_BLOCK : PSM.SINGLE_LINE,  // Region-specific mode
           PSM.AUTO                 // Let Tesseract decide
         ];
@@ -75,7 +75,7 @@ export const processCardWithOcr = async (
         
         // Reset to default mode
         await worker.setParameters({
-          tessedit_pageseg_mode: PSM.SPARSE_TEXT
+          tessedit_pageseg_mode: PSM.SPARSE_TEXT_OSD
         });
         
         if (!bestResult) continue;
@@ -89,10 +89,10 @@ export const processCardWithOcr = async (
         });
         
         // Show user warning if confidence is very low
-        if (data.confidence < 40) {
+        if (data.confidence < 50) {
           toast({
             title: "Niedrige Erkennungsqualität",
-            description: "Bitte scannen Sie die Karte erneut mit besserer Beleuchtung und ruhiger Kamera",
+            description: "Kartentext nicht klar erkannt. Bitte Karte erneut scannen oder Kamera neu fokussieren.",
             variant: "destructive",
           });
         }
@@ -132,6 +132,20 @@ export const processCardWithOcr = async (
     result.confidence = regionsProcessed > 0 ? totalConfidence / regionsProcessed : 0;
     
     const cleanedResult = cleanupOcrResults(result);
+    
+    // Display overall confidence information to the user
+    if (cleanedResult.confidence >= 70) {
+      console.log('High confidence OCR result:', cleanedResult.confidence.toFixed(1) + '%');
+    } else if (cleanedResult.confidence >= 50) {
+      console.log('Medium confidence OCR result:', cleanedResult.confidence.toFixed(1) + '%');
+    } else {
+      console.log('Low confidence OCR result:', cleanedResult.confidence.toFixed(1) + '%');
+      toast({
+        title: "Niedrige Gesamterkennungsqualität",
+        description: "Kartentext nicht klar erkannt. Bitte Karte erneut scannen oder Kamera neu fokussieren.",
+        variant: "destructive",
+      });
+    }
     
     await worker.terminate();
     

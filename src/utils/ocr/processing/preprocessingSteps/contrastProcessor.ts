@@ -1,12 +1,17 @@
 
 import { ImageQualityResult } from '../../types';
 
-export const applyContrast = (imageData: ImageData, quality: ImageQualityResult): ImageData => {
+export const applyContrast = (imageData: ImageData, quality: ImageQualityResult, boostFactor: number = 1.0): ImageData => {
   console.log('Starting contrast processing...');
   
   try {
     const data = new Uint8ClampedArray(imageData.data);
-    const contrastFactor = quality.poorLighting ? 2.5 : 2.0;
+    // Calculate contrast factor based on quality and boost
+    let contrastFactor = quality.poorLighting ? 2.5 : 2.0;
+    
+    // Apply the additional boost (25-30% more contrast)
+    contrastFactor *= boostFactor;
+    
     console.log('Using contrast factor:', contrastFactor);
     
     const factor = (259 * (contrastFactor + 255)) / (255 * (259 - contrastFactor));
