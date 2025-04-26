@@ -57,21 +57,22 @@ const ADDITIONAL_REGIONS: OcrRegion[] = [
 
 /**
  * Creates and initializes a Tesseract worker optimized for Pokémon card text
+ * Now using both German and English languages for better mixed text recognition
  * @returns Initialized Tesseract worker
  */
 export const initOcrWorker = async () => {
-  // Initialize with German language and high accuracy settings
-  const worker = await createWorker('deu', 1, {
+  // Initialize with German + English languages for better mixed text recognition
+  const worker = await createWorker('deu+eng', 1, {
     logger: import.meta.env.DEV 
       ? m => console.log(m) 
       : undefined
   });
   
-  // Optimized OCR parameters specifically for Pokémon card fonts and German text
+  // Optimized OCR parameters for Pokémon card fonts and mixed language text
   await worker.setParameters({
     preserve_interword_spaces: '1',
     tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-/. äöüÄÖÜß',
-    tessedit_pageseg_mode: PSM.SINGLE_LINE, // Changed to SINGLE_LINE for better text line detection
+    tessedit_pageseg_mode: PSM.SPARSE_TEXT, // Changed to SPARSE_TEXT for better handling of separated text blocks
     tessjs_create_hocr: '0',
     tessjs_create_tsv: '0',
     tessjs_create_box: '0',
@@ -83,8 +84,8 @@ export const initOcrWorker = async () => {
 };
 
 /**
- * Enhanced preprocessing for Pokémon card images to improve text clarity
- * Specialized in enhancing printed card text against colorful backgrounds
+ * Enhanced preprocessing for Pokémon card images with improved noise reduction
+ * and text preservation techniques
  * @param imageDataUrl Data URL of the original image
  * @returns Processed image as Data URL
  */
@@ -111,19 +112,47 @@ export const preprocessImage = async (imageDataUrl: string): Promise<string> => 
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
       
-      // Advanced color processing for better text detection
-      for (let i = 0; i < data.length; i += 4) {
-        // Convert to grayscale using luminance formula with adjustments for card text
-        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+      // Apply simple blur before thresholding to reduce noise
+      const blurredData = new Uint8ClampedArray(data.length);
+      const kernelSize = 3; // 3x3 blur kernel
+      const offset = Math.floor(kernelSize / 2);
+      
+      for (let y = offset; y < canvas.height - offset; y++) {
+        for (let x = offset; x < canvas.width - offset; x++) {
+          let rSum = 0, gSum = 0, bSum = 0;
+          let count = 0;
+          
+          // Average surrounding pixels
+          for (let ky = -offset; ky <= offset; ky++) {
+            for (let kx = -offset; kx <= offset; kx++) {
+              const idx = ((y + ky) * canvas.width + (x + kx)) * 4;
+              rSum += data[idx];
+              gSum += data[idx + 1];
+              bSum += data[idx + 2];
+              count++;
+            }
+          }
+          
+          const outIdx = (y * canvas.width + x) * 4;
+          blurredData[outIdx] = rSum / count;
+          blurredData[outIdx + 1] = gSum / count;
+          blurredData[outIdx + 2] = bSum / count;
+          blurredData[outIdx + 3] = data[outIdx + 3];
+        }
+      }
+      
+      // Process blurred image with enhanced thresholding
+      for (let i = 0; i < blurredData.length; i += 4) {
+        // Convert to grayscale using luminance formula
+        const gray = 0.299 * blurredData[i] + 0.587 * blurredData[i + 1] + 0.114 * blurredData[i + 2];
         
-        // Apply high contrast enhancement specifically optimized for card text
-        const contrast = 2.0; // Higher contrast for clearer text edges
+        // Apply contrast enhancement
+        const contrast = 2.0;
         const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
         let newValue = Math.min(255, Math.max(0, factor * (gray - 128) + 128));
         
-        // Apply adaptive thresholding based on surrounding pixels
-        // This helps with text that appears on different background colors
-        const threshold = 180; // Adjusted threshold for better text separation
+        // Apply lower threshold for better text preservation
+        const threshold = 150; // Lowered from 180 to 150
         const finalValue = newValue > threshold ? 255 : 0;
         
         // Set RGB channels to the processed value
