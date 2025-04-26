@@ -3,28 +3,57 @@
  * Apply adaptive local contrast enhancement specifically for text regions
  * This helps with small printed text on Pokémon cards
  */
-export function adaptiveLocalContrast(canvas: HTMLCanvasElement): string {
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  if (!ctx) return canvas.toDataURL('image/png');
-  
-  const width = canvas.width;
-  const height = canvas.height;
-  
-  // Process the top 20% (card name area) and bottom 15% (set number area) with enhanced contrast
-  const topRegionHeight = Math.round(height * 0.2);
-  const bottomRegionHeight = Math.round(height * 0.15);
-  
-  // Process top region (card name)
-  const topData = ctx.getImageData(0, 0, width, topRegionHeight);
-  const enhancedTop = enhanceTextRegion(topData);
-  ctx.putImageData(enhancedTop, 0, 0);
-  
-  // Process bottom region (set number)
-  const bottomData = ctx.getImageData(0, height - bottomRegionHeight, width, bottomRegionHeight);
-  const enhancedBottom = enhanceTextRegion(bottomData);
-  ctx.putImageData(enhancedBottom, 0, height - bottomRegionHeight);
-  
-  return canvas.toDataURL('image/png', 1.0);
+export function adaptiveLocalContrast(imageDataUrl: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    
+    img.onload = () => {
+      try {
+        // Create canvas with the image dimensions
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) {
+          reject(new Error('Failed to get canvas 2D context'));
+          return;
+        }
+        
+        // Draw the image onto the canvas
+        ctx.drawImage(img, 0, 0);
+        
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        // Process the top 20% (card name area) and bottom 15% (set number area) with enhanced contrast
+        const topRegionHeight = Math.round(height * 0.2);
+        const bottomRegionHeight = Math.round(height * 0.15);
+        
+        // Process top region (card name)
+        const topData = ctx.getImageData(0, 0, width, topRegionHeight);
+        const enhancedTop = enhanceTextRegion(topData);
+        ctx.putImageData(enhancedTop, 0, 0);
+        
+        // Process bottom region (set number)
+        const bottomData = ctx.getImageData(0, height - bottomRegionHeight, width, bottomRegionHeight);
+        const enhancedBottom = enhanceTextRegion(bottomData);
+        ctx.putImageData(enhancedBottom, 0, height - bottomRegionHeight);
+        
+        // Return as data URL
+        resolve(canvas.toDataURL('image/png', 1.0));
+      } catch (error) {
+        console.error('Error applying adaptive local contrast:', error);
+        reject(error);
+      }
+    };
+    
+    img.onerror = () => {
+      reject(new Error('Failed to load image for adaptive local contrast'));
+    };
+    
+    img.src = imageDataUrl;
+  });
 }
 
 /**

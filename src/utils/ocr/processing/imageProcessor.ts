@@ -39,10 +39,14 @@ export const preprocessImage = async (imageDataUrl: string): Promise<string> => 
         console.log('Applied OCR optimization');
         
         // Final adaptive local contrast enhancement
-        const enhancedImage = adaptiveLocalContrast(optimizedImage);
-        console.log('Preprocessing completed successfully');
-        
-        resolve(enhancedImage);
+        try {
+          const enhancedImage = await adaptiveLocalContrast(optimizedImage);
+          console.log('Preprocessing completed successfully');
+          resolve(enhancedImage);
+        } catch (contrastError) {
+          console.error('Contrast enhancement failed, using optimized image:', contrastError);
+          resolve(optimizedImage);
+        }
         
       } catch (error) {
         console.error('Preprocessing failed:', error);
