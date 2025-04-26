@@ -1,140 +1,75 @@
 
-import { getCardPriceFromCardMarket } from './cardMarketService';
-import { processCardWithOcr, cleanupOcrResults, CardOcrResult } from './ocrUtils';
+import { processCardWithOcr } from './ocr';
+import { lookupCardPrice } from './cardMarketService';
+
+interface CardEdges {
+  topLeft: {x: number, y: number};
+  topRight: {x: number, y: number};
+  bottomRight: {x: number, y: number};
+  bottomLeft: {x: number, y: number};
+}
 
 /**
- * Analyzes a card image with enhanced OCR processing specifically 
- * optimized for Pokémon cards in German language
- * 
- * @param {string} imageDataUrl - The data URL of the captured card image
- * @returns {Promise<Object>} Information about the recognized card including name, number, price and image
+ * Analyzes a card image to extract name, number and price information
+ * Enhanced with card edge detection support for better region extraction
  */
-export const analyzeCardImage = async (imageDataUrl: string): Promise<{
-  cardName: string;
-  cardNumber: string;
-  price: number | null;
-  imageDataUrl: string;
-  ocrResult?: CardOcrResult;
-}> => {
-  console.log('Analyzing Pokémon card with enhanced German OCR...');
+export const analyzeCardImage = async (
+  imageDataUrl: string,
+  cardEdges?: CardEdges | null
+) => {
+  console.log('Analyzing card image...');
   
   try {
-    // Process image with our improved OCR system
-    const ocrResult = await processCardWithOcr(imageDataUrl);
+    // Process card image with OCR, passing detected edges for better region extraction
+    const ocrResult = await processCardWithOcr(imageDataUrl, cardEdges);
     
-    console.log('OCR Recognition results:', ocrResult);
-    
-    // If OCR failed to detect a name, use special error message
-    if (!ocrResult.cardName) {
+    // Handle case where OCR couldn't recognize text
+    if (!ocrResult.cardName && !ocrResult.cardNumber) {
+      console.log('OCR failed to recognize any text in the card');
       return {
-        cardName: "Kartenname nicht erkannt",
-        cardNumber: ocrResult.cardNumber || "Nummer nicht erkannt",
+        cardName: "Text nicht erkannt",
+        cardNumber: null,
         price: null,
-        imageDataUrl: imageDataUrl,
         ocrResult: ocrResult
       };
     }
     
-    // If we have a card name and number, this is the best case scenario
-    if (ocrResult.cardName && ocrResult.cardNumber) {
-      console.log('OCR successfully detected card name and number');
-      
-      // Create a search query that combines name and number
-      const searchQuery = `${ocrResult.cardName} ${ocrResult.cardNumber}`;
-      console.log('Searching CardMarket with:', searchQuery);
-      
+    let cardPrice = null;
+    
+    // Only attempt price lookup if we have a card name
+    if (ocrResult.cardName) {
       try {
-        const price = await getCardPriceFromCardMarket(searchQuery);
+        // Log detected text before price lookup
+        console.log('OCR detected text:', {
+          name: ocrResult.cardName,
+          number: ocrResult.cardNumber
+        });
         
-        return {
-          cardName: ocrResult.cardName,
-          cardNumber: ocrResult.cardNumber,
-          price: price,
-          imageDataUrl: imageDataUrl,
-          ocrResult: ocrResult
-        };
+        // Look up card price
+        cardPrice = await lookupCardPrice(ocrResult.cardName, ocrResult.cardNumber);
       } catch (priceError) {
-        console.error('Price lookup failed, trying with card name only:', priceError);
-        
-        // If price lookup fails with the combined query, try with just the name
-        try {
-          const price = await getCardPriceFromCardMarket(ocrResult.cardName);
-          
-          return {
-            cardName: ocrResult.cardName,
-            cardNumber: ocrResult.cardNumber,
-            price: price,
-            imageDataUrl: imageDataUrl,
-            ocrResult: ocrResult
-          };
-        } catch (nameOnlyError) {
-          // Return what we have even without price
-          return {
-            cardName: ocrResult.cardName,
-            cardNumber: ocrResult.cardNumber,
-            price: null,
-            imageDataUrl: imageDataUrl,
-            ocrResult: ocrResult
-          };
-        }
+        console.error('Error looking up card price:', priceError);
       }
     }
     
-    // We have a card name but no number
-    if (ocrResult.cardName && !ocrResult.cardNumber) {
-      console.log('OCR detected card name but no card number');
-      
-      try {
-        const price = await getCardPriceFromCardMarket(ocrResult.cardName);
-        
-        return {
-          cardName: ocrResult.cardName,
-          cardNumber: "Nummer nicht erkannt",
-          price: price,
-          imageDataUrl: imageDataUrl,
-          ocrResult: ocrResult
-        };
-      } catch (priceError) {
-        console.error('Price lookup failed:', priceError);
-        
-        return {
-          cardName: ocrResult.cardName,
-          cardNumber: "Nummer nicht erkannt",
-          price: null,
-          imageDataUrl: imageDataUrl,
-          ocrResult: ocrResult
-        };
-      }
-    }
-    
-    // In case we somehow have a number but no name
-    if (!ocrResult.cardName && ocrResult.cardNumber) {
-      return {
-        cardName: "Kartenname nicht erkannt",
-        cardNumber: ocrResult.cardNumber,
-        price: null,
-        imageDataUrl: imageDataUrl,
-        ocrResult: ocrResult
-      };
-    }
-
-    // If both name and number are missing
     return {
-      cardName: "Text nicht erkannt",
-      cardNumber: "Bitte erneut versuchen",
-      price: null,
-      imageDataUrl: imageDataUrl,
+      cardName: ocrResult.cardName || "Fehler beim Scannen",
+      cardNumber: ocrResult.cardNumber,
+      price: cardPrice,
       ocrResult: ocrResult
     };
   } catch (error) {
-    console.error('Error during card analysis:', error);
-    
-    // Return a clear error message
+    console.error('Card analysis error:', error);
     return {
       cardName: "Fehler beim Scannen",
-      cardNumber: "Bitte erneut versuchen",
+      cardNumber: null,
       price: null,
-      imageDataUrl: imageDataUrl
+      ocrResult: {
+        cardName: null,
+        cardNumber: null,
+        rawText: '',
+        confidence: 0
+      }
     };
   }
 };

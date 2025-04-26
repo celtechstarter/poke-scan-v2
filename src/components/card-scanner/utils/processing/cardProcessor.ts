@@ -1,3 +1,4 @@
+
 import { toast } from '@/components/ui/use-toast';
 import { analyzeCardImage } from '@/utils/cardAnalysisUtils';
 import { CardScanningErrorType, ScanResult, ScannerError } from '../../types/scannerTypes';
@@ -20,7 +21,7 @@ export const processCardImage = async (
     }
     
     // First assess image quality with enhanced card detection
-    const { isBlurry, poorLighting, message, isCardVisible } = await assessImageQuality(imageDataUrl);
+    const { isBlurry, poorLighting, message, isCardVisible, cardEdges } = await assessImageQuality(imageDataUrl);
     
     // If no card is detected in the frame, stop processing
     if (!isCardVisible) {
@@ -41,7 +42,8 @@ export const processCardImage = async (
       });
     }
     
-    const result = await analyzeCardImage(imageDataUrl);
+    // Pass the detected card edges to the analyzer for more precise region extraction
+    const result = await analyzeCardImage(imageDataUrl, cardEdges);
     
     const toastMessage = result.cardName === "Fehler beim Scannen" || result.cardName === "Text nicht erkannt" 
       ? "Text konnte nicht gelesen werden"

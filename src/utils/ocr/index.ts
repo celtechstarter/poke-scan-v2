@@ -1,3 +1,4 @@
+
 import { CardOcrResult } from './types';
 import { CARD_REGIONS, ADDITIONAL_REGIONS } from './regions';
 import { preprocessImage, extractRegion, assessImageQuality } from './imagePreprocessing';
@@ -12,7 +13,10 @@ export * from './types';
  * Process a card image using OCR with enhanced region processing and
  * specialized handling for Pokémon card text format
  */
-export const processCardWithOcr = async (imageDataUrl: string): Promise<CardOcrResult> => {
+export const processCardWithOcr = async (
+  imageDataUrl: string,
+  cardEdges?: { topLeft: {x: number, y: number}, topRight: {x: number, y: number}, bottomRight: {x: number, y: number}, bottomLeft: {x: number, y: number} } | null
+): Promise<CardOcrResult> => {
   const result: CardOcrResult = {
     cardName: null,
     cardNumber: null,
@@ -36,7 +40,8 @@ export const processCardWithOcr = async (imageDataUrl: string): Promise<CardOcrR
       console.log(`Processing region: ${region.name}`);
       
       try {
-        const regionImage = await extractRegion(imageDataUrl, region);
+        // Pass cardEdges to region extraction for more precise cropping
+        const regionImage = await extractRegion(imageDataUrl, region, cardEdges);
         const processedImage = await preprocessImage(regionImage);
         
         // Initial recognition attempt with SPARSE_TEXT
@@ -102,7 +107,7 @@ export const processCardWithOcr = async (imageDataUrl: string): Promise<CardOcrR
     // Process additional regions with default PSM
     for (const region of ADDITIONAL_REGIONS) {
       try {
-        const regionImage = await extractRegion(imageDataUrl, region);
+        const regionImage = await extractRegion(imageDataUrl, region, cardEdges);
         const { data } = await worker.recognize(regionImage);
         
         if (data.text.trim()) {
