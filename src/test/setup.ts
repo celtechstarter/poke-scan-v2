@@ -3,13 +3,12 @@ import '@testing-library/jest-dom';
 
 // Mock canvas for testing
 global.HTMLCanvasElement.prototype.getContext = function(
-  contextId: "2d" | "bitmaprenderer" | "webgl" | "webgl2",
-  options?: CanvasRenderingContext2DSettings | ImageBitmapRenderingContextSettings | WebGLContextAttributes
-): CanvasRenderingContext2D | ImageBitmapRenderingContext | WebGLRenderingContext | WebGL2RenderingContext | null {
-  // We only implement the '2d' context for testing, all others return null
+  contextId: "2d"
+): CanvasRenderingContext2D | null {
+  // We only implement the '2d' context for testing
   if (contextId === '2d') {
     return {
-      // Explicitly type the '2d' context with all required properties
+      // Required minimum properties for our tests
       willReadFrequently: true,
       canvas: this,
       getImageData: () => ({
@@ -21,17 +20,43 @@ global.HTMLCanvasElement.prototype.getContext = function(
       drawImage: () => {},
       fillRect: () => {},
       fillStyle: '',
-      
-      // Add more required CanvasRenderingContext2D properties
       globalAlpha: 1.0,
       globalCompositeOperation: 'source-over',
-      
-      // Explicitly type to match CanvasRenderingContext2D
       getContextAttributes: () => ({ alpha: true }),
-      
+      // Additional required methods
+      beginPath: () => {},
+      moveTo: () => {},
+      lineTo: () => {},
+      stroke: () => {},
+      fill: () => {},
+      clip: () => {},
+      save: () => {},
+      restore: () => {},
+      scale: () => {},
+      rotate: () => {},
+      translate: () => {},
+      transform: () => {},
+      setTransform: () => {},
+      createLinearGradient: () => ({ addColorStop: () => {} }),
+      createPattern: () => null,
+      clearRect: () => {},
+      rect: () => {},
+      strokeRect: () => {},
+      isPointInPath: () => false,
+      isPointInStroke: () => false,
+      measureText: () => ({ width: 0 }),
+      setLineDash: () => {},
+      getLineDash: () => [],
+      closePath: () => {},
+      bezierCurveTo: () => {},
+      quadraticCurveTo: () => {},
+      arc: () => {},
+      arcTo: () => {},
+      ellipse: () => {},
+      createImageData: () => ({ data: new Uint8ClampedArray(), width: 0, height: 0 }),
+      createRadialGradient: () => ({ addColorStop: () => {} }),
+      setLineDashOffset: () => {},
     } as CanvasRenderingContext2D;
   }
-  
-  // For other context types, return null as per the spec
   return null;
 };
