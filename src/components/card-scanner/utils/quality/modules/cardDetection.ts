@@ -1,5 +1,4 @@
-
-import { Point } from '../../types/scannerTypes';
+import { Point } from '@/lib/types';
 
 /**
  * Detect edges and shape of a card in the image
