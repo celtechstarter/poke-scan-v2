@@ -67,7 +67,7 @@ Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
         createConicGradient: () => ({ addColorStop: () => {} }),
         filter: 'none',
         imageSmoothingEnabled: true,
-        imageSmoothingQuality: 'low' as CanvasImageSmoothingQuality,
+        imageSmoothingQuality: 'low' as ImageSmoothingQuality,
         lineCap: 'butt' as CanvasLineCap,
         lineDashOffset: 0,
         lineJoin: 'miter' as CanvasLineJoin,
