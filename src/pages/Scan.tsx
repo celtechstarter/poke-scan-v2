@@ -1,5 +1,7 @@
 
 import CardScannerWebcam from '@/components/card-scanner/CardScannerWebcam';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 
 const Scan = () => {
   return (
@@ -9,6 +11,15 @@ const Scan = () => {
         Nutze deine Webcam, um Pokemon-Karten zu scannen und ihren aktuellen Marktwert zu ermitteln.
         Der Scanner erkennt automatisch den Namen und die Set-Nummer der Karte.
       </p>
+      
+      <Alert className="mb-6 max-w-2xl mx-auto">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Wichtig für genaue Ergebnisse</AlertTitle>
+        <AlertDescription>
+          Positioniere die Karte vollständig und gerade innerhalb des gelben Rahmens.
+          Achte auf gute Beleuchtung ohne Reflexionen auf der Karte.
+        </AlertDescription>
+      </Alert>
       
       <CardScannerWebcam />
       
@@ -47,9 +58,21 @@ const Scan = () => {
             Probiere bei unscharfen Scans den "Festen Fokus" und halte die Karte in optimaler Entfernung.
           </p>
         </div>
+        
+        <div className="mt-4 bg-green-50 dark:bg-green-900/30 border-l-4 border-green-500 p-4">
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            <strong className="text-gray-900 dark:text-gray-100">Optimale Positionierung:</strong>
+          </p>
+          <ul className="mt-2 list-disc pl-5 text-sm text-gray-700 dark:text-gray-300">
+            <li>Die Karte sollte <strong>vollständig im gelben Rahmen</strong> sichtbar sein</li>
+            <li>Vermeide Reflexionen auf der Karte durch Anpassung des Winkels</li>
+            <li>Halte die Kamera etwa 15-20cm von der Karte entfernt</li>
+          </ul>
+        </div>
       </div>
     </div>
   );
 };
 
 export default Scan;
+

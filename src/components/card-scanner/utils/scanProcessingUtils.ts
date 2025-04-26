@@ -5,23 +5,24 @@ import { CardScanningErrorType, ScanResult, ScannerError } from '../types/scanne
 
 /**
  * Advanced image quality assessment for Pokémon cards
- * Checks for blurry text and lighting issues in critical areas
+ * Enhanced with card detection and positioning check
  * @param imageDataUrl - The captured image as a data URL
- * @returns {Promise<{isBlurry: boolean, poorLighting: boolean, message: string|null}>} - Assessment result
+ * @returns {Promise<{isBlurry: boolean, poorLighting: boolean, message: string|null, isCardVisible: boolean}>} - Assessment result
  */
 export const assessImageQuality = async (imageDataUrl: string): Promise<{
   isBlurry: boolean;
   poorLighting: boolean;
   message: string | null;
+  isCardVisible: boolean;
 }> => {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
       
       if (!ctx) {
-        resolve({ isBlurry: false, poorLighting: false, message: null });
+        resolve({ isBlurry: false, poorLighting: false, message: null, isCardVisible: false });
         return;
       }
       
@@ -30,6 +31,39 @@ export const assessImageQuality = async (imageDataUrl: string): Promise<{
       ctx.drawImage(img, 0, 0);
       
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      
+      // Detect if a card is properly visible in the image
+      let hasCardShape = false;
+      let cardEdgeCount = 0;
+      const edgeThreshold = 50; // Threshold for edge detection
+      
+      // Check horizontal edges (sample rows)
+      for (let y = Math.floor(canvas.height * 0.2); y < canvas.height * 0.8; y += 20) {
+        let lastBrightness = -1;
+        let edgeCount = 0;
+        
+        for (let x = 0; x < canvas.width; x += 4) {
+          const pixel = (y * canvas.width + x) * 4;
+          const brightness = (imageData[pixel] + imageData[pixel + 1] + imageData[pixel + 2]) / 3;
+          
+          if (lastBrightness >= 0) {
+            const diff = Math.abs(brightness - lastBrightness);
+            if (diff > edgeThreshold) {
+              edgeCount++;
+            }
+          }
+          
+          lastBrightness = brightness;
+        }
+        
+        // If we detect edges in expected card shape (usually 2 main edges)
+        if (edgeCount >= 2 && edgeCount <= 8) {
+          cardEdgeCount++;
+        }
+      }
+      
+      // Card is likely present if we detect edges in multiple rows
+      hasCardShape = cardEdgeCount >= 3;
       
       // Define specific regions to check for quality issues
       const regions = [
@@ -75,25 +109,29 @@ export const assessImageQuality = async (imageDataUrl: string): Promise<{
         }
         
         // Normalize by region size
-        regionEdgeStrength /= regionPixels;
-        regionBrightness /= regionPixels;
-        
-        // Add to total values
-        totalEdgeStrength += regionEdgeStrength;
-        totalBrightness += regionBrightness;
-        totalPixels += regionPixels;
+        if (regionPixels > 0) {
+          regionEdgeStrength /= regionPixels;
+          regionBrightness /= regionPixels;
+          
+          // Add to total values
+          totalEdgeStrength += regionEdgeStrength;
+          totalBrightness += regionBrightness;
+          totalPixels += regionPixels;
+        }
       }
       
       // Calculate averages
-      const avgEdgeStrength = totalEdgeStrength / regions.length;
-      const avgBrightness = totalBrightness / totalPixels;
+      const avgEdgeStrength = regions.length > 0 ? totalEdgeStrength / regions.length : 0;
+      const avgBrightness = totalPixels > 0 ? totalBrightness / totalPixels : 0;
       
       // Determine quality issues with refined thresholds
       const isBlurry = avgEdgeStrength < 12; // Adjusted threshold based on testing
       const poorLighting = avgBrightness < 50 || avgBrightness > 210; // Refined lighting thresholds
       
       let message = null;
-      if (isBlurry && poorLighting) {
+      if (!hasCardShape) {
+        message = "Keine Karte im Bild erkannt. Bitte zentriere die Karte im Rahmen";
+      } else if (isBlurry && poorLighting) {
         message = "Bild ist unscharf und hat schlechte Lichtverhältnisse";
       } else if (isBlurry) {
         message = "Bild ist unscharf, bitte halte die Kamera still";
@@ -101,11 +139,11 @@ export const assessImageQuality = async (imageDataUrl: string): Promise<{
         message = "Schlechte Lichtverhältnisse, bitte für bessere Beleuchtung sorgen";
       }
       
-      resolve({ isBlurry, poorLighting, message });
+      resolve({ isBlurry, poorLighting, message, isCardVisible: hasCardShape });
     };
     
     img.onerror = () => {
-      resolve({ isBlurry: false, poorLighting: false, message: null });
+      resolve({ isBlurry: false, poorLighting: false, message: null, isCardVisible: false });
     };
     
     img.src = imageDataUrl;
@@ -114,7 +152,7 @@ export const assessImageQuality = async (imageDataUrl: string): Promise<{
 
 /**
  * Process the captured card image through analysis
- * Enhanced with image quality assessment
+ * Enhanced with image quality assessment and card detection
  * @param {string} imageDataUrl - The captured image as a data URL
  * @param {AbortSignal} signal - Signal for aborting the operation
  * @returns {Promise<ScanResult>} - The scan result
@@ -137,8 +175,18 @@ export const processCardImage = async (
       });
     }
     
-    // First assess image quality
-    const { isBlurry, poorLighting, message } = await assessImageQuality(imageDataUrl);
+    // First assess image quality with enhanced card detection
+    const { isBlurry, poorLighting, message, isCardVisible } = await assessImageQuality(imageDataUrl);
+    
+    // If no card is detected in the frame, stop processing
+    if (!isCardVisible) {
+      toast({
+        title: "Scan fehlgeschlagen",
+        description: "Keine Karte im Bild erkannt. Bitte zentriere die Karte im Rahmen",
+        variant: "destructive",
+      });
+      throw new Error("No card detected in the frame");
+    }
     
     if (isBlurry || poorLighting) {
       console.warn('Image quality issues detected:', message);
@@ -186,7 +234,10 @@ export const processCardImage = async (
     
     // Check for more specific error types
     if (error instanceof Error) {
-      if (error.message.includes('price') || error.message.includes('Preis')) {
+      if (error.message.includes('No card detected')) {
+        errorType = CardScanningErrorType.CAPTURE_FAILED;
+        errorMessage = "Keine Karte erkannt. Bitte positioniere die Karte mittig im Rahmen.";
+      } else if (error.message.includes('price') || error.message.includes('Preis')) {
         errorType = CardScanningErrorType.PRICE_LOOKUP_FAILED;
         errorMessage = "Karte erkannt, aber der Preis konnte nicht ermittelt werden.";
       }
@@ -254,3 +305,4 @@ export const captureFrameUtil = async (
     return null;
   }
 };
+
