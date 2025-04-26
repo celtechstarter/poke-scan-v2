@@ -4,6 +4,7 @@ import { CARD_REGIONS, ADDITIONAL_REGIONS } from './regions';
 import { preprocessImage, extractRegion } from './imagePreprocessing';
 import { initOcrWorker } from './worker';
 import { cleanupOcrResults } from './textCleanup';
+import { PSM } from 'tesseract.js';
 
 export * from './types';
 
