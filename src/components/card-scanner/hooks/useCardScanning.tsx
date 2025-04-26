@@ -45,8 +45,13 @@ export function useCardScanning({
     }
     
     try {
-      // Capture frame using utility
-      const imageDataUrl = await captureFrameUtil(videoRef, canvasRef, setScanError);
+      // Create an error handler that matches the expected signature
+      const handleScanError = (_type: string, error: ScannerError) => {
+        setScanError(error);
+      };
+      
+      // Capture frame using utility with the compatible error handler
+      const imageDataUrl = await captureFrameUtil(videoRef, canvasRef, handleScanError);
       
       if (!imageDataUrl) {
         setIsScanning(false);
