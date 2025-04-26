@@ -1,5 +1,56 @@
-
 import { OcrRegion } from './types';
+
+const EDGE_THRESHOLD = 12; // Minimum edge strength for acceptable sharpness
+const BRIGHTNESS_MIN = 50; // Minimum acceptable average brightness
+const BRIGHTNESS_MAX = 210; // Maximum acceptable average brightness
+
+/**
+ * Analyzes image quality for OCR processing
+ */
+export const assessImageQuality = (
+  imageData: ImageData
+): { isBlurry: boolean; poorLighting: boolean; message: string | null } => {
+  const data = imageData.data;
+  let edgeStrength = 0;
+  let totalBrightness = 0;
+  
+  // Calculate edge strength and brightness
+  for (let y = 1; y < imageData.height - 1; y++) {
+    for (let x = 1; x < imageData.width - 1; x++) {
+      const idx = (y * imageData.width + x) * 4;
+      const idxLeft = (y * imageData.width + (x - 1)) * 4;
+      const idxRight = (y * imageData.width + (x + 1)) * 4;
+      const idxUp = ((y - 1) * imageData.width + x) * 4;
+      const idxDown = ((y + 1) * imageData.width + x) * 4;
+      
+      // Enhanced edge detection (both horizontal and vertical)
+      const edgeH = Math.abs(data[idxLeft] - data[idxRight]);
+      const edgeV = Math.abs(data[idxUp] - data[idxDown]);
+      edgeStrength += Math.max(edgeH, edgeV);
+      
+      // Calculate brightness
+      totalBrightness += (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+    }
+  }
+  
+  // Normalize measurements
+  const avgEdgeStrength = edgeStrength / (imageData.width * imageData.height);
+  const avgBrightness = totalBrightness / (imageData.width * imageData.height);
+  
+  const isBlurry = avgEdgeStrength < EDGE_THRESHOLD;
+  const poorLighting = avgBrightness < BRIGHTNESS_MIN || avgBrightness > BRIGHTNESS_MAX;
+  
+  let message = null;
+  if (isBlurry && poorLighting) {
+    message = "Bild ist unscharf und hat schlechte Lichtverhältnisse";
+  } else if (isBlurry) {
+    message = "Bild ist unscharf, bitte halte die Kamera still";
+  } else if (poorLighting) {
+    message = "Schlechte Lichtverhältnisse, bitte für bessere Beleuchtung sorgen";
+  }
+  
+  return { isBlurry, poorLighting, message };
+};
 
 /**
  * Enhanced preprocessing for Pokémon card images with improved noise reduction
@@ -23,24 +74,38 @@ export const preprocessImage = async (imageDataUrl: string): Promise<string> => 
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
       
-      // Apply simple blur before thresholding to reduce noise
+      // Get image quality assessment
+      const quality = assessImageQuality(imageData);
+      
+      // Apply adaptive pre-processing based on image quality
+      const blurKernelSize = quality.isBlurry ? 3 : 5; // Less blur for already blurry images
+      const contrastFactor = quality.poorLighting ? 2.5 : 2.0; // More contrast for poor lighting
+      
+      // Apply selective blur before thresholding to reduce noise
       const blurredData = new Uint8ClampedArray(data.length);
-      const kernelSize = 3;
-      const offset = Math.floor(kernelSize / 2);
+      const offset = Math.floor(blurKernelSize / 2);
       
       for (let y = offset; y < canvas.height - offset; y++) {
         for (let x = offset; x < canvas.width - offset; x++) {
           let rSum = 0, gSum = 0, bSum = 0;
           let count = 0;
           
-          // Average surrounding pixels
+          // Selective blur - only blur similar pixels
+          const centerIdx = (y * canvas.width + x) * 4;
+          const centerValue = (data[centerIdx] + data[centerIdx + 1] + data[centerIdx + 2]) / 3;
+          
           for (let ky = -offset; ky <= offset; ky++) {
             for (let kx = -offset; kx <= offset; kx++) {
               const idx = ((y + ky) * canvas.width + (x + kx)) * 4;
-              rSum += data[idx];
-              gSum += data[idx + 1];
-              bSum += data[idx + 2];
-              count++;
+              const pixelValue = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+              
+              // Only include pixels with similar intensity
+              if (Math.abs(pixelValue - centerValue) < 50) {
+                rSum += data[idx];
+                gSum += data[idx + 1];
+                bSum += data[idx + 2];
+                count++;
+              }
             }
           }
           
@@ -52,13 +117,19 @@ export const preprocessImage = async (imageDataUrl: string): Promise<string> => 
         }
       }
       
-      // Process blurred image with enhanced thresholding
+      // Process with adaptive contrast and thresholding
       for (let i = 0; i < blurredData.length; i += 4) {
         const gray = 0.299 * blurredData[i] + 0.587 * blurredData[i + 1] + 0.114 * blurredData[i + 2];
-        const contrast = 2.0;
-        const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
-        let newValue = Math.min(255, Math.max(0, factor * (gray - 128) + 128));
-        const threshold = 150;
+        
+        // Apply adaptive contrast
+        const factor = (259 * (contrastFactor + 255)) / (255 * (259 - contrastFactor));
+        let newValue = factor * (gray - 128) + 128;
+        
+        // Ensure values stay in range
+        newValue = Math.min(255, Math.max(0, newValue));
+        
+        // Dynamic thresholding based on image quality
+        const threshold = quality.poorLighting ? 140 : 150;
         const finalValue = newValue > threshold ? 255 : 0;
         
         data[i] = finalValue;

@@ -1,9 +1,11 @@
+
 import { CardOcrResult } from './types';
 import { CARD_REGIONS, ADDITIONAL_REGIONS } from './regions';
 import { preprocessImage, extractRegion } from './imagePreprocessing';
 import { initOcrWorker } from './worker';
 import { cleanupOcrResults } from './textCleanup';
 import { PSM } from 'tesseract.js';
+import { toast } from '@/components/ui/use-toast';
 
 export * from './types';
 
@@ -71,6 +73,15 @@ export const processCardWithOcr = async (imageDataUrl: string): Promise<CardOcrR
           text: cleanText,
           confidence: data.confidence
         });
+        
+        // Show user warning if confidence is very low
+        if (data.confidence < 40) {
+          toast({
+            title: "Niedrige Erkennungsqualität",
+            description: "Bitte scannen Sie die Karte erneut mit besserer Beleuchtung und ruhiger Kamera",
+            variant: "destructive",
+          });
+        }
         
         if (cleanText) {
           if (region.name === 'cardName') {
