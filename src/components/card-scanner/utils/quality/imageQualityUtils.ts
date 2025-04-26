@@ -1,5 +1,5 @@
-
 import { toast } from '@/hooks/use-toast';
+import { Point } from '@/lib/types';
 import { detectCardShape } from './modules/cardDetection';
 import { checkImageQuality } from './modules/qualityCheck';
 
@@ -51,8 +51,3 @@ export const assessImageQuality = async (imageDataUrl: string): Promise<{
     img.src = imageDataUrl;
   });
 };
-
-interface Point {
-  x: number;
-  y: number;
-}

@@ -17,3 +17,8 @@ export interface PokeCard {
   rarity?: string;
   price?: number;
 }
+
+export interface Point {
+  x: number;
+  y: number;
+}
