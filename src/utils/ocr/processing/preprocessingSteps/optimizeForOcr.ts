@@ -1,0 +1,72 @@
+
+import { ImageQualityResult } from '../../types';
+import { applyContrast } from './contrastProcessor';
+import { applyUnsharpMask } from './unsharpMask';
+import { applyBinaryThreshold } from './binaryThreshold';
+
+/**
+ * Optimizes an image for OCR by applying a series of preprocessing steps
+ * @param imageDataUrl Base64 encoded image URL
+ * @returns Promise<string> Optimized Base64 image URL
+ */
+export const optimizeImageForOcr = async (imageDataUrl: string): Promise<string> => {
+  console.log('Starting OCR image optimization...');
+  
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    
+    img.onload = () => {
+      try {
+        // Create canvas context
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          throw new Error('Failed to get canvas context');
+        }
+        
+        // Draw original image
+        ctx.drawImage(img, 0, 0);
+        let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
+        // Step 1: Apply unsharp mask for text sharpening
+        imageData = applyUnsharpMask(imageData, 1.5, 2.0);
+        ctx.putImageData(imageData, 0, 0);
+        console.log('Applied unsharp mask');
+        
+        // Step 2: Enhance contrast by 30%
+        const quality: ImageQualityResult = {
+          isBlurry: false,
+          poorLighting: false,
+          message: null
+        };
+        imageData = applyContrast(imageData, quality, 1.3);
+        ctx.putImageData(imageData, 0, 0);
+        console.log('Applied contrast enhancement');
+        
+        // Step 3: Apply binary thresholding (140)
+        imageData = applyBinaryThreshold(ctx.getImageData(0, 0, canvas.width, canvas.height), 140);
+        ctx.putImageData(imageData, 0, 0);
+        console.log('Applied binary thresholding');
+        
+        // Convert to Base64
+        const optimizedImageUrl = canvas.toDataURL('image/png');
+        console.log('Image optimization completed');
+        resolve(optimizedImageUrl);
+        
+      } catch (error) {
+        console.error('Image optimization failed:', error);
+        reject(new Error(`Failed to optimize image: ${error instanceof Error ? error.message : 'Unknown error'}`));
+      }
+    };
+    
+    img.onerror = () => {
+      console.error('Failed to load image for optimization');
+      reject(new Error('Failed to load image for optimization'));
+    };
+    
+    img.src = imageDataUrl;
+  });
+};
