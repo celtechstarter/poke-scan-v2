@@ -1,6 +1,6 @@
 
 import { OcrRegion } from '../../types';
-import { CardEdges } from './types';
+import { CardEdges, Point } from './types';
 import { createCanvasWithContext2D } from '@/utils/canvas/safeCanvasContext';
 import { computePerspectiveTransform, applyTransform } from './perspectiveUtils';
 import { enhanceCardName, enhanceCardNumber } from './imageEnhancement';
