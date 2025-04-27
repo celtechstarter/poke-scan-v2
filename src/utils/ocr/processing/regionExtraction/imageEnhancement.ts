@@ -1,7 +1,6 @@
 
 import { OcrRegion } from '../../types';
 import { createCanvasWithContext2D } from '@/utils/canvas/safeCanvasContext';
-import { applyUnsharpMask } from '../preprocessingSteps/unsharpMask';
 
 export function enhanceCardNumber(
   canvas: HTMLCanvasElement, 
@@ -38,7 +37,18 @@ export function enhanceCardNumber(
   }
   
   ctx.putImageData(imageData, x, y);
-  applyUnsharpMask(ctx, width, height, 0.5, 0.5, x, y);
+  
+  // Create a new ImageData object and apply unsharp mask
+  const imageDataForSharpening = ctx.getImageData(x, y, width, height);
+  
+  // Import the unsharpMask function
+  const { applyUnsharpMask } = require('../preprocessingSteps/unsharpMask');
+  
+  // Apply unsharp mask with the correct parameter signature (ImageData, radius, strength)
+  const enhancedImageData = applyUnsharpMask(imageDataForSharpening, 0.5, 0.5);
+  
+  // Put the enhanced image data back to the canvas
+  ctx.putImageData(enhancedImageData, x, y);
 }
 
 export function enhanceCardName(
@@ -76,5 +86,16 @@ export function enhanceCardName(
   }
   
   ctx.putImageData(imageData, x, y);
-  applyUnsharpMask(ctx, width, height, 0.5, 0.7, x, y);
+  
+  // Create a new ImageData object and apply unsharp mask
+  const imageDataForSharpening = ctx.getImageData(x, y, width, height);
+  
+  // Import the unsharpMask function
+  const { applyUnsharpMask } = require('../preprocessingSteps/unsharpMask');
+  
+  // Apply unsharp mask with the correct parameter signature (ImageData, radius, strength)
+  const enhancedImageData = applyUnsharpMask(imageDataForSharpening, 0.5, 0.7);
+  
+  // Put the enhanced image data back to the canvas
+  ctx.putImageData(enhancedImageData, x, y);
 }
