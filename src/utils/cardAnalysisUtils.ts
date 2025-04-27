@@ -1,5 +1,6 @@
 
-import { CardOcrResult, processCardWithOcr } from './ocrUtils';
+import { CardOcrResult } from './ocr/types';
+import { scanCardWithGoogleVision } from './ocr';
 import { toast } from '@/hooks/use-toast';
 // import { lookupCardPrice } from './cardMarketService';
 
@@ -16,6 +17,35 @@ interface CardEdges {
   bottomRight: { x: number, y: number };
   bottomLeft: { x: number, y: number };
 }
+
+export const processCardWithOcr = async (
+  imageDataUrl: string,
+  cardEdges?: CardEdges | null,
+  useStrictCrop: boolean = false
+): Promise<CardOcrResult> => {
+  try {
+    // Process the image with OCR
+    console.log('Processing card image with OCR, strict crop =', useStrictCrop);
+    
+    // Scan the card image with Google Vision OCR
+    const ocrResult = await scanCardWithGoogleVision(imageDataUrl);
+    
+    return {
+      cardName: ocrResult.cardName,
+      cardNumber: ocrResult.cardNumber,
+      rawText: ocrResult.fullText,
+      confidence: ocrResult.confidence
+    };
+  } catch (error) {
+    console.error('Error processing card with OCR:', error);
+    return {
+      cardName: null,
+      cardNumber: null,
+      rawText: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      confidence: 0
+    };
+  }
+};
 
 export const analyzeCardImage = async (
   imageDataUrl: string,

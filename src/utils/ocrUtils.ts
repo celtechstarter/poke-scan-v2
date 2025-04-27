@@ -1,3 +1,4 @@
 
 export * from './ocr';
-export * from './ocr/textCleanup';
+export * from './ocr/types';
+export * from './cardAnalysisUtils';
