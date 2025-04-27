@@ -1,4 +1,3 @@
-
 import { toast } from '@/hooks/use-toast';
 import { extractRegion } from './ocr/imagePreprocessing';
 import { preprocessImage } from './ocr/processing/imageProcessor';
@@ -89,13 +88,6 @@ export async function scanCardWithGoogleVision(base64Image: string): Promise<Vis
     // Extract card name and number using specialized functions
     const cardName = extractCardName(fullText);
     const cardNumber = extractCardNumber(fullText);
-    
-    console.log('Extracted card information:', { 
-      cardName, 
-      cardNumber, 
-      confidence: confidence.toFixed(2),
-      textLength: fullText.length 
-    });
 
     return {
       cardName,

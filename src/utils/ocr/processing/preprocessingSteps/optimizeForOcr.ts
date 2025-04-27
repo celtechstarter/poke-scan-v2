@@ -16,7 +16,7 @@ export const optimizeImageForOcr = async (imageDataUrl: string): Promise<string>
   return new Promise((resolve, reject) => {
     const img = new Image();
     
-    img.onload = () => {
+    img.onload = async () => {
       try {
         // Create canvas with safe context
         const { canvas, ctx } = createCanvasWithContext2D(img.width, img.height, { willReadFrequently: true });
@@ -25,29 +25,25 @@ export const optimizeImageForOcr = async (imageDataUrl: string): Promise<string>
         ctx.drawImage(img, 0, 0);
         let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         
-        // Step 1: Apply unsharp mask for text sharpening (increased from 1.5 to 2.0 for better edge definition)
-        imageData = applyUnsharpMask(imageData, 1.5, 2.5);
+        // Step 1: Apply unsharp mask for text sharpening (factor ~1.5)
+        imageData = applyUnsharpMask(imageData, 1.5, 1.5);
         ctx.putImageData(imageData, 0, 0);
-        console.log('Applied unsharp mask');
         
-        // Step 2: Enhance contrast by 40% (increased from 30%)
+        // Step 2: Enhance contrast by 30%
         const quality: ImageQualityResult = {
           isBlurry: false,
           poorLighting: true, // Force higher contrast enhancement
           message: null
         };
-        imageData = applyContrast(imageData, quality, 1.4);
+        imageData = applyContrast(imageData, quality, 1.3);
         ctx.putImageData(imageData, 0, 0);
-        console.log('Applied contrast enhancement');
         
-        // Step 3: Apply binary thresholding with optimized threshold (130 instead of 140 for better text separation)
-        imageData = applyBinaryThreshold(ctx.getImageData(0, 0, canvas.width, canvas.height), 130);
+        // Step 3: Apply binary thresholding with optimized threshold (140)
+        imageData = applyBinaryThreshold(ctx.getImageData(0, 0, canvas.width, canvas.height), 140);
         ctx.putImageData(imageData, 0, 0);
-        console.log('Applied binary thresholding');
         
-        // Convert to Base64
-        const optimizedImageUrl = canvas.toDataURL('image/png');
-        console.log('Image optimization completed');
+        // Convert to Base64 with slight compression (80% quality)
+        const optimizedImageUrl = canvas.toDataURL('image/jpeg', 0.8);
         resolve(optimizedImageUrl);
         
       } catch (error) {
@@ -57,7 +53,6 @@ export const optimizeImageForOcr = async (imageDataUrl: string): Promise<string>
     };
     
     img.onerror = () => {
-      console.error('Failed to load image for optimization');
       reject(new Error('Failed to load image for optimization'));
     };
     

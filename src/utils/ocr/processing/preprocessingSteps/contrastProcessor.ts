@@ -12,8 +12,6 @@ export const applyContrast = (imageData: ImageData, quality: ImageQualityResult,
     // Apply the additional boost (30% more contrast)
     contrastFactor *= boostFactor;
     
-    console.log('Using contrast factor:', contrastFactor);
-    
     const factor = (259 * (contrastFactor + 255)) / (255 * (259 - contrastFactor));
     
     for (let i = 0; i < data.length; i += 4) {
@@ -23,7 +21,6 @@ export const applyContrast = (imageData: ImageData, quality: ImageQualityResult,
       }
     }
     
-    console.log('Contrast processing completed');
     return new ImageData(data, imageData.width, imageData.height);
     
   } catch (error) {
