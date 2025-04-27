@@ -25,7 +25,8 @@ export const processCardWithOcr = async (
     let processedImage = imageDataUrl;
     if (cardEdges && useStrictCrop) {
       try {
-        const { extractRegion } = await import('./imagePreprocessing');
+        const { extractRegion } = await import('./processing/regionExtractor');
+        // Pass the cardEdges directly to extractRegion which now accepts cardEdges parameter
         processedImage = await extractRegion(imageDataUrl, cardEdges);
         console.log('Card region extracted');
       } catch (extractError) {
