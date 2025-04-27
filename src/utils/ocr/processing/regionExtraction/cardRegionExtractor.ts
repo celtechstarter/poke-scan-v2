@@ -4,39 +4,23 @@ import { CardEdges } from './types';
 import { createCanvasWithContext2D } from '@/utils/canvas/safeCanvasContext';
 import { extractCardRegion } from './modules/regionExtractor';
 import { extractUsingCardEdges } from './modules/edgeBasedExtractor';
+import { loadImage } from './utils/imageLoader';
 
 export async function extractRegion(
   imageDataUrl: string,
   regionOrEdges: OcrRegion | CardEdges
 ): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      try {
-        const { canvas, ctx } = createCanvasWithContext2D(1, 1, { willReadFrequently: true });
-        
-        if ('topLeft' in regionOrEdges) {
-          const extractedImage = extractUsingCardEdges(img, regionOrEdges, ctx);
-          resolve(extractedImage);
-          return;
-        }
-        
-        try {
-          const extractedImage = extractCardRegion(img, regionOrEdges as OcrRegion);
-          resolve(extractedImage);
-        } catch (error) {
-          reject(error);
-        }
-      } catch (error) {
-        console.error('Error during region extraction:', error);
-        reject(new Error(`Failed to extract region: ${error instanceof Error ? error.message : 'Unknown error'}`));
-      }
-    };
+  try {
+    const img = await loadImage(imageDataUrl);
+    const { canvas, ctx } = createCanvasWithContext2D(1, 1, { willReadFrequently: true });
     
-    img.onerror = () => {
-      reject(new Error('Failed to load image for region extraction'));
-    };
+    if ('topLeft' in regionOrEdges) {
+      return extractUsingCardEdges(img, regionOrEdges, ctx);
+    }
     
-    img.src = imageDataUrl;
-  });
+    return extractCardRegion(img, regionOrEdges as OcrRegion);
+  } catch (error) {
+    console.error('Error during region extraction:', error);
+    throw new Error(`Failed to extract region: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
