@@ -23,7 +23,7 @@ export interface VisionOcrResult {
 
 export interface CardInfoResult {
   cardName: string;
-  setCode: string;
+  setCode?: string; // Made optional
   cardNumber: string;
   confidence?: number;
   rawText?: string;
