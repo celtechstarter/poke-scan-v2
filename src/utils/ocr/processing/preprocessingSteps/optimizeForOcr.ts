@@ -25,21 +25,21 @@ export const optimizeImageForOcr = async (imageDataUrl: string): Promise<string>
         ctx.drawImage(img, 0, 0);
         let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         
-        // Step 1: Apply unsharp mask for text sharpening (factor ~1.5)
-        imageData = applyUnsharpMask(imageData, 1.5, 1.5);
+        // Step 1: Apply stronger unsharp mask for text sharpening (factor ~2.0)
+        imageData = applyUnsharpMask(imageData, 2.0, 2.0);
         ctx.putImageData(imageData, 0, 0);
         
-        // Step 2: Enhance contrast by 30%
+        // Step 2: Enhance contrast by 45%
         const quality: ImageQualityResult = {
           isBlurry: false,
           poorLighting: true, // Force higher contrast enhancement
           message: null
         };
-        imageData = applyContrast(imageData, quality, 1.3);
+        imageData = applyContrast(imageData, quality, 1.45);
         ctx.putImageData(imageData, 0, 0);
         
-        // Step 3: Apply binary thresholding with optimized threshold (140)
-        imageData = applyBinaryThreshold(ctx.getImageData(0, 0, canvas.width, canvas.height), 140);
+        // Step 3: Apply binary thresholding with lower threshold (130) for better text extraction
+        imageData = applyBinaryThreshold(ctx.getImageData(0, 0, canvas.width, canvas.height), 130);
         ctx.putImageData(imageData, 0, 0);
         
         // Convert to Base64 with slight compression (80% quality)

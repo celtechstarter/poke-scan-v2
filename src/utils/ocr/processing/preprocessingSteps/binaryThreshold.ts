@@ -1,12 +1,13 @@
+
 /**
  * Apply binary thresholding to image for improved text readability
  * Converts pixels to either black or white based on threshold value
  * 
  * @param imageData Original image data
- * @param threshold Threshold value (0-255), defaults to 140
+ * @param threshold Threshold value (0-255), defaults to 130
  * @returns Processed image data with binary thresholding applied
  */
-export function applyBinaryThreshold(imageData: ImageData, threshold: number = 140): ImageData {
+export function applyBinaryThreshold(imageData: ImageData, threshold: number = 130): ImageData {
   console.log(`Applying binary threshold with value: ${threshold}`);
   
   const width = imageData.width;
