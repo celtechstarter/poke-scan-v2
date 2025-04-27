@@ -10,13 +10,13 @@ export interface VisionOcrResult {
 }
 
 /**
- * Main entry point for OCR scanning with advanced preprocessing and card-focused strategies
+ * Main entry point for OCR scanning with EasyOCR and advanced preprocessing
  */
 export async function scanCardWithGoogleVision(base64Image: string): Promise<VisionOcrResult> {
   try {
-    console.log('Starting card scanning with advanced OCR strategy...');
+    console.log('Starting card scanning with EasyOCR...');
     
-    // Use the new adaptive scanning strategy
+    // Use the adaptive scanning strategy with EasyOCR
     const result = await scanCardWithAdaptiveStrategy(base64Image);
     
     // Check for meaningful results

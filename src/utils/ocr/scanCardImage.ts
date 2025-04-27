@@ -1,6 +1,6 @@
 
 import { toast } from '@/hooks/use-toast';
-import { optimizeImageForOcr } from './processing/preprocessingSteps/optimizeForOcr';
+import { optimizeImageForOcr } from './processing/preprocessingSteps/optimizeImageForOcr';
 import { cropRegions } from './cropRegions';
 import { extractCardName, extractCardNumber } from './text/extractors';
 import { postprocessOcrResult } from './text/postprocessOcrResult';
@@ -9,14 +9,14 @@ import { lookupCardInfo } from './services/cardDatabaseSearch';
 import { VisionOcrResult } from './types';
 
 /**
- * Advanced card scanning with adaptive OCR strategy
+ * Advanced card scanning with adaptive OCR strategy using EasyOCR
  * Uses regional scanning and Pokemon-specific optimizations
  */
 export async function scanCardWithAdaptiveStrategy(base64Image: string): Promise<VisionOcrResult> {
   try {
-    console.log('Starting adaptive card scanning...');
+    console.log('Starting adaptive card scanning with EasyOCR...');
     
-    // Step 1: Preprocess the full image
+    // Step 1: Preprocess the full image - optimized for EasyOCR
     const optimizedImage = await optimizeImageForOcr(base64Image);
     console.log('Full image preprocessing completed');
     
@@ -24,15 +24,12 @@ export async function scanCardWithAdaptiveStrategy(base64Image: string): Promise
     const regions = await cropRegions(optimizedImage);
     console.log('Image regions cropped');
     
-    // Create OCR provider
+    // Create EasyOCR provider
     const ocrProvider = new EasyOcrProvider(['de', 'en']);
     console.log(`Using OCR provider: ${ocrProvider.getProviderName()}`);
     
-    // Remove the data:image/... prefix from base64 string
-    const getBase64Content = (dataUrl: string) => dataUrl.split(',')[1];
-    
     // Step 3: First attempt - scan full card
-    console.log('Scanning full card image...');
+    console.log('Scanning full card image with EasyOCR...');
     const fullCardResult = await ocrProvider.recognizeText(regions.full);
     
     // Initialize the OCR result
@@ -53,7 +50,7 @@ export async function scanCardWithAdaptiveStrategy(base64Image: string): Promise
     
     // Step 4: If needed, scan card name region
     if (needsCardName) {
-      console.log('Card name not found in full scan, trying card name region...');
+      console.log('Card name not found in full scan, trying card name region with EasyOCR...');
       try {
         const nameRegionResult = await ocrProvider.recognizeText(regions.titleArea);
         if (nameRegionResult.text && nameRegionResult.confidence > 0.5) {
@@ -74,7 +71,7 @@ export async function scanCardWithAdaptiveStrategy(base64Image: string): Promise
     
     // Step 5: If needed, scan card number region
     if (needsCardNumber) {
-      console.log('Card number not found in full scan, trying set number region...');
+      console.log('Card number not found in full scan, trying set number region with EasyOCR...');
       try {
         const numberRegionResult = await ocrProvider.recognizeText(regions.setNumberArea);
         if (numberRegionResult.text && numberRegionResult.confidence > 0.5) {
@@ -123,7 +120,7 @@ export async function scanCardWithAdaptiveStrategy(base64Image: string): Promise
     }
     
     // Log OCR confidence for debugging
-    console.log(`OCR Confidence: ${Math.round(processedResult.confidence * 100)}%`);
+    console.log(`EasyOCR Confidence: ${Math.round(processedResult.confidence * 100)}%`);
     
     // Check final result quality and provide user feedback
     if (!processedResult.cardName && !processedResult.cardNumber) {
@@ -142,7 +139,7 @@ export async function scanCardWithAdaptiveStrategy(base64Image: string): Promise
     
     return processedResult;
   } catch (error) {
-    console.error('Adaptive card scanning failed:', error);
+    console.error('Adaptive card scanning with EasyOCR failed:', error);
     
     toast({
       title: "OCR Fehler",

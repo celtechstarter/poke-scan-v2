@@ -1,3 +1,4 @@
+
 import { createCanvasWithContext2D } from '@/utils/canvas/safeCanvasContext';
 import { applyUnsharpMask } from './unsharpMask';
 import { applyContrast } from './contrastProcessor';
@@ -29,21 +30,23 @@ export async function optimizeImageForOcr(base64Image: string): Promise<string> 
         const quality = assessImageQuality(imageData);
         console.log('Image quality assessment:', quality);
         
-        // 1. Apply unsharp mask with strong factor (2.0-2.5)
-        const unsharpFactor = quality.isBlurry ? 2.5 : 2.0; // Use stronger sharpening for blurry images
+        // 1. Apply unsharp mask with extra strong factor (2.5-3.0) - optimized for EasyOCR
+        const unsharpFactor = quality.isBlurry ? 3.0 : 2.5; // Stronger sharpening for EasyOCR
         imageData = applyUnsharpMask(imageData, unsharpFactor, 1.0);
         console.log(`Applied unsharp mask with factor ${unsharpFactor}`);
         
-        // 2. Boost contrast by 50% (1.5 boost factor)
-        imageData = applyContrast(imageData, quality, 1.5);
-        console.log('Applied contrast enhancement');
+        // 2. Boost contrast by 100% (2.0 boost factor) - higher contrast for EasyOCR
+        imageData = applyContrast(imageData, quality, 2.0);
+        console.log('Applied aggressive contrast enhancement');
         
-        // 3. Apply adaptive thresholding
-        imageData = applyBinaryThreshold(imageData, 128);
-        console.log('Applied binary thresholding');
+        // 3. Apply adaptive thresholding with optimized threshold for EasyOCR
+        // EasyOCR works best with very clear black/white separation
+        const threshold = quality.poorLighting ? 120 : 140; // Adjust threshold based on lighting
+        imageData = applyBinaryThreshold(imageData, threshold);
+        console.log(`Applied binary thresholding with threshold ${threshold}`);
         
         // 4. Check if we need to invert colors (text should be dark on light background)
-        // Count dark vs light pixels to determine if inversion is needed
+        // EasyOCR typically performs better with dark text on light background
         let darkPixels = 0;
         let totalPixels = imageData.width * imageData.height;
         
@@ -53,7 +56,7 @@ export async function optimizeImageForOcr(base64Image: string): Promise<string> 
         }
         
         const darkRatio = darkPixels / totalPixels;
-        if (darkRatio > 0.7) {
+        if (darkRatio > 0.65) { // Lower threshold for inversion (65% instead of 70%)
           // Invert the image if it's predominantly dark
           for (let i = 0; i < imageData.data.length; i += 4) {
             imageData.data[i] = 255 - imageData.data[i];         // R
@@ -61,15 +64,15 @@ export async function optimizeImageForOcr(base64Image: string): Promise<string> 
             imageData.data[i + 2] = 255 - imageData.data[i + 2]; // B
             // Alpha remains unchanged
           }
-          console.log('Applied color inversion');
+          console.log('Applied color inversion for better EasyOCR performance');
         }
         
         // Put processed image data back to canvas
         ctx.putImageData(imageData, 0, 0);
         
-        // Convert to JPEG with 80% quality
-        const optimizedBase64 = canvas.toDataURL('image/jpeg', 0.8);
-        console.log('Image optimization completed');
+        // Convert to PNG with 100% quality for best OCR results
+        const optimizedBase64 = canvas.toDataURL('image/png', 1.0);
+        console.log('Image optimization for EasyOCR completed');
         
         resolve(optimizedBase64);
       } catch (error) {

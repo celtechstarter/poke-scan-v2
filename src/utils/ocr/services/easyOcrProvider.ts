@@ -1,9 +1,7 @@
 
 import { OcrProvider, OcrResult } from './ocrProviderInterface';
 import { toast } from '@/hooks/use-toast';
-
-// Mock EasyOCR API endpoint
-const EASYOCR_API_ENDPOINT = '/api/ocr';
+import { ocrWithEasyOCR } from './easyOcrService';
 
 /**
  * EasyOCR provider implementation with embedded fallback strategy 
@@ -20,37 +18,16 @@ export class EasyOcrProvider implements OcrProvider {
     try {
       console.log('Starting EasyOCR text recognition');
       
-      // Extract the base64 content without the prefix
-      const base64Content = base64Image.includes(',') ? 
-        base64Image.split(',')[1] : base64Image;
+      // Use our new EasyOCR service
+      const result = await ocrWithEasyOCR(base64Image, this.languages);
       
-      // Prepare API request payload
-      const payload = {
-        image: base64Content,
-        languages: this.languages
-      };
-      
-      // Send request to EasyOCR API endpoint
-      const response = await fetch(EASYOCR_API_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(10000) // 10 second timeout
-      });
-      
-      if (!response.ok) {
-        throw new Error(`EasyOCR API error: ${response.status}`);
+      if (!result.text) {
+        console.log('EasyOCR returned no text, falling back to local processing');
+        return this.fallbackBrowserProcessing(base64Image);
       }
       
-      const result = await response.json();
-      
       // Parse the response into our standardized format
-      // Assume result format: { text: string, confidence: number, boxes: Array }
-      const text = result.text || '';
-      const confidence = result.confidence || 0;
-      const boundingBoxes = (result.boxes || []).map((box: any) => ({
+      const boundingBoxes = (result.boxes || []).map(box => ({
         x: box.x || 0,
         y: box.y || 0,
         width: box.width || 0,
@@ -60,14 +37,14 @@ export class EasyOcrProvider implements OcrProvider {
       }));
       
       return {
-        text,
-        confidence,
+        text: result.text,
+        confidence: result.confidence,
         boundingBoxes
       };
     } catch (error) {
       console.error('EasyOCR recognition error:', error);
       
-      // Fallback to browser-based processing in development or when server is unavailable
+      // Fallback to browser-based processing when server is unavailable
       if (error instanceof Error && (error.message.includes('Failed to fetch') || 
                                     error.message.includes('NetworkError'))) {
         return this.fallbackBrowserProcessing(base64Image);

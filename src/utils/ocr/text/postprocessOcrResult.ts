@@ -1,9 +1,8 @@
-
 import { VisionOcrResult } from '../types';
 
-// Common OCR error corrections for Pokemon cards
+// Common OCR error corrections for Pokemon cards - expanded for EasyOCR
 const OCR_CORRECTIONS: Record<string, string> = {
-  // Digits and letters often confused
+  // Digits and letters often confused by EasyOCR
   '0': 'O',
   'O': '0',
   'l': '1',
@@ -17,6 +16,12 @@ const OCR_CORRECTIONS: Record<string, string> = {
   '6': 'G',
   'B': '8',
   '8': 'B',
+  // EasyOCR specific mistakes
+  'rn': 'm',
+  'vv': 'w',
+  'VV': 'W',
+  'cl': 'd',
+  'ii': 'u',
   // Common Pokemon name corrections
   'P1kachu': 'Pikachu',
   'Charizara': 'Charizard',
@@ -37,7 +42,7 @@ const COMMON_POKEMON_NAMES = [
 ];
 
 /**
- * Post-processes OCR results with Pokemon-specific knowledge
+ * Post-processes OCR results from EasyOCR with Pokemon-specific knowledge
  * @param ocrResult The raw OCR result
  * @returns Enhanced OCR result with corrections
  */
@@ -72,19 +77,28 @@ export function postprocessOcrResult(ocrResult: VisionOcrResult): VisionOcrResul
   // Process card number to match expected format (e.g., "032/182")
   if (improvedCardNumber) {
     // Remove any spaces or unexpected characters
-    improvedCardNumber = improvedCardNumber.replace(/[^\d\/]/g, '');
+    improvedCardNumber = improvedCardNumber.replace(/[^\d\/A-Za-z]/g, '');
     
-    // Check if it matches the expected pattern NNN/NNN
-    if (!/^\d+\/\d+$/.test(improvedCardNumber)) {
+    // Check if it matches the expected pattern SET NNN/NNN
+    const setNumberRegex = /([A-Za-z]{2,5})\s*(\d+)\/(\d+)/i;
+    if (!setNumberRegex.test(improvedCardNumber)) {
       // Try to fix common issues with card numbers
+      const alphaMatch = improvedCardNumber.match(/([A-Za-z]{2,5})/i);
       const numbers = improvedCardNumber.replace(/[^\d]/g, '');
-      if (numbers.length >= 3) {
-        // Try to reconstruct the pattern
+      
+      if (alphaMatch && numbers.length >= 2) {
+        // Try to reconstruct the pattern with set code
+        const setCode = alphaMatch[1].toUpperCase();
         const firstPart = numbers.substring(0, Math.ceil(numbers.length / 2));
         const secondPart = numbers.substring(Math.ceil(numbers.length / 2));
         if (firstPart && secondPart) {
-          improvedCardNumber = `${firstPart}/${secondPart}`;
+          improvedCardNumber = `${setCode} ${firstPart}/${secondPart}`;
         }
+      } else if (numbers.length >= 2) {
+        // No set code found, just use numbers
+        const firstPart = numbers.substring(0, Math.ceil(numbers.length / 2));
+        const secondPart = numbers.substring(Math.ceil(numbers.length / 2));
+        improvedCardNumber = `${firstPart}/${secondPart}`;
       }
     }
   }
