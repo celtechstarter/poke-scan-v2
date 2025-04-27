@@ -4,10 +4,9 @@ import { optimizeImageForOcr } from './processing/preprocessingSteps/optimizeFor
 import { cropRegions } from './cropRegions';
 import { extractCardName, extractCardNumber } from './text/extractors';
 import { postprocessOcrResult } from './text/postprocessOcrResult';
-import { GoogleVisionProvider } from './services/googleVisionProvider';
-import { CARD_REGIONS } from './regions';
+import { EasyOcrProvider } from './services/easyOcrProvider';
+import { lookupCardInfo } from './services/cardDatabaseSearch';
 import { VisionOcrResult } from './types';
-import { extractRegion } from './imagePreprocessing';
 
 /**
  * Advanced card scanning with adaptive OCR strategy
@@ -21,17 +20,20 @@ export async function scanCardWithAdaptiveStrategy(base64Image: string): Promise
     const optimizedImage = await optimizeImageForOcr(base64Image);
     console.log('Full image preprocessing completed');
     
+    // Step 2: Crop the image into regions
+    const regions = await cropRegions(optimizedImage);
+    console.log('Image regions cropped');
+    
     // Create OCR provider
-    const ocrProvider = new GoogleVisionProvider(['de', 'en']);
+    const ocrProvider = new EasyOcrProvider(['de', 'en']);
     console.log(`Using OCR provider: ${ocrProvider.getProviderName()}`);
     
     // Remove the data:image/... prefix from base64 string
     const getBase64Content = (dataUrl: string) => dataUrl.split(',')[1];
-    const fullImageContent = getBase64Content(optimizedImage);
     
-    // Step 2: First attempt - scan full card
+    // Step 3: First attempt - scan full card
     console.log('Scanning full card image...');
-    const fullCardResult = await ocrProvider.recognizeText(fullImageContent);
+    const fullCardResult = await ocrProvider.recognizeText(regions.full);
     
     // Initialize the OCR result
     let initialOcrResult: VisionOcrResult = {
@@ -45,29 +47,15 @@ export async function scanCardWithAdaptiveStrategy(base64Image: string): Promise
     initialOcrResult.cardName = extractCardName(fullCardResult.text);
     initialOcrResult.cardNumber = extractCardNumber(fullCardResult.text);
     
-    // Early success check - if we got both name and number with good confidence
-    const hasGoodResults = initialOcrResult.cardName && 
-                          initialOcrResult.cardNumber && 
-                          initialOcrResult.confidence > 0.7;
-                          
-    if (hasGoodResults) {
-      console.log('Full card scan successful, applying post-processing');
-      return postprocessOcrResult(initialOcrResult);
-    }
-    
     // Track missing information
     let needsCardName = !initialOcrResult.cardName;
     let needsCardNumber = !initialOcrResult.cardNumber;
     
-    // Step 3: If needed, scan card name region
+    // Step 4: If needed, scan card name region
     if (needsCardName) {
       console.log('Card name not found in full scan, trying card name region...');
       try {
-        // Extract and process the card name region
-        const nameRegionImage = await extractRegion(optimizedImage, CARD_REGIONS.CARD_NAME);
-        const nameRegionContent = getBase64Content(nameRegionImage);
-        
-        const nameRegionResult = await ocrProvider.recognizeText(nameRegionContent);
+        const nameRegionResult = await ocrProvider.recognizeText(regions.titleArea);
         if (nameRegionResult.text && nameRegionResult.confidence > 0.5) {
           initialOcrResult.cardName = extractCardName(nameRegionResult.text);
           // If this region gave us good results, increase overall confidence
@@ -84,15 +72,11 @@ export async function scanCardWithAdaptiveStrategy(base64Image: string): Promise
       }
     }
     
-    // Step 4: If needed, scan card number region
+    // Step 5: If needed, scan card number region
     if (needsCardNumber) {
       console.log('Card number not found in full scan, trying set number region...');
       try {
-        // Extract and process the set number region
-        const numberRegionImage = await extractRegion(optimizedImage, CARD_REGIONS.SET_NUMBER);
-        const numberRegionContent = getBase64Content(numberRegionImage);
-        
-        const numberRegionResult = await ocrProvider.recognizeText(numberRegionContent);
+        const numberRegionResult = await ocrProvider.recognizeText(regions.setNumberArea);
         if (numberRegionResult.text && numberRegionResult.confidence > 0.5) {
           initialOcrResult.cardNumber = extractCardNumber(numberRegionResult.text);
           // If this region gave us good results, increase overall confidence
@@ -109,26 +93,54 @@ export async function scanCardWithAdaptiveStrategy(base64Image: string): Promise
       }
     }
     
-    // Step 5: Apply Pokemon-specific post-processing
-    const finalResult = postprocessOcrResult(initialOcrResult);
+    // Step 6: Apply Pokemon-specific post-processing
+    const processedResult = postprocessOcrResult(initialOcrResult);
     console.log('OCR post-processing completed');
     
+    // Step 7: Try database lookup for partial matches
+    if ((!processedResult.cardName || !processedResult.cardNumber) && processedResult.fullText) {
+      console.log('Using database lookup for partial OCR match');
+      const databaseMatch = await lookupCardInfo(processedResult.fullText);
+      
+      if (databaseMatch) {
+        console.log('Database match found:', databaseMatch);
+        
+        // Fill in missing information from database
+        if (!processedResult.cardName) {
+          processedResult.cardName = databaseMatch.name;
+          console.log('Set card name from database:', databaseMatch.name);
+        }
+        
+        if (!processedResult.cardNumber) {
+          processedResult.cardNumber = databaseMatch.cardNumber;
+          console.log('Set card number from database:', databaseMatch.cardNumber);
+        }
+        
+        // Improve confidence since we have a database match
+        processedResult.confidence = Math.max(0.7, processedResult.confidence);
+        processedResult.databaseMatch = true;
+      }
+    }
+    
+    // Log OCR confidence for debugging
+    console.log(`OCR Confidence: ${Math.round(processedResult.confidence * 100)}%`);
+    
     // Check final result quality and provide user feedback
-    if (!finalResult.cardName && !finalResult.cardNumber) {
+    if (!processedResult.cardName && !processedResult.cardNumber) {
       toast({
         title: "Scan-Qualität zu niedrig",
         description: "Keine Karteninformationen erkannt. Bitte bei besserer Beleuchtung neu scannen.",
         variant: "destructive",
       });
-    } else if (!finalResult.cardName || !finalResult.cardNumber) {
+    } else if (!processedResult.cardName || !processedResult.cardNumber) {
       toast({
         title: "Teilweise Erkennung",
-        description: `${finalResult.cardName ? 'Kartenname gefunden' : 'Kartenname fehlt'}. ${finalResult.cardNumber ? 'Kartennummer gefunden' : 'Kartennummer fehlt'}.`,
+        description: `${processedResult.cardName ? 'Kartenname gefunden' : 'Kartenname fehlt'}. ${processedResult.cardNumber ? 'Kartennummer gefunden' : 'Kartennummer fehlt'}.`,
         variant: "default",
       });
     }
     
-    return finalResult;
+    return processedResult;
   } catch (error) {
     console.error('Adaptive card scanning failed:', error);
     

@@ -22,7 +22,7 @@ export async function cropRegions(base64Image: string): Promise<CroppedRegions> 
       try {
         console.log('Image loaded for cropping, dimensions:', img.width, 'x', img.height);
         
-        // Calculate region dimensions
+        // Calculate optimal region dimensions
         const titleHeight = Math.floor(img.height * 0.2);  // Top 20%
         const setNumberHeight = Math.floor(img.height * 0.15);  // Bottom 15%
         const setNumberY = img.height - setNumberHeight;
@@ -32,21 +32,21 @@ export async function cropRegions(base64Image: string): Promise<CroppedRegions> 
           img.width, img.height, { willReadFrequently: true }
         );
         fullCtx.drawImage(img, 0, 0);
-        const fullImageBase64 = fullCanvas.toDataURL('image/jpeg', 0.8);
+        const fullImageBase64 = fullCanvas.toDataURL('image/jpeg', 0.9);
         
         // Create canvas for title area
         const { canvas: titleCanvas, ctx: titleCtx } = createCanvasWithContext2D(
           img.width, titleHeight, { willReadFrequently: true }
         );
         titleCtx.drawImage(img, 0, 0, img.width, titleHeight, 0, 0, img.width, titleHeight);
-        const titleAreaBase64 = titleCanvas.toDataURL('image/jpeg', 0.8);
+        const titleAreaBase64 = titleCanvas.toDataURL('image/jpeg', 0.9);
         
         // Create canvas for set number area
         const { canvas: setNumberCanvas, ctx: setNumberCtx } = createCanvasWithContext2D(
           img.width, setNumberHeight, { willReadFrequently: true }
         );
         setNumberCtx.drawImage(img, 0, setNumberY, img.width, setNumberHeight, 0, 0, img.width, setNumberHeight);
-        const setNumberAreaBase64 = setNumberCanvas.toDataURL('image/jpeg', 0.8);
+        const setNumberAreaBase64 = setNumberCanvas.toDataURL('image/jpeg', 0.9);
         
         console.log('Image regions cropped successfully');
         

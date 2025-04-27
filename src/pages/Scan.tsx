@@ -9,7 +9,7 @@ const Scan = () => {
       <h1 className="text-3xl font-bold mb-6 text-center">Pokemon Karten Scanner</h1>
       <p className="text-center text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
         Nutze deine Webcam, um Pokemon-Karten zu scannen und ihren aktuellen Marktwert zu ermitteln.
-        Der Scanner erkennt automatisch den Namen und die Set-Nummer der Karte mit Google Vision OCR.
+        Der Scanner erkennt automatisch den Namen und die Set-Nummer der Karte mit EasyOCR Technologie.
       </p>
       
       <Alert className="mb-6 max-w-2xl mx-auto">
@@ -74,12 +74,13 @@ const Scan = () => {
           <Info className="h-5 w-5 text-purple-700 dark:text-purple-300 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              Über die Google Vision OCR-Technologie
+              Über die EasyOCR Technologie
             </p>
             <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">
-              Diese App nutzt die leistungsstarke Google Vision API zur Texterkennung. 
-              Dies ermöglicht eine deutlich präzisere Erkennung von Kartennamen und Set-Nummern 
-              auch bei schwierigen Lichtverhältnissen oder reflektierenden Kartenoberflächen.
+              Diese App nutzt die leistungsstarke EasyOCR Technologie zur Texterkennung. 
+              Dies ermöglicht eine präzise Erkennung von Kartennamen und Set-Nummern 
+              auch bei schwierigen Lichtverhältnissen. Ein integrierter Kartenkatalog 
+              hilft bei der Vervollständigung von teilweisen Erkennungen.
             </p>
           </div>
         </div>

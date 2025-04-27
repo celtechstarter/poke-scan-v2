@@ -1,0 +1,65 @@
+
+{
+  "cards": [
+    {
+      "id": 1,
+      "name": "Bisaflor",
+      "setCode": "SV",
+      "cardNumber": "1/189"
+    },
+    {
+      "id": 2,
+      "name": "Glurak",
+      "setCode": "SV",
+      "cardNumber": "25/189"
+    },
+    {
+      "id": 3,
+      "name": "Turtok",
+      "setCode": "SV",
+      "cardNumber": "9/189"
+    },
+    {
+      "id": 4,
+      "name": "Pikachu",
+      "setCode": "SV",
+      "cardNumber": "32/189"
+    },
+    {
+      "id": 5,
+      "name": "Relaxo",
+      "setCode": "SV",
+      "cardNumber": "77/189"
+    },
+    {
+      "id": 6,
+      "name": "Mew",
+      "setCode": "SM",
+      "cardNumber": "10/73"
+    },
+    {
+      "id": 7,
+      "name": "Gengar",
+      "setCode": "CRE",
+      "cardNumber": "62/198"
+    },
+    {
+      "id": 8,
+      "name": "Lugia",
+      "setCode": "LO",
+      "cardNumber": "94/195"
+    },
+    {
+      "id": 9,
+      "name": "Quajutsu",
+      "setCode": "OBF",
+      "cardNumber": "47/182"
+    },
+    {
+      "id": 10,
+      "name": "Evoli",
+      "setCode": "PGO",
+      "cardNumber": "26/78"
+    }
+  ]
+}
