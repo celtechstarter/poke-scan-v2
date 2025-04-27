@@ -1,7 +1,7 @@
 
 import CardScannerWebcam from '@/components/card-scanner/CardScannerWebcam';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, Info } from 'lucide-react';
+import { AlertTriangle, Info, Server } from 'lucide-react';
 
 const Scan = () => {
   return (
@@ -71,16 +71,17 @@ const Scan = () => {
         </div>
         
         <div className="mt-4 bg-purple-50 dark:bg-purple-900/30 border-l-4 border-purple-500 p-4 flex items-start gap-3">
-          <Info className="h-5 w-5 text-purple-700 dark:text-purple-300 flex-shrink-0 mt-0.5" />
+          <Server className="h-5 w-5 text-purple-700 dark:text-purple-300 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              Über die EasyOCR Technologie
+              EasyOCR Technologie mit dediziertem Server
             </p>
             <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">
-              Diese App nutzt die leistungsstarke EasyOCR Technologie zur Texterkennung. 
-              Dies ermöglicht eine präzise Erkennung von Kartennamen und Set-Nummern 
-              auch bei schwierigen Lichtverhältnissen. Ein integrierter Kartenkatalog 
-              hilft bei der Vervollständigung von teilweisen Erkennungen.
+              Diese App nutzt eine dedizierte EasyOCR-Server-Infrastruktur für präzise Texterkennung. 
+              Während Supabase die Benutzerauthentifizierung und Datenspeicherung übernimmt, wird die 
+              rechenintensive OCR-Verarbeitung auf einem spezialisierten Python-Server durchgeführt. 
+              Dies ermöglicht eine schnellere und zuverlässigere Erkennung von Kartennamen und Set-Nummern, 
+              auch bei schwierigen Lichtverhältnissen.
             </p>
           </div>
         </div>

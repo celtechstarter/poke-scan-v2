@@ -3,9 +3,9 @@ import { toast } from '@/hooks/use-toast';
 
 /**
  * Base URL for the EasyOCR service
- * Uses environment variable if available, otherwise defaults to localhost
+ * Uses environment variable if available, otherwise defaults to a deployed OCR service
  */
-const EASY_OCR_ENDPOINT = import.meta.env.VITE_EASY_OCR_ENDPOINT || '/api/ocr';
+const EASY_OCR_ENDPOINT = import.meta.env.VITE_EASY_OCR_ENDPOINT || 'https://poke-ocr-service.onrender.com/api/ocr';
 
 /**
  * Interface for the EasyOCR API response
@@ -35,7 +35,7 @@ export async function ocrWithEasyOCR(
   languages: string[] = ['en', 'de']
 ): Promise<EasyOcrResponse> {
   try {
-    console.log('Sending image to EasyOCR service...');
+    console.log('Sending image to external EasyOCR service...');
     
     // Extract the base64 content without the prefix
     const base64Content = base64Image.includes(',') ? 
@@ -47,14 +47,14 @@ export async function ocrWithEasyOCR(
       languages: languages
     };
     
-    // Send request to EasyOCR API endpoint
+    // Send request to EasyOCR API endpoint with increased timeout (30s)
     const response = await fetch(EASY_OCR_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(15000) // 15 second timeout
+      signal: AbortSignal.timeout(30000) // 30 second timeout for OCR processing
     });
     
     if (!response.ok) {
