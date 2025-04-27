@@ -1,8 +1,9 @@
+
 import { Camera, Search, Eye, EyeOff, Focus, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { CameraFocusMode } from '@/utils/cameraUtils';
+import { CameraFocusMode } from '@/utils/camera';
 
 interface ScannerControlsProps {
   isCameraActive: boolean;
