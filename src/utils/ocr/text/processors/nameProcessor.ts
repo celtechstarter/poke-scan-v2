@@ -1,5 +1,4 @@
-
-import { findClosestMatch } from '../utils/stringSimilarity';
+import { findClosestMatch, calculateStringSimilarity } from '../utils/stringSimilarity';
 
 // Common OCR error corrections for Pokemon names
 const NAME_CORRECTIONS: Record<string, string> = {
