@@ -149,6 +149,15 @@ async def process_image(
             detail=f"OCR processing error: {str(e)}"
         )
 
+@app.post("/", response_model=OCRResponse)
+async def ocr_root(request: OCRRequest, background_tasks: BackgroundTasks):
+    """Root endpoint for backward compatibility"""
+    return await process_image(
+        request.image,
+        request.languages,
+        request.min_confidence
+    )
+
 @app.post("/api/ocr", response_model=OCRResponse)
 async def ocr(request: OCRRequest, background_tasks: BackgroundTasks):
     """
@@ -179,4 +188,4 @@ async def health_check():
 # Main entry point
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
+    uvicorn.run("easyocr_server:app", host="0.0.0.0", port=port, reload=False)
