@@ -1,12 +1,13 @@
 
-import { extractRegion } from './imagePreprocessing';
-import { preprocessImage } from './processing/imageProcessor';
+import { toast } from '@/hooks/use-toast';
+import { optimizeImageForOcr } from './processing/preprocessingSteps/optimizeForOcr';
+import { cropRegions } from './cropRegions';
 import { extractCardName, extractCardNumber } from './text/extractors';
 import { postprocessOcrResult } from './text/postprocessOcrResult';
 import { GoogleVisionProvider } from './services/googleVisionProvider';
 import { CARD_REGIONS } from './regions';
 import { VisionOcrResult } from './types';
-import { toast } from '@/hooks/use-toast';
+import { extractRegion } from './imagePreprocessing';
 
 /**
  * Advanced card scanning with adaptive OCR strategy
@@ -17,7 +18,7 @@ export async function scanCardWithAdaptiveStrategy(base64Image: string): Promise
     console.log('Starting adaptive card scanning...');
     
     // Step 1: Preprocess the full image
-    const optimizedImage = await preprocessImage(base64Image);
+    const optimizedImage = await optimizeImageForOcr(base64Image);
     console.log('Full image preprocessing completed');
     
     // Create OCR provider
@@ -144,4 +145,17 @@ export async function scanCardWithAdaptiveStrategy(base64Image: string): Promise
       confidence: 0
     };
   }
+}
+
+/**
+ * Legacy function to match the requested interface
+ */
+export async function scanCardImage(base64Image: string): Promise<{ title: string | null; setNumber: string | null; rawText: string }> {
+  const result = await scanCardWithAdaptiveStrategy(base64Image);
+  
+  return {
+    title: result.cardName,
+    setNumber: result.cardNumber,
+    rawText: result.fullText
+  };
 }

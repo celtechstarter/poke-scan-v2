@@ -3,6 +3,9 @@ import { OcrProvider, OcrResult } from './ocrProviderInterface';
 import { callGoogleVisionApi } from './visionApiService';
 import { toast } from '@/hooks/use-toast';
 
+/**
+ * Google Vision API OCR provider implementation
+ */
 export class GoogleVisionProvider implements OcrProvider {
   private languageHints: string[];
   

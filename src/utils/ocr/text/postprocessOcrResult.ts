@@ -23,7 +23,18 @@ const OCR_CORRECTIONS: Record<string, string> = {
   'Bulbasaur': 'Bulbasaur',
   'lvy5aur': 'Ivysaur',
   '5quirtle': 'Squirtle',
+  // Add more Pokemon-specific corrections as needed
 };
+
+// A small list of common Pokemon names for matching
+const COMMON_POKEMON_NAMES = [
+  'Pikachu', 'Charizard', 'Bulbasaur', 'Ivysaur', 'Squirtle', 'Wartortle', 'Blastoise',
+  'Charmander', 'Charmeleon', 'Venusaur', 'Eevee', 'Mewtwo', 'Mew', 'Gengar',
+  'Gyarados', 'Snorlax', 'Dragonite', 'Zapdos', 'Articuno', 'Moltres', 'Lugia',
+  'Ho-Oh', 'Rayquaza', 'Groudon', 'Kyogre', 'Dialga', 'Palkia', 'Giratina',
+  'Arceus', 'Zekrom', 'Reshiram', 'Kyurem', 'Xerneas', 'Yveltal', 'Zygarde',
+  'Solgaleo', 'Lunala', 'Necrozma', 'Zacian', 'Zamazenta', 'Eternatus'
+];
 
 /**
  * Post-processes OCR results with Pokemon-specific knowledge
@@ -49,6 +60,12 @@ export function postprocessOcrResult(ocrResult: VisionOcrResult): VisionOcrResul
     if (improvedCardName.length > 0) {
       improvedCardName = improvedCardName.charAt(0).toUpperCase() + 
                          improvedCardName.slice(1).toLowerCase();
+    }
+    
+    // Try to match against known Pokemon names using fuzzy matching
+    const closestMatch = findClosestMatch(improvedCardName, COMMON_POKEMON_NAMES);
+    if (closestMatch && calculateStringSimilarity(improvedCardName, closestMatch) > 0.7) {
+      improvedCardName = closestMatch;
     }
   }
   
@@ -77,4 +94,119 @@ export function postprocessOcrResult(ocrResult: VisionOcrResult): VisionOcrResul
     cardName: improvedCardName || ocrResult.cardName,
     cardNumber: improvedCardNumber || ocrResult.cardNumber,
   };
+}
+
+/**
+ * Legacy function to match the requested interface
+ */
+export function postprocessOcrText(text: string): { title: string | null; setNumber: string | null } {
+  // Extract card name and set number from text
+  const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+  
+  // Attempt to find card title (usually first line or prominent text)
+  let title: string | null = null;
+  if (lines.length > 0) {
+    // Look for a line that might be a Pokemon name
+    for (const line of lines) {
+      const possibleName = line.trim();
+      if (possibleName.length > 2 && possibleName.length < 20) {
+        // Try to match against known Pokemon names
+        const closestMatch = findClosestMatch(possibleName, COMMON_POKEMON_NAMES);
+        if (closestMatch && calculateStringSimilarity(possibleName, closestMatch) > 0.7) {
+          title = closestMatch;
+          break;
+        }
+        
+        // If no match but line looks like a title, use it
+        if (/^[A-Z][a-zA-Z\s-]+$/.test(possibleName)) {
+          title = possibleName;
+          break;
+        }
+      }
+    }
+    
+    // If no title found, just use the first line
+    if (!title && lines[0].length < 30) {
+      title = lines[0];
+    }
+  }
+  
+  // Extract set number using regex pattern
+  let setNumber: string | null = null;
+  const setNumberRegex = /(\d{1,3})\s*\/\s*(\d{1,3})/;
+  for (const line of lines) {
+    const match = line.match(setNumberRegex);
+    if (match) {
+      setNumber = `${match[1]}/${match[2]}`;
+      break;
+    }
+  }
+  
+  // Apply corrections if title was found
+  if (title) {
+    // Apply common OCR error corrections
+    for (const [incorrect, correct] of Object.entries(OCR_CORRECTIONS)) {
+      title = title.replace(new RegExp(incorrect, 'g'), correct);
+    }
+    
+    // Title should start with uppercase
+    title = title.charAt(0).toUpperCase() + title.slice(1);
+  }
+  
+  return { title, setNumber };
+}
+
+/**
+ * Calculate string similarity score using Levenshtein distance
+ */
+function calculateStringSimilarity(a: string, b: string): number {
+  if (a.length === 0) return b.length === 0 ? 1 : 0;
+  if (b.length === 0) return 0;
+  
+  const track = Array(b.length + 1).fill(null).map(() => 
+    Array(a.length + 1).fill(null));
+  
+  for (let i = 0; i <= a.length; i += 1) {
+    track[0][i] = i;
+  }
+  
+  for (let j = 0; j <= b.length; j += 1) {
+    track[j][0] = j;
+  }
+  
+  for (let j = 1; j <= b.length; j += 1) {
+    for (let i = 1; i <= a.length; i += 1) {
+      const indicator = a[i - 1] === b[j - 1] ? 0 : 1;
+      track[j][i] = Math.min(
+        track[j][i - 1] + 1,
+        track[j - 1][i] + 1,
+        track[j - 1][i - 1] + indicator
+      );
+    }
+  }
+  
+  const maxLength = Math.max(a.length, b.length);
+  const distance = track[b.length][a.length];
+  return 1 - distance / maxLength;
+}
+
+/**
+ * Find the closest matching string from an array of candidates
+ */
+function findClosestMatch(input: string, candidates: string[]): string | null {
+  if (!input || !candidates.length) return null;
+  
+  let bestMatch = null;
+  let bestScore = 0;
+  
+  for (const candidate of candidates) {
+    const score = calculateStringSimilarity(input.toLowerCase(), candidate.toLowerCase());
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = candidate;
+    }
+  }
+  
+  // Only return match if it's reasonably close
+  return bestScore >= 0.5 ? bestMatch : null;
 }
