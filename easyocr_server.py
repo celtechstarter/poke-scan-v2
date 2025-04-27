@@ -7,7 +7,7 @@ from typing import List, Dict, Any, Optional
 import numpy as np
 from PIL import Image
 import uvicorn
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import easyocr
@@ -22,7 +22,7 @@ app = FastAPI(
 # Configure CORS to allow requests from any origin
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, you should specify your frontend URL
+    allow_origins=["*"],  # Allow all origins for development
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -179,6 +179,44 @@ async def ocr(request: OCRRequest, background_tasks: BackgroundTasks):
         request.languages,
         request.min_confidence
     )
+
+# Add a new direct endpoint to match the expected format from frontend
+@app.post("/ocr")
+async def ocr_direct(request: Request):
+    """
+    Direct OCR endpoint for simpler frontend integration
+    Accepts JSON with base64Image field
+    """
+    try:
+        # Parse the request body
+        body = await request.json()
+        base64_image = body.get("base64Image", "")
+        
+        if not base64_image:
+            raise HTTPException(
+                status_code=400,
+                detail="Missing base64Image field"
+            )
+        
+        # Use the existing processing logic
+        result = await process_image(
+            base64_image,
+            ["en", "de"],  # Default languages
+            0.4  # Default confidence
+        )
+        
+        # Return a simplified response format
+        return {
+            "text": result.text,
+            "confidence": result.confidence,
+            "boxes": [box.dict() for box in result.boxes]
+        }
+    except Exception as e:
+        print(f"Error in direct OCR endpoint: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"OCR processing error: {str(e)}"
+        )
 
 @app.get("/health")
 async def health_check():
