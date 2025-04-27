@@ -25,4 +25,7 @@ export interface CardInfoResult {
   cardName: string;
   setCode: string;
   cardNumber: string;
+  confidence?: number;
+  rawText?: string;
 }
+
