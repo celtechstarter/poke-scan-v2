@@ -18,8 +18,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY easyocr_server.py .
 
-# Expose port
-EXPOSE 8000
+# Expose port (Render.com will override this with its own port)
+EXPOSE 10000
 
 # Command to run the application
 CMD ["python", "easyocr_server.py"]

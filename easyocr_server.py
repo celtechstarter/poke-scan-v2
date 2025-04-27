@@ -19,10 +19,10 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configure CORS to allow requests from any origin
+# Configure CORS to allow requests from any origin (crucial for development)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for development
+    allow_origins=["*"],  # Allow all origins including localhost
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -91,6 +91,7 @@ async def process_image(
             # Convert PIL Image to numpy array for EasyOCR
             img_array = np.array(image)
         except Exception as e:
+            print(f"Image decode error: {str(e)}")
             raise HTTPException(
                 status_code=400,
                 detail=f"Invalid image data: {str(e)}"
@@ -180,7 +181,6 @@ async def ocr(request: OCRRequest, background_tasks: BackgroundTasks):
         request.min_confidence
     )
 
-# Add a new direct endpoint to match the expected format from frontend
 @app.post("/ocr")
 async def ocr_direct(request: Request):
     """
@@ -188,11 +188,13 @@ async def ocr_direct(request: Request):
     Accepts JSON with base64Image field
     """
     try:
+        print("Received request to /ocr endpoint")
         # Parse the request body
         body = await request.json()
         base64_image = body.get("base64Image", "")
         
         if not base64_image:
+            print("Missing base64Image field in request")
             raise HTTPException(
                 status_code=400,
                 detail="Missing base64Image field"
@@ -204,6 +206,8 @@ async def ocr_direct(request: Request):
             ["en", "de"],  # Default languages
             0.4  # Default confidence
         )
+        
+        print(f"OCR processing successful, extracted text: {result.text}")
         
         # Return a simplified response format
         return {
@@ -218,6 +222,11 @@ async def ocr_direct(request: Request):
             detail=f"OCR processing error: {str(e)}"
         )
 
+@app.options("/ocr")
+async def preflight_ocr():
+    """Handle preflight CORS requests for /ocr endpoint"""
+    return {}
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
@@ -225,5 +234,6 @@ async def health_check():
 
 # Main entry point
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get("PORT", 10000))
+    print(f"Starting EasyOCR server on port {port}")
     uvicorn.run("easyocr_server:app", host="0.0.0.0", port=port, reload=False)
