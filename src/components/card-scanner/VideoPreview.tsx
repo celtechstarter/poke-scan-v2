@@ -24,6 +24,7 @@ export function VideoPreview({
           className="w-full h-full object-contain" 
           autoPlay 
           playsInline
+          muted
           aria-label="Kamera-Vorschau"
         ></video>
         

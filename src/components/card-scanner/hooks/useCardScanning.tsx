@@ -33,6 +33,7 @@ export function useCardScanning({
 
   /**
    * Processes the captured frame and handles the scanning workflow
+   * Enhanced to provide better user feedback and error handling
    */
   const captureFrame = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) {
@@ -45,6 +46,18 @@ export function useCardScanning({
     }
     
     try {
+      // Validate video dimensions for optimal OCR
+      const video = videoRef.current;
+      const minDimension = Math.min(video.videoWidth, video.videoHeight);
+      
+      if (minDimension < 480) {
+        toast({
+          title: "Bildqualität",
+          description: "Kameraauflösung niedrig. Bessere Ergebnisse mit höherer Auflösung möglich.",
+          variant: "default"
+        });
+      }
+      
       // Create an error handler that matches the expected signature
       const handleScanError = (_type: string, error: ScannerError) => {
         setScanError(error);
@@ -67,6 +80,36 @@ export function useCardScanning({
       
       // Clear any previous results to ensure we don't see stale data
       setScanResult(null);
+      
+      // Check for low quality OCR results
+      if (result.ocrResult.confidence < 50) {
+        toast({
+          title: "Niedrige OCR-Qualität",
+          description: "Text wurde mit niedriger Zuverlässigkeit erkannt. Versuche es mit besserer Beleuchtung.",
+          variant: "default"
+        });
+      }
+      
+      // Check if card is too small in frame
+      if (manualAdjustment) {
+        const width = Math.max(
+          manualAdjustment.topRight.x - manualAdjustment.topLeft.x,
+          manualAdjustment.bottomRight.x - manualAdjustment.bottomLeft.x
+        );
+        const height = Math.max(
+          manualAdjustment.bottomLeft.y - manualAdjustment.topLeft.y,
+          manualAdjustment.bottomRight.y - manualAdjustment.topRight.y
+        );
+        
+        const canvas = canvasRef.current;
+        if (width < canvas.width * 0.5 || height < canvas.height * 0.5) {
+          toast({
+            title: "Karte zu klein",
+            description: "Bitte bring die Karte näher an die Kamera für ein besseres Ergebnis.",
+            variant: "default"
+          });
+        }
+      }
       
       // Set the new result after a brief delay to ensure UI refresh
       setTimeout(() => {
@@ -93,7 +136,7 @@ export function useCardScanning({
         toast({
           title: "Scanfehler",
           description: error.message,
-          variant: "destructive",
+          variant: "destructive"
         });
       } else {
         setScanError({
@@ -108,7 +151,7 @@ export function useCardScanning({
   }, [videoRef, canvasRef, manualAdjustment]);
 
   /**
-   * Initiates the card scanning process
+   * Initiates the card scanning process with enhanced user feedback
    */
   const scanCard = useCallback(() => {
     // First cancel any ongoing scan
@@ -125,10 +168,23 @@ export function useCardScanning({
       description: "Karte wird sofort erfasst...",
     });
     
+    // Progress animation for better user feedback
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+      progress += 5;
+      setScanProgress(Math.min(progress, 95)); // Max 95% until complete
+      
+      if (progress >= 95) {
+        clearInterval(progressInterval);
+      }
+    }, 50);
+    
     // Give a very short delay to allow the UI to update
     setTimeout(() => {
       setScanProgress(100);
-      captureFrame();
+      captureFrame().finally(() => {
+        clearInterval(progressInterval);
+      });
     }, 100);
     
   }, [captureFrame]);

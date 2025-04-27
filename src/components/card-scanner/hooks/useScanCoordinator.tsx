@@ -6,6 +6,7 @@ import { useCardScanning } from './useCardScanning';
 import { useScannerState } from './useScannerState';
 import { CameraFocusMode, CameraOptions } from '@/utils/camera';
 import { CardRegionAdjustment } from '../types/adjustmentTypes';
+import { toast } from '@/hooks/use-toast';
 
 /**
  * Coordinator hook for the card scanner
@@ -17,12 +18,12 @@ export function useScanCoordinator(manualAdjustment: CardRegionAdjustment | null
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const { errors, setError } = useScannerState();
   
-  // Optimal camera settings for card scanning
+  // Enhanced camera settings optimized for OCR with Google Vision
   const optimalCameraOptions: CameraOptions = {
     facingMode: 'environment',
-    width: 1920,
-    height: 1440,
-    focusMode: CameraFocusMode.CONTINUOUS
+    width: 1920,  // Higher resolution for better OCR
+    height: 1440, // 4:3 aspect ratio
+    focusMode: CameraFocusMode.CONTINUOUS // Start with continuous focus for best results
   };
   
   // Camera control functionality with optimal settings
@@ -80,7 +81,7 @@ export function useScanCoordinator(manualAdjustment: CardRegionAdjustment | null
     setError('detection', detectError);
   }
   
-  // Handle scan initiation, checking camera status first
+  // Enhanced scan initiation with pre-validation
   const scanCard = useCallback(() => {
     if (!isCameraActive) {
       // Start camera with optimal settings for card scanning
@@ -88,8 +89,28 @@ export function useScanCoordinator(manualAdjustment: CardRegionAdjustment | null
       return;
     }
     
+    // Pre-validate video stream quality before scanning
+    if (videoRef.current) {
+      const video = videoRef.current;
+      
+      // Check if video dimensions are too small for good OCR
+      if (video.videoWidth < 640 || video.videoHeight < 480) {
+        setError('scanning', {
+          message: "Kameraauflösung zu niedrig für gute OCR-Ergebnisse",
+          type: "QUALITY_WARNING"
+        });
+        
+        toast({
+          title: "Niedrige Auflösung",
+          description: "Bessere Ergebnisse mit höherer Kameraauflösung möglich.",
+          variant: "default"
+        });
+      }
+    }
+    
+    // Proceed with scan
     originalScanCard();
-  }, [isCameraActive, startCamera, originalScanCard, optimalCameraOptions]);
+  }, [isCameraActive, startCamera, originalScanCard, optimalCameraOptions, videoRef, setError]);
 
   // Enhanced camera toggle to use optimal settings
   const enhancedToggleCamera = useCallback(() => {

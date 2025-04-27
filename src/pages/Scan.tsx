@@ -1,7 +1,7 @@
 
 import CardScannerWebcam from '@/components/card-scanner/CardScannerWebcam';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Info } from 'lucide-react';
 
 const Scan = () => {
   return (
@@ -9,7 +9,7 @@ const Scan = () => {
       <h1 className="text-3xl font-bold mb-6 text-center">Pokemon Karten Scanner</h1>
       <p className="text-center text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
         Nutze deine Webcam, um Pokemon-Karten zu scannen und ihren aktuellen Marktwert zu ermitteln.
-        Der Scanner erkennt automatisch den Namen und die Set-Nummer der Karte.
+        Der Scanner erkennt automatisch den Namen und die Set-Nummer der Karte mit Google Vision OCR.
       </p>
       
       <Alert className="mb-6 max-w-2xl mx-auto">
@@ -69,10 +69,23 @@ const Scan = () => {
             <li>Halte die Kamera etwa 15-20cm von der Karte entfernt</li>
           </ul>
         </div>
+        
+        <div className="mt-4 bg-purple-50 dark:bg-purple-900/30 border-l-4 border-purple-500 p-4 flex items-start gap-3">
+          <Info className="h-5 w-5 text-purple-700 dark:text-purple-300 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              Über die Google Vision OCR-Technologie
+            </p>
+            <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">
+              Diese App nutzt die leistungsstarke Google Vision API zur Texterkennung. 
+              Dies ermöglicht eine deutlich präzisere Erkennung von Kartennamen und Set-Nummern 
+              auch bei schwierigen Lichtverhältnissen oder reflektierenden Kartenoberflächen.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
 export default Scan;
-
