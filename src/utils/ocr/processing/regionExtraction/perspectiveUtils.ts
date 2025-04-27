@@ -1,4 +1,3 @@
-
 import { Point } from './types';
 
 export function computePerspectiveTransform(src: Point[], dst: Point[]): number[] {

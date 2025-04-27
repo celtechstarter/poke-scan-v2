@@ -1,17 +1,11 @@
 
 import { OcrRegion } from '../../types';
-import { CardEdges, Point } from './types';
+import { CardEdges } from './types';
 import { createCanvasWithContext2D } from '@/utils/canvas/safeCanvasContext';
 import { computePerspectiveTransform, applyTransform } from './perspectiveUtils';
 import { enhanceCardName, enhanceCardNumber } from './imageEnhancement';
 import { verifyRegionQuality } from './qualityVerification';
-
-function distance(point1: Point, point2: Point): number {
-  return Math.sqrt(
-    Math.pow(point2.x - point1.x, 2) + 
-    Math.pow(point2.y - point1.y, 2)
-  );
-}
+import { distance, getPixel } from './extractionUtils';
 
 function extractUsingCardEdges(
   img: HTMLImageElement,
@@ -160,16 +154,6 @@ function correctPerspective(
   }
   
   ctx.putImageData(outputImgData, 0, 0);
-}
-
-function getPixel(imgData: ImageData, x: number, y: number): [number, number, number, number] {
-  const idx = (y * imgData.width + x) * 4;
-  return [
-    imgData.data[idx],
-    imgData.data[idx + 1],
-    imgData.data[idx + 2],
-    imgData.data[idx + 3]
-  ];
 }
 
 export async function extractRegion(
