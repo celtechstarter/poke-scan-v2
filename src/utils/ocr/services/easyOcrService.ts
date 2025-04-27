@@ -1,3 +1,4 @@
+
 import { toast } from '@/hooks/use-toast';
 
 /**
@@ -36,6 +37,13 @@ export async function ocrWithEasyOCR(
   try {
     console.log('Sending image to external EasyOCR service...');
     
+    // Show loading toast for cold starts
+    const loadingToast = toast({
+      title: "OCR Service wird gestartet",
+      description: "Der erste Scan kann bis zu 30 Sekunden dauern...",
+      variant: "default",
+    });
+    
     // Extract the base64 content without the prefix
     const base64Content = base64Image.includes(',') ? 
       base64Image.split(',')[1] : base64Image;
@@ -56,8 +64,18 @@ export async function ocrWithEasyOCR(
       signal: AbortSignal.timeout(30000) // 30 second timeout for OCR processing
     });
     
+    // Dismiss the loading toast
+    loadingToast.dismiss();
+    
     if (!response.ok) {
       const errorText = await response.text();
+      if (response.status === 503 || response.status === 504) {
+        toast({
+          title: "OCR Service startet",
+          description: "Server wird aufgeweckt. Bitte in 30 Sekunden erneut versuchen.",
+          variant: "default"
+        });
+      }
       throw new Error(`EasyOCR API error (${response.status}): ${errorText}`);
     }
     
@@ -66,6 +84,13 @@ export async function ocrWithEasyOCR(
     if (result.error) {
       throw new Error(`EasyOCR processing error: ${result.error}`);
     }
+    
+    // If we get here, OCR was successful
+    toast({
+      title: "Text erkannt",
+      description: result.text ? "OCR erfolgreich abgeschlossen" : "Kein Text gefunden",
+      variant: result.text ? "default" : "destructive"
+    });
     
     return {
       text: result.text || '',
@@ -77,11 +102,19 @@ export async function ocrWithEasyOCR(
     
     // Show error toast only if it's not an abort error
     if (error instanceof Error && !error.message.includes('abort')) {
-      toast({
-        title: "OCR Fehler",
-        description: "Texterkennung fehlgeschlagen. Bitte versuchen Sie es erneut.",
-        variant: "destructive"
-      });
+      if (error.message.includes('timeout')) {
+        toast({
+          title: "Zeitüberschreitung",
+          description: "OCR Server antwortet nicht. Bitte später erneut versuchen.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "OCR Fehler",
+          description: "Texterkennung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+          variant: "destructive"
+        });
+      }
     }
     
     // Return an empty result
