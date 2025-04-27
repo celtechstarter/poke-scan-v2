@@ -1,10 +1,9 @@
-
-import { CardOcrResult } from './types';
+import { CardInfoResult } from './types';
 
 /**
  * Enhanced cleanup of OCR results specifically tailored for Pokémon cards
  */
-export const cleanupOcrResults = (ocrResult: CardOcrResult): CardOcrResult => {
+export const cleanupOcrResults = (ocrResult: CardInfoResult): CardInfoResult => {
   const result = { ...ocrResult };
   
   if (result.cardName) {

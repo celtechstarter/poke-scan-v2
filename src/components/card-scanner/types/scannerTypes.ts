@@ -1,6 +1,6 @@
 
 import { CardDetectionErrorType } from '@/utils/cardDetectionUtils';
-import { CardOcrResult } from '@/utils/ocrUtils';
+import { CardInfoResult } from '@/utils/ocr/types';
 
 /**
  * Error types specific to card scanning
@@ -25,7 +25,7 @@ export interface ScanResult {
   cardNumber?: string;
   price: number | null;
   imageDataUrl: string | null;
-  ocrResult?: CardOcrResult;
+  ocrResult?: CardInfoResult;
 }
 
 /**

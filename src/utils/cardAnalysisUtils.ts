@@ -1,5 +1,4 @@
-
-import { CardOcrResult } from './ocr/types';
+import { CardInfoResult } from './ocr/types';
 import { scanCardWithGoogleVision } from './ocr';
 import { toast } from '@/hooks/use-toast';
 // import { lookupCardPrice } from './cardMarketService';
@@ -8,7 +7,7 @@ interface CardAnalysisResult {
   cardName: string;
   cardNumber: string | null;
   price: number | null;
-  ocrResult: CardOcrResult;
+  ocrResult: CardInfoResult;
 }
 
 interface CardEdges {
@@ -22,7 +21,7 @@ export const processCardWithOcr = async (
   imageDataUrl: string,
   cardEdges?: CardEdges | null,
   useStrictCrop: boolean = false
-): Promise<CardOcrResult> => {
+): Promise<CardInfoResult> => {
   try {
     // Process the image with OCR
     console.log('Processing card image with OCR, strict crop =', useStrictCrop);
