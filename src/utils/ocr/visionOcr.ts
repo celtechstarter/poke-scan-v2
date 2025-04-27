@@ -1,9 +1,6 @@
 
 import { toast } from '@/hooks/use-toast';
-import { extractRegion } from './imagePreprocessing';
-import { preprocessImage } from './processing/imageProcessor';
-import { extractCardName, extractCardNumber } from './text/extractors';
-import { callGoogleVisionApi } from './services/visionApiService';
+import { scanCardWithAdaptiveStrategy } from './scanCardImage';
 
 export interface VisionOcrResult {
   cardName: string | null;
@@ -12,48 +9,34 @@ export interface VisionOcrResult {
   confidence: number;
 }
 
+/**
+ * Main entry point for OCR scanning with advanced preprocessing and card-focused strategies
+ */
 export async function scanCardWithGoogleVision(base64Image: string): Promise<VisionOcrResult> {
   try {
-    // Preprocess the image to improve OCR quality
-    console.log('Preprocessing image for OCR...');
-    const optimizedImage = await preprocessImage(base64Image);
-    console.log('Image preprocessing complete');
+    console.log('Starting card scanning with advanced OCR strategy...');
     
-    // Remove the data:image/... prefix from base64 string
-    const base64Content = optimizedImage.split(',')[1];
+    // Use the new adaptive scanning strategy
+    const result = await scanCardWithAdaptiveStrategy(base64Image);
     
-    console.log('Sending request to Google Vision API...');
-    const apiResponse = await callGoogleVisionApi(base64Content);
-    console.log('Received Vision API response');
-    
-    // Extract the full text annotation
-    const fullText = apiResponse.fullTextAnnotation?.text || '';
-    
-    // Calculate confidence from text annotations
-    let confidence = 0;
-    const textAnnotations = apiResponse.textAnnotations || [];
-    
-    if (textAnnotations.length > 0) {
-      // Average confidence from all detections
-      const confidenceSum = textAnnotations.reduce((sum: number, annotation: any) => {
-        return sum + (annotation.confidence || 0);
-      }, 0);
-      confidence = confidenceSum / textAnnotations.length;
+    // Check for meaningful results
+    if (!result.cardName && !result.cardNumber) {
+      toast({
+        title: "OCR Ergebnis",
+        description: "Kartentext konnte nicht zuverlässig erkannt werden. Versuche es mit besserer Beleuchtung.",
+        variant: "destructive"
+      });
+    } else if (result.confidence < 0.6) {
+      toast({
+        title: "Niedrige Erkennungsqualität",
+        description: "Text wurde mit geringer Zuverlässigkeit erkannt. Versuche es mit besserer Beleuchtung.",
+        variant: "default"
+      });
     }
 
-    // Extract card name and number using specialized functions
-    const cardName = extractCardName(fullText);
-    const cardNumber = extractCardNumber(fullText);
-
-    return {
-      cardName,
-      cardNumber,
-      fullText,
-      confidence: confidence || 0.7 // Default confidence if not provided by API
-    };
-
+    return result;
   } catch (error) {
-    console.error('Google Vision OCR Error:', error);
+    console.error('Card OCR Error:', error);
     
     toast({
       title: "OCR Fehler",

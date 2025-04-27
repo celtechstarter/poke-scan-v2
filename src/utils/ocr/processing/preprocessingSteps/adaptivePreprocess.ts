@@ -78,4 +78,3 @@ export const adaptivePreprocess = (imageData: ImageData, quality: ImageQualityRe
     throw new Error('Failed to apply adaptive preprocessing');
   }
 };
-

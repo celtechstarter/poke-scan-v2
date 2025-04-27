@@ -1,35 +1,62 @@
 
 import { OcrRegion } from './types';
 
-// Refined regions of interest for a Pokemon card
-// Values are percentages of the image dimensions
-export const CARD_REGIONS: OcrRegion[] = [
-  // Top region - Card name - Refined and narrowed down for better precision
-  {
-    name: 'cardName',
-    top: 4.5, // Slightly lower to avoid card border
-    left: 18, // More centered on actual name position
-    width: 64, // Narrower to focus on just the name
-    height: 8.5 // Smaller height to avoid capturing unwanted elements
+/**
+ * OCR regions for different card areas
+ * Coordinates are percentages of the card dimensions
+ */
+export const CARD_REGIONS: Record<string, OcrRegion> = {
+  // Full card area
+  FULL: {
+    name: 'full_card',
+    top: 0,
+    left: 0,
+    width: 100,
+    height: 100
   },
-  // Bottom region - Card number and set - Adjusted for better set code capture
-  {
-    name: 'cardNumber',
-    top: 88.5, // Slightly higher to ensure we get the complete set info
-    left: 6.5, // Better positioned for left-aligned set codes
-    width: 30, // Narrower to focus on the set code area
-    height: 8 // Optimized height for set code text
-  }
-];
-
-// Additional region for energy type (can help identify and confirm certain cards)
-export const ADDITIONAL_REGIONS: OcrRegion[] = [
-  // Energy type region - top right
-  {
-    name: 'energyType',
+  
+  // Card name area (top 20%)
+  CARD_NAME: {
+    name: 'card_name',
+    top: 0,
+    left: 0,
+    width: 100,
+    height: 20
+  },
+  
+  // Set number area (bottom 15%)
+  SET_NUMBER: {
+    name: 'set_number',
+    top: 85,
+    left: 0,
+    width: 100,
+    height: 15
+  },
+  
+  // Card type area (middle upper area)
+  CARD_TYPE: {
+    name: 'card_type',
+    top: 20,
+    left: 0,
+    width: 100,
+    height: 10
+  },
+  
+  // HP area (top right)
+  HP: {
+    name: 'hp',
     top: 5,
-    left: 85,
-    width: 10,
+    left: 70,
+    width: 30,
+    height: 15
+  },
+  
+  // Bottom attributes area
+  ATTRIBUTES: {
+    name: 'attributes',
+    top: 75,
+    left: 0,
+    width: 100,
     height: 10
   }
-];
+};

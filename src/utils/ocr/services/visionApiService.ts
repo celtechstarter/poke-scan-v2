@@ -14,11 +14,21 @@ interface VisionApiResponse {
     text: string;
   };
   textAnnotations?: Array<{
+    description?: string;
+    boundingPoly?: {
+      vertices?: Array<{
+        x?: number;
+        y?: number;
+      }>;
+    };
     confidence?: number;
   }>;
 }
 
-export async function callGoogleVisionApi(base64Content: string): Promise<VisionApiResponse> {
+export async function callGoogleVisionApi(
+  base64Content: string, 
+  languageHints: string[] = ['de', 'en']
+): Promise<VisionApiResponse> {
   const apiKey = import.meta.env.VITE_GOOGLE_VISION_API_KEY;
   
   if (!apiKey) {
@@ -36,7 +46,7 @@ export async function callGoogleVisionApi(base64Content: string): Promise<Vision
       image: { content: base64Content },
       features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
       imageContext: {
-        languageHints: ['de', 'en']
+        languageHints
       }
     }]
   };
