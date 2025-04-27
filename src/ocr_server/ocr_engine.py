@@ -3,9 +3,12 @@ import easyocr
 from typing import List, Dict
 from PIL import Image
 import numpy as np
+from .text_processor import TextProcessor
+from .bbox_processor import BBoxProcessor
+from .confidence_processor import ConfidenceProcessor
 
 class OCREngine:
-    """Handles OCR processing using EasyOCR"""
+    """Handles OCR processing using EasyOCR with modular processing"""
     _readers: Dict[str, easyocr.Reader] = {}
 
     @classmethod
@@ -31,38 +34,19 @@ class OCREngine:
         
         # Get reader and perform OCR
         reader = cls.get_reader(languages)
-        results = reader.readtext(img_array)
+        raw_results = reader.readtext(img_array)
         
-        # Filter and format results
-        processed_results = []
-        total_confidence = 0.0
-        valid_results = 0
+        # Filter results by confidence
+        filtered_results = TextProcessor.filter_by_confidence(raw_results, min_confidence)
         
-        for bbox, text, confidence in results:
-            if confidence >= min_confidence:
-                min_x = min(point[0] for point in bbox)
-                min_y = min(point[1] for point in bbox)
-                max_x = max(point[0] for point in bbox)
-                max_y = max(point[1] for point in bbox)
-                
-                processed_results.append({
-                    "text": text,
-                    "confidence": confidence,
-                    "box": {
-                        "x": min_x,
-                        "y": min_y,
-                        "width": max_x - min_x,
-                        "height": max_y - min_y
-                    }
-                })
-                
-                total_confidence += confidence
-                valid_results += 1
+        # Process bounding boxes
+        processed_results = BBoxProcessor.process_boxes(filtered_results)
         
-        avg_confidence = total_confidence / valid_results if valid_results > 0 else 0.0
+        # Calculate confidence stats
+        confidence_stats = ConfidenceProcessor.get_confidence_stats(processed_results)
         
         return {
             "results": processed_results,
-            "confidence": avg_confidence
+            "confidence": confidence_stats["average"]
         }
 
