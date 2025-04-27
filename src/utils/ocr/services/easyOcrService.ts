@@ -1,11 +1,10 @@
-
 import { toast } from '@/hooks/use-toast';
 
 /**
  * Base URL for the EasyOCR service
- * Uses environment variable if available, otherwise defaults to a deployed OCR service
+ * Uses environment variable if available, otherwise defaults to the deployed OCR service
  */
-const EASY_OCR_ENDPOINT = import.meta.env.VITE_EASY_OCR_ENDPOINT || 'https://poke-ocr-service.onrender.com/api/ocr';
+const EASY_OCR_ENDPOINT = import.meta.env.VITE_EASY_OCR_ENDPOINT || 'https://poke-scan-v2.onrender.com';
 
 /**
  * Interface for the EasyOCR API response
