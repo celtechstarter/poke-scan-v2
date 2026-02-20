@@ -10,7 +10,7 @@ export default async function handler(request: Request) {
     const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.VITE_NVIDIA_API_KEY}`,
+        'Authorization': `Bearer ${process.env.NVIDIA_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -21,7 +21,7 @@ export default async function handler(request: Request) {
             content: [
               {
                 type: 'text',
-                text: 'Analysiere diese Pokemon-Karte und gib mir folgende Infos als JSON: cardName, set, number, rarity, language. Antworte NUR mit JSON.',
+                text: `Analysiere diese Pokemon-Karte und gib mir folgende Infos als JSON: cardName, set, number, rarity, language. Antworte NUR mit JSON.`,
               },
               {
                 type: 'image_url',
