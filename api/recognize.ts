@@ -4,6 +4,18 @@ export default async function handler(request: Request) {
     return new Response('Method not allowed', { status: 405 });
   }
 
+  let body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return new Response(JSON.stringify({ error: 'Invalid JSON', message: String(e) }), {
+      status: 400,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+  const { image } = body;
   const apiKey = process.env.NVIDIA_API_KEY;
   if (!apiKey) {
     return new Response(JSON.stringify({ error: 'NVIDIA_API_KEY not configured' }), {
@@ -15,16 +27,6 @@ export default async function handler(request: Request) {
   }
 
   try {
-    const { image } = await request.json();
-    if (!image) {
-      return new Response(JSON.stringify({ error: 'No image provided' }), {
-        status: 400,
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-    }
-
     const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
       method: 'POST',
       headers: {
