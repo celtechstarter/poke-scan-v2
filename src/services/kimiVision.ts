@@ -13,16 +13,21 @@ export const recognizeCard = async (base64Image: string): Promise<CardRecognitio
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ image: base64Image })
+      body: JSON.stringify({
+        image: base64Image.startsWith('data:') ? base64Image : `data:image/jpeg;base64,${base64Image}`
+      })
     });
 
     if (!response.ok) {
-      throw new Error('API request failed');
+      const errorData = await response.json();
+      console.error('API Error:', errorData);
+      return null;
     }
 
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content;
     if (!content) {
+      console.error('No content in response:', data);
       return null;
     }
 
