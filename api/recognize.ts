@@ -1,17 +1,35 @@
-export const config = { runtime: 'edge', };
-
+export const config = { runtime: 'edge' };
 export default async function handler(request: Request) {
   if (request.method !== 'POST') {
     return new Response('Method not allowed', { status: 405 });
   }
 
+  const apiKey = process.env.NVIDIA_API_KEY;
+  if (!apiKey) {
+    return new Response(JSON.stringify({ error: 'NVIDIA_API_KEY not configured' }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
   try {
     const { image } = await request.json();
+    if (!image) {
+      return new Response(JSON.stringify({ error: 'No image provided' }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    }
+
     const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.NVIDIA_API_KEY}`,
-        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         model: 'moonshotai/kimi-k2-5',
@@ -21,7 +39,7 @@ export default async function handler(request: Request) {
             content: [
               {
                 type: 'text',
-                text: `Analysiere diese Pokemon-Karte und gib mir folgende Infos als JSON: cardName, set, number, rarity, language. Antworte NUR mit JSON.`,
+                text: 'Analysiere diese Pokemon-Karte. Antworte NUR mit JSON: {"cardName":"...","set":"...","number":"...","rarity":"...","language":"..."}'
               },
               {
                 type: 'image_url',
@@ -38,14 +56,26 @@ export default async function handler(request: Request) {
     });
 
     const data = await response.json();
+    if (!response.ok) {
+      return new Response(JSON.stringify({ error: 'NVIDIA API error', details: data }), {
+        status: response.status,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    }
+
     return new Response(JSON.stringify(data), {
       headers: {
         'Content-Type': 'application/json'
       }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'API Error' }), {
-      status: 500
+    return new Response(JSON.stringify({ error: 'Server error', message: String(error) }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
   }
 }
