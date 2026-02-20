@@ -1,51 +1,20 @@
+import React from 'react';
+import CardScanner from './components/CardScanner';
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import NavbarTheme from "@/components/NavbarTheme";
-import Index from "./pages/Index";
-import Scan from "./pages/Scan";
-import AboutUs from "./pages/AboutUs";
-import NotFound from "./pages/NotFound";
-import { ThemeProvider } from "@/components/ThemeProvider";
-
-const queryClient = new QueryClient();
-
-const App = () => (
-  <ThemeProvider defaultTheme="system">
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <NavbarTheme />
-          <main className="min-h-screen pt-4">
-            <div className="content-container container mx-auto p-4 my-4">
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/scan" element={<Scan />} />
-                <Route path="/about" element={<AboutUs />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </div>
-            <footer className="app-footer mt-8">
-              <div className="footer-logo-container">
-                <img src="/lovable-uploads/524bbc0d-e4eb-42db-aa04-f227799c439b.png" alt="Rotierendes Logo" className="rotating-logo-footer" />
-              </div>
-              <p className="text-sm font-bold text-gray-500">
-                © 2025 PokeScan Technologies
-              </p>
-              <p className="text-sm text-gray-500">
-                Powered by Marcel Welk
-              </p>
-            </footer>
-          </main>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </ThemeProvider>
-);
+const App = () => {
+  return (
+    <div className="min-h-screen flex flex-col">
+      <header className="bg-blue-500 text-white p-4 text-center">
+        <h1 className="text-3xl font-bold">Poke-Scan</h1>
+      </header>
+      <main className="flex-1 p-4">
+        <CardScanner />
+      </main>
+      <footer className="bg-blue-500 text-white p-4 text-center">
+        <p>Powered by Kimi K2.5</p>
+      </footer>
+    </div>
+  );
+};
 
 export default App;
