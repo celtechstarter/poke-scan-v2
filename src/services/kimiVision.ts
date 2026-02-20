@@ -7,7 +7,7 @@ const apiKey = process.env.VITE_NVIDIA_API_KEY;
 const recognizeCard = async (base64Image: string) => {
   try {
     const response = await axios.post(
-      `${openAiApi}/chat/completions",
+      `${openAiApi}/chat/completions`,
       {
         model: modelName,
         messages: [
