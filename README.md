@@ -15,6 +15,7 @@
   <img src="https://img.shields.io/badge/Vite-5.x-646CFF?style=flat-square&logo=vite" />
   <img src="https://img.shields.io/badge/Tailwind-3.x-06B6D4?style=flat-square&logo=tailwindcss" />
   <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=flat-square&logo=supabase" />
+  <img src="https://img.shields.io/badge/Vercel-Deployed-000000?style=flat-square&logo=vercel" />
 </p>
 
 ---
@@ -33,6 +34,7 @@
 - [⚙️ Konfiguration](#️-konfiguration)
 - [🗺️ Roadmap](#️-roadmap)
 - [💰 Betriebskosten](#-betriebskosten)
+- [♿ Barrierefreiheit](#-barrierefreiheit)
 - [🤝 Contributing](#-contributing)
 - [📄 Lizenz](#-lizenz)
 
@@ -56,21 +58,27 @@ Du findest eine alte Pokémon-Karte auf dem Dachboden oder auf dem Flohmarkt und
 
 Dieses Projekt wurde **fast komplett von KI-Agenten gebaut**. Ein Mensch koordiniert, mehrere KI-Assistenten arbeiten zusammen – vollautomatisiert, 24/7, für unter 30€ im Monat.
 
+### Die Geschichte dahinter
+
+Dieses Projekt startete vor 2 Jahren als Idee in einer Cloud- und Webentwicklungs-Weiterbildung. Damals scheiterte es an der Bilderkennung (OCR funktionierte nicht bei holographischen Karten). Jetzt, mit moderner KI-Vision-Technologie (Kimi K2.5), kann das Projekt endlich fertiggestellt werden.
+
 ---
 
 ## ✨ Features
 
 | Feature | Beschreibung | Status |
 |---------|--------------|--------|
-| 📸 **Karten-Erkennung** | KI erkennt Pokémon-Karten per Foto | ✅ Implementiert |
-| 💰 **Preisabfrage** | Aktuelle Marktpreise von Pokémon TCG API | ✅ Implementiert |
+| 📸 **Karten-Erkennung** | KI erkennt Pokémon-Karten per Foto (Kimi K2.5 Vision) | ✅ Implementiert |
+| 💰 **Preisabfrage** | Direkte Verlinkung zu Cardmarket | ✅ Implementiert |
 | ⭐ **Set & Seltenheit** | Erkennt Set, Nummer und Seltenheit | ✅ Implementiert |
+| 🌍 **Mehrsprachig** | Erkennt DE, EN, JP, KR, CN Karten | ✅ Implementiert |
 | 📱 **Responsive Design** | Funktioniert auf Desktop & Mobile | ✅ Implementiert |
-| 🦞 **Telegram Bot** | Foto schicken → Preis bekommen | ✅ Läuft |
-| 🔄 **Auto-Updates** | Preise aktualisieren sich automatisch | 🚧 In Arbeit |
+| 🦞 **Telegram Bot** | Entwickler-Bot für Code-Aufgaben | ✅ Läuft |
+| ♿ **Barrierefrei** | ARIA Labels, Keyboard Navigation | ✅ Implementiert |
+| 🔄 **Auto-Deploy** | Vercel CI/CD Pipeline | ✅ Aktiv |
 | 📊 **Preis-Verlauf** | Historische Preisdaten als Graph | 📋 Geplant |
 | 🪙 **Sammlung** | Eigene Kartensammlung verwalten | 📋 Geplant |
-| 📱 **PWA Support** | Als App auf dem Handy installierbar | 📋 Geplant |
+| 🔐 **Google Login** | Authentifizierung via Supabase | 📋 Geplant |
 
 ---
 
@@ -80,9 +88,9 @@ Du hast **3 Wege** die App zu nutzen:
 
 | Weg | Wie | Für wen | Status |
 |-----|-----|---------|--------|
-| 🌐 **Browser** | Webseite öffnen → Foto hochladen | Alle | ✅ |
+| 🌐 **Web-App** | [poke-scan-v2.vercel.app](https://poke-scan-v2.vercel.app) öffnen → Foto hochladen | Alle | ✅ Live |
 | 📲 **Handy** | Webseite auf dem Handy → Kamera nutzen | Unterwegs | ✅ |
-| 🦞 **Telegram-Bot** | Foto an @herbekantebot schicken → Preis kommt zurück | Flohmarkt-Profis | ✅ |
+| 🦞 **Telegram-Bot** | @herbekantebot für Entwickler-Aufgaben | Entwickler | ✅ |
 
 ---
 
@@ -97,18 +105,18 @@ Du hast **3 Wege** die App zu nutzen:
 | ⚡ **Vite** | 5.x | Build Tool & Dev Server |
 | 🎨 **Tailwind CSS** | 3.x | Utility-First Styling |
 | 🧩 **shadcn/ui** | Latest | UI-Komponenten-Bibliothek |
-| 📡 **Axios** | Latest | HTTP Client für API-Calls |
 
-### Backend & Services
+### Backend & APIs
 
 | Service | Anbieter | Verwendung | Kosten |
 |---------|----------|------------|--------|
-| 🧠 **Kimi K2.5 Vision** | NVIDIA NIM | KI-Kartenerkennung | Kostenlos |
-| 🃏 **Pokémon TCG API** | pokemontcg.io | Kartendaten & Preise | Kostenlos |
-| 🗄️ **Supabase** | supabase.com | PostgreSQL Datenbank | Kostenlos (Free Tier) |
-| 🚀 **Vercel** | vercel.com | Frontend Hosting | Kostenlos (Free Tier) |
+| 🧠 **Kimi K2.5 Vision** | NVIDIA NIM | KI-Kartenerkennung (Bilder → Text) | Kostenlos |
+| 🃏 **Pokémon TCG API** | pokemontcg.io | Kartendaten & US-Preise | Kostenlos |
+| 💰 **Cardmarket** | cardmarket.com | EU-Preise (Verlinkung) | Kostenlos |
+| 🗄️ **Supabase** | supabase.com | PostgreSQL Datenbank | Kostenlos |
+| 🚀 **Vercel** | vercel.com | Hosting + Serverless Functions | Kostenlos |
 
-### Infrastruktur & Agenten
+### Infrastruktur & DevOps
 
 | Komponente | Anbieter | Verwendung | Kosten |
 |------------|----------|------------|--------|
@@ -117,16 +125,17 @@ Du hast **3 Wege** die App zu nutzen:
 | 🤖 **Llama 3.3 70B** | NVIDIA NIM | OpenClaw's Denkmaschine | Kostenlos |
 | 📱 **Telegram Bot API** | Telegram | Bot-Kommunikation | Kostenlos |
 | 🔄 **GitHub Actions** | GitHub | CI/CD Pipeline | Kostenlos |
+| ☁️ **Vercel Edge Functions** | Vercel | API Proxy (CORS-Lösung) | Kostenlos |
 
 ### Entwicklungstools
 
 | Tool | Verwendung |
 |------|------------|
-| 🧠 **Claude** (Anthropic) | Architektur-Planung, Code-Review |
-| 🦞 **OpenClaw + Kimi/Llama** | Automatisierte Code-Implementierung |
+| 🧠 **Claude** (Anthropic) | Architektur-Planung, Code-Design, Debugging |
+| 🦞 **OpenClaw + Llama** | Automatisierte Code-Implementierung via Telegram |
 | 🎨 **v0.dev** | UI-Komponenten-Generierung |
 | 📦 **npm** | Package Manager |
-| 🔀 **Git + GitHub** | Versionskontrolle |
+| 🔀 **Git + GitHub** | Versionskontrolle mit Branch-Strategie (main/dev) |
 
 ---
 
@@ -139,56 +148,62 @@ Dieses Projekt wird von einem **Team aus KI-Agenten** gebaut und gewartet:
  │
  ├── 🧠 Claude ──────── Der Architekt
  │                      Plant die Architektur, schreibt Code-Vorlagen,
- │                      reviewt und debuggt.
+ │                      reviewt und debuggt. Arbeitet mit dem Menschen
+ │                      direkt im Chat.
  │
  ├── 🦞 OpenClaw ────── Der Handwerker
  │    │                 Implementiert auf dem VPS, testet, deployed.
+ │    │                 Erreichbar via Telegram (@herbekantebot)
  │    │                 Arbeitet 24/7, schläft nie 💪
  │    │
  │    └── 🤖 Llama 3.3 ─ Das Gehirn von OpenClaw
  │                       70B Parameter, läuft kostenlos via NVIDIA NIM
  │
+ ├── 👁️ Kimi K2.5 ───── Der Seher
+ │                      Vision-Model für Kartenerkennung
+ │                      Kann Bilder "sehen" und analysieren
+ │
  ├── 🎨 v0.dev ──────── Der Designer
  │                      Generiert UI-Komponenten aus Beschreibungen
- │
- ├── ⚙️ GitHub Actions ─ Der Qualitätsprüfer
- │                       Automatische Tests bei jedem Push
  │
  └── 🚀 Vercel ──────── Der Deployment-Manager
                         Automatisches Hosting, Preview URLs
 ```
 
-### Kommunikation & Workflow
+### Der Workflow
 
 ```
 ┌─────────────┐     Aufgabe      ┌─────────────┐
 │   Mensch    │ ───────────────► │   Claude    │
-│  (Telegram) │                  │ (Architekt) │
+│   (Chat)    │                  │ (Architekt) │
 └─────────────┘                  └──────┬──────┘
-       ▲                                │
-       │                           Code & Plan
        │                                │
-       │ Status                         ▼
-       │                         ┌─────────────┐
-       └──────────────────────── │  OpenClaw   │
-                                 │ (Handwerker)│
-                                 └──────┬──────┘
-                                        │
-                                   Commit & Push
-                                        │
-                                        ▼
-                                 ┌─────────────┐
-                                 │   GitHub    │
-                                 │  Actions    │
-                                 └──────┬──────┘
-                                        │
-                                   Auto-Deploy
-                                        │
-                                        ▼
-                                 ┌─────────────┐
-                                 │   Vercel    │
-                                 │   (Live!)   │
-                                 └─────────────┘
+       │ Telegram                  Code & Plan
+       │                                │
+       ▼                                ▼
+┌─────────────┐                  ┌─────────────┐
+│  OpenClaw   │ ◄─────────────── │   Mensch    │
+│ (Handwerker)│   kopiert Code   │   (Chat)    │
+└──────┬──────┘                  └─────────────┘
+       │
+       │ git push
+       ▼
+┌─────────────┐
+│   GitHub    │
+│    (dev)    │
+└──────┬──────┘
+       │
+       │ merge to main
+       ▼
+┌─────────────┐
+│   Vercel    │
+│  (Deploy)   │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│  🌐 Live!   │
+└─────────────┘
 ```
 
 ---
@@ -199,100 +214,87 @@ Dieses Projekt wird von einem **Team aus KI-Agenten** gebaut und gewartet:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        FRONTEND                              │
-│  React 18 + TypeScript + Vite                               │
-│  Tailwind CSS + shadcn/ui                                   │
-│  PWA-fähig (installierbar auf Mobilgeräten)                 │
-│  Hosted auf Vercel (Free Tier)                              │
+│                     USER (Browser/Handy)                     │
 └────────────────────────┬────────────────────────────────────┘
-                         │ REST API
+                         │ HTTPS
                          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    BACKEND / SERVICES                        │
+│                    VERCEL (Frontend + API)                   │
 │                                                              │
 │  ┌─────────────────────┐  ┌─────────────────────┐           │
-│  │  Kimi K2.5 Vision   │  │   Pokémon TCG API   │           │
-│  │  (NVIDIA NIM API)   │  │   (Kartendaten)     │           │
-│  │  Kartenerkennung    │  │   Preise & Sets     │           │
-│  │  Kostenlos! 🎉      │  │   Kostenlos! 🎉     │           │
-│  └─────────────────────┘  └─────────────────────┘           │
-│                                                              │
-│  ┌─────────────────────┐  ┌─────────────────────┐           │
-│  │     Supabase        │  │   OpenClaw Agent    │           │
-│  │  (PostgreSQL DB)    │  │  (VPS @ Hostinger)  │           │
-│  │   Cache + Auth      │  │  Cron-Jobs, Scraping│           │
-│  │   Free Tier         │  │   Telegram Bot      │           │
-│  └─────────────────────┘  └─────────────────────┘           │
-└─────────────────────────────────────────────────────────────┘
+│  │   React Frontend    │  │  Edge Function      │           │
+│  │   (Static Files)    │  │  /api/recognize     │           │
+│  │                     │  │  (Proxy für NVIDIA) │           │
+│  └─────────────────────┘  └──────────┬──────────┘           │
+└─────────────────────────────────────┬───────────────────────┘
+                                      │
+                         ┌────────────┴────────────┐
+                         ▼                         ▼
+┌─────────────────────────────┐  ┌─────────────────────────────┐
+│    NVIDIA NIM API           │  │      Cardmarket.com         │
+│    (Kimi K2.5 Vision)       │  │      (Preise - Link)        │
+│                             │  │                             │
+│  Bild → Karteninfos         │  │  Wird im neuen Tab geöffnet │
+└─────────────────────────────┘  └─────────────────────────────┘
 ```
 
-### Technische Entscheidungen
+### Warum diese Architektur?
 
-| Entscheidung | Alternative | Warum diese Wahl |
-|-------------|-------------|------------------|
-| **Kimi K2.5 Vision** statt OCR | EasyOCR, Tesseract | OCR versagt bei holographischen Karten, KI-Vision erkennt das gesamte Bild |
-| **TypeScript only** | Python + TypeScript | Ein Tech-Stack = weniger Bugs, einfacher zu warten |
-| **Supabase** statt eigener DB | MongoDB, Firebase | PostgreSQL + kostenlos + Auth + Realtime out of the box |
-| **NVIDIA NIM API** | Moonshot API, OpenRouter | Komplett kostenlos, keine Rate Limits dokumentiert |
-| **Vercel** statt Netlify | Netlify, Railway | Auto-Deploy, Preview URLs, perfekte GitHub Integration |
-| **OpenClaw + VPS** | Lokaler Betrieb | 24/7 Betrieb, Telegram-Bot braucht Always-On Server |
-| **Llama 3.3 70B** statt GPT-4 | OpenAI API | Kostenlos via NVIDIA, schnell, gute Code-Qualität |
+| Entscheidung | Problem | Lösung |
+|-------------|---------|--------|
+| **Edge Function** | CORS blockiert Browser→NVIDIA | Server-Side Proxy |
+| **Kimi K2.5 Vision** | OCR versagt bei Holo-Karten | KI "sieht" das ganze Bild |
+| **Cardmarket Link** | Keine offizielle API | Direkte Verlinkung zur Suche |
+| **Vercel** | Einfaches Deployment | Auto-Deploy bei Git Push |
+| **TypeScript** | Fehleranfällig | Typsicherheit |
 
 ---
 
 ## 🔄 Wie funktioniert die Kartenerkennung?
 
-Wir nutzen **KEINE klassische Texterkennung (OCR)** – das funktioniert bei Pokémon-Karten schlecht wegen der bunten Hintergründe und Spezial-Schriften.
-
-Stattdessen nutzen wir **KI-Vision**:
-
 ```
-📸 Foto der Karte
+📸 User lädt Foto hoch
      │
      ▼
 ┌─────────────────────────────────────────┐
-│  🤖 Kimi K2.5 Vision API (NVIDIA NIM)   │
-│                                         │
-│  "Das ist Glurak (Charizard)            │
-│   Set: Obsidian Flames                  │
-│   Nummer: 006/197                       │
-│   Seltenheit: Ultra Rare"               │
+│  Frontend (React)                       │
+│  - Konvertiert Bild zu Base64           │
+│  - Sendet an /api/recognize             │
+└────────────────┬────────────────────────┘
+                 │ POST
+                 ▼
+┌─────────────────────────────────────────┐
+│  Vercel Edge Function                   │
+│  - Empfängt Base64-Bild                 │
+│  - Leitet an NVIDIA API weiter          │
+│  - Gibt Antwort zurück                  │
 └────────────────┬────────────────────────┘
                  │
                  ▼
 ┌─────────────────────────────────────────┐
-│  🔎 Pokémon TCG API                     │
+│  NVIDIA NIM (Kimi K2.5 Vision)          │
 │                                         │
-│  Kartendaten abrufen:                   │
-│  - Offizielles Bild                     │
-│  - Marktpreise (TCGPlayer)              │
-│  - Set-Informationen                    │
+│  Prompt: "Analysiere diese Pokémon-     │
+│  Karte und gib mir: cardName, set,      │
+│  number, rarity, language als JSON"     │
+│                                         │
+│  Antwort: {                             │
+│    "cardName": "Xerneas",               │
+│    "set": "Celebrations",               │
+│    "number": "012/025",                 │
+│    "rarity": "Holo Rare",               │
+│    "language": "English"                │
+│  }                                      │
 └────────────────┬────────────────────────┘
                  │
                  ▼
 ┌─────────────────────────────────────────┐
-│  📱 Ergebnis auf dem Bildschirm         │
+│  Frontend zeigt Ergebnis                │
+│  + Link zu Cardmarket                   │
 │                                         │
-│  Kartenname: Glurak                     │
-│  Set: Obsidian Flames (006/197)         │
-│  Seltenheit: Ultra Rare ⭐              │
-│  Preis: ~47,50€                         │
+│  "Auf Cardmarket ansehen" →             │
+│  cardmarket.com/Pokemon/Search?...      │
 └─────────────────────────────────────────┘
-```
-
-### Code-Beispiel
-
-```typescript
-// 1. Bild an Kimi K2.5 Vision senden
-const recognition = await recognizeCard(base64Image);
-// → { cardName: "Charizard", set: "Obsidian Flames", number: "006/197", rarity: "Ultra Rare" }
-
-// 2. Pokémon TCG API abfragen
-const cardData = await searchCard(recognition.cardName, recognition.set, recognition.number);
-// → { id: "sv3-006", imageUrl: "...", prices: { market: 47.50 } }
-
-// 3. Ergebnis anzeigen
-displayResult(cardData);
 ```
 
 ---
@@ -301,38 +303,30 @@ displayResult(cardData);
 
 ```
 poke-scan-v2/
+├── 📁 api/                     # Vercel Serverless Functions
+│   └── recognize.ts              # NVIDIA API Proxy (CORS-Lösung)
+│
 ├── 📁 src/
 │   ├── 📁 components/          # React UI-Komponenten
-│   │   ├── CardScanner.tsx       # Hauptkomponente: Kamera + Upload
-│   │   ├── CardResult.tsx        # Ergebnis-Anzeige
-│   │   └── PriceDisplay.tsx      # Preis + Trend
+│   │   └── CardScanner.tsx       # Hauptkomponente mit Upload + Ergebnis
 │   │
 │   ├── 📁 services/            # API-Integrationen
-│   │   ├── kimiVision.ts         # Kimi K2.5 Vision API
-│   │   ├── pokemonTCG.ts         # Pokémon TCG API
-│   │   ├── priceService.ts       # Preis-Aggregation
-│   │   └── supabase.ts           # Datenbank-Client
+│   │   ├── kimiVision.ts         # Ruft /api/recognize auf
+│   │   ├── cardmarketPrice.ts    # Generiert Cardmarket-URL
+│   │   └── pokemonTCG.ts         # Pokémon TCG API Client
 │   │
-│   ├── 📁 hooks/               # Custom React Hooks
-│   ├── 📁 types/               # TypeScript Definitionen
-│   ├── 📁 utils/               # Hilfsfunktionen
-│   │
-│   ├── App.tsx                 # Haupt-App-Komponente
+│   ├── App.tsx                 # Haupt-App mit Layout
 │   └── main.tsx                # Entry Point
 │
 ├── 📁 docs/                    # Dokumentation
-│   ├── PROJEKT-ANWEISUNGEN.md    # Anweisungen für KI-Agenten
-│   └── AGENT-RICHTLINIEN.md      # Regeln für OpenClaw
-│
-├── 📁 supabase/                # Datenbank-Migrationen
-├── 📁 public/                  # Statische Assets
-├── 📁 .github/workflows/       # CI/CD Pipeline
+│   ├── PROJEKT-ANWEISUNGEN.md    # Regeln für KI-Agenten
+│   └── AGENT-RICHTLINIEN.md      # Git-Workflow Regeln
 │
 ├── 📄 package.json             # Dependencies
 ├── 📄 tsconfig.json            # TypeScript Config
 ├── 📄 vite.config.ts           # Vite Config
 ├── 📄 tailwind.config.ts       # Tailwind Config
-└── 📄 .env.example             # Environment Variables Template
+└── 📄 vercel.json              # Vercel Config (optional)
 ```
 
 ---
@@ -342,8 +336,9 @@ poke-scan-v2/
 ### Voraussetzungen
 
 - Node.js 18+ (empfohlen: 20 LTS)
-- npm oder pnpm
+- npm
 - Git
+- NVIDIA NIM API Key (kostenlos auf build.nvidia.com)
 
 ### Lokale Installation
 
@@ -359,7 +354,7 @@ npm install
 
 # 4. Environment Variables setzen
 cp .env.example .env.local
-# Dann .env.local mit deinen API-Keys füllen
+# Dann .env.local editieren und API-Keys eintragen
 
 # 5. Entwicklungsserver starten
 npm run dev
@@ -367,15 +362,12 @@ npm run dev
 
 Dann öffne `http://localhost:5173` im Browser. 🎉
 
-### Produktions-Build
+### Vercel Deployment
 
-```bash
-# Build erstellen
-npm run build
-
-# Build lokal testen
-npm run preview
-```
+1. Repo mit Vercel verbinden (vercel.com → Import Project)
+2. Environment Variables hinzufügen:
+   - `NVIDIA_API_KEY` = dein NVIDIA NIM Key
+3. Deploy!
 
 ---
 
@@ -383,27 +375,27 @@ npm run preview
 
 ### Environment Variables
 
-Erstelle eine `.env.local` Datei mit folgenden Variablen:
-
+**Für lokale Entwicklung** (`.env.local`):
 ```env
-# Supabase (Datenbank)
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-# NVIDIA NIM API (Kimi K2.5 Vision)
-VITE_NVIDIA_API_KEY=nvapi-your_nvidia_api_key
-
-# Pokémon TCG API
-VITE_POKEMON_TCG_API_KEY=your_pokemon_tcg_api_key
+VITE_NVIDIA_API_KEY=nvapi-xxx
+VITE_SUPABASE_URL=https://xxx.supabase.co
+VITE_SUPABASE_ANON_KEY=xxx
 ```
+
+**Für Vercel** (Settings → Environment Variables):
+```env
+NVIDIA_API_KEY=nvapi-xxx
+```
+
+> ⚠️ **Wichtig:** Vercel Server Functions brauchen Keys **ohne** `VITE_` Prefix!
 
 ### API-Keys bekommen
 
-| Service | Wo bekommst du den Key? | Kosten |
-|---------|------------------------|--------|
-| **Supabase** | [supabase.com](https://supabase.com) → Neues Projekt → Settings → API | Kostenlos |
-| **NVIDIA NIM** | [build.nvidia.com](https://build.nvidia.com) → Sign Up → API Keys | Kostenlos |
-| **Pokémon TCG** | [pokemontcg.io](https://pokemontcg.io) → Get API Key | Kostenlos |
+| Service | URL | Kosten |
+|---------|-----|--------|
+| **NVIDIA NIM** | [build.nvidia.com](https://build.nvidia.com) | Kostenlos |
+| **Supabase** | [supabase.com](https://supabase.com) | Kostenlos |
+| **Pokémon TCG** | [pokemontcg.io](https://pokemontcg.io) | Kostenlos |
 
 ---
 
@@ -416,25 +408,27 @@ VITE_POKEMON_TCG_API_KEY=your_pokemon_tcg_api_key
 - [x] 🗄️ Supabase Datenbank Setup
 - [x] 🤖 Kimi K2.5 Vision API Integration
 - [x] 🔎 Pokémon TCG API Anbindung
-- [x] 🦞 OpenClaw Agent auf VPS
-- [x] 📱 Telegram Bot (@herbekantebot)
+- [x] 💰 Cardmarket-Verlinkung
+- [x] 🦞 OpenClaw Agent auf VPS (Telegram: @herbekantebot)
 - [x] 📸 CardScanner UI-Komponente
-- [x] 🔄 GitHub → Dev Branch Workflow
+- [x] 🚀 Vercel Deployment mit Edge Functions
+- [x] 🔄 GitHub → Vercel CI/CD Pipeline
+- [x] ♿ Barrierefreiheit (ARIA Labels)
+- [x] 📝 Professionelle README
 
 ### 🚧 In Arbeit
 
+- [ ] 🔧 API-Fehlerbehandlung verbessern
 - [ ] 🧪 End-to-End Tests
-- [ ] 🔒 Error Handling verbessern
-- [ ] 📊 Loading States & Skeleton UI
 
 ### 📋 Geplant
 
-- [ ] 💰 Cardmarket Preis-Scraping via OpenClaw
-- [ ] 📱 PWA Support (App-Icon auf Handy)
-- [ ] 📈 Preis-Verlaufs-Graphen
-- [ ] 🪙 Sammlungs-Verwaltung
-- [ ] 🌍 Multi-Language Support (EN/DE)
-- [ ] 🔔 Preis-Alerts
+- [ ] 🔐 Google Login via Supabase Auth
+- [ ] 🪙 Kartensammlung speichern
+- [ ] 📊 Preis-Verlauf Graphen
+- [ ] 📱 PWA Support
+- [ ] 🔗 n8n Workflow Integration
+- [ ] 🐳 Docker Setup
 
 ---
 
@@ -443,15 +437,34 @@ VITE_POKEMON_TCG_API_KEY=your_pokemon_tcg_api_key
 | Service | Kosten/Monat | Notwendig? |
 |---------|--------------|------------|
 | 🧠 Claude Pro | 18€ | Ja (Architekt) |
-| 🖥️ Hostinger VPS KVM 2 | ~9€ | Ja (24/7 Bot) |
+| 🖥️ Hostinger VPS | ~9€ | Ja (24/7 Bot) |
 | 🤖 NVIDIA NIM API | 0€ | Kostenlos |
 | 🃏 Pokémon TCG API | 0€ | Kostenlos |
 | 🗄️ Supabase | 0€ | Free Tier |
 | 🚀 Vercel | 0€ | Free Tier |
-| 🔄 GitHub Actions | 0€ | Free Tier |
+| 🔄 GitHub | 0€ | Free Tier |
 | **Gesamt** | **~27€/Monat** | |
 
-> 💡 **Tipp:** Das entspricht etwa den Kosten von Netflix + Spotify – für einen vollautomatisierten KI-Entwicklungs-Workflow!
+> 💡 Das entspricht etwa Netflix + Spotify – für einen vollautomatisierten KI-Entwicklungs-Workflow!
+
+---
+
+## ♿ Barrierefreiheit
+
+Dieses Projekt legt besonderen Wert auf Barrierefreiheit:
+
+| Feature | Umsetzung |
+|---------|-----------|
+| **Screen Reader** | ARIA Labels auf allen interaktiven Elementen |
+| **Tastatur-Navigation** | Alle Funktionen per Tab erreichbar |
+| **Kontraste** | WCAG AA konform |
+| **Loading States** | Klare Rückmeldung während Ladezeiten |
+| **Fehlermeldungen** | Verständlich, nicht technisch |
+| **Einfache Sprache** | Keine unnötigen Fachbegriffe in der UI |
+
+### Warum?
+
+Der Entwickler dieses Projekts lebt selbst mit ADHS und anderen Herausforderungen. Die App soll für **alle** Menschen nutzbar sein – unabhängig von Einschränkungen.
 
 ---
 
@@ -459,11 +472,21 @@ VITE_POKEMON_TCG_API_KEY=your_pokemon_tcg_api_key
 
 Contributions sind willkommen! Bitte beachte:
 
-1. **Fork** das Repository
-2. Erstelle einen **Feature Branch** (`git checkout -b feature/NeuesFeature`)
-3. **Committe** deine Änderungen (`git commit -m '[Feature] Beschreibung'`)
-4. **Pushe** den Branch (`git push origin feature/NeuesFeature`)
-5. Öffne einen **Pull Request**
+### Branch-Strategie
+
+```
+main (geschützt) ← nur über Pull Request
+  └── dev        ← hier wird entwickelt
+```
+
+### Workflow
+
+1. Fork das Repository
+2. Erstelle einen Branch von `dev`
+3. Mache deine Änderungen
+4. Erstelle einen Pull Request nach `dev`
+5. Nach Review: Merge in `dev`
+6. Regelmäßig: `dev` → `main` (Production)
 
 ### Commit-Format
 
@@ -486,23 +509,11 @@ Typen:
 
 MIT License – Mach damit was du willst. ✌️
 
-```
-MIT License
-
-Copyright (c) 2026 celtechstarter
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software...
-```
-
 ---
 
 <p align="center">
   <b>Gebaut mit 💛 und einer Menge KI</b><br/>
-  <sub>Von einem Menschen mit Ideen und 6 KI-Agenten mit Skills</sub><br/><br/>
+  <sub>Von einem Menschen mit Ideen und einem Team aus KI-Agenten</sub><br/><br/>
   <img src="https://img.shields.io/badge/Made_with-Claude_+_OpenClaw_+_Kimi-FF6B6B?style=for-the-badge" />
 </p>
 
@@ -510,8 +521,11 @@ copies of the Software...
 
 ## 🔗 Links
 
-- **Live Demo:** *Coming Soon*
-- **GitHub:** [github.com/celtechstarter/poke-scan-v2](https://github.com/celtechstarter/poke-scan-v2)
-- **Telegram Bot:** [@herbekantebot](https://t.me/herbekantebot)
-- **Pokémon TCG API:** [pokemontcg.io](https://pokemontcg.io)
-- **NVIDIA NIM:** [build.nvidia.com](https://build.nvidia.com)
+| Was | URL |
+|-----|-----|
+| 🌐 **Live App** | [poke-scan-v2.vercel.app](https://poke-scan-v2.vercel.app) |
+| 📦 **GitHub** | [github.com/celtechstarter/poke-scan-v2](https://github.com/celtechstarter/poke-scan-v2) |
+| 🦞 **Telegram Bot** | [@herbekantebot](https://t.me/herbekantebot) |
+| 🧠 **NVIDIA NIM** | [build.nvidia.com](https://build.nvidia.com) |
+| 🃏 **Pokémon TCG API** | [pokemontcg.io](https://pokemontcg.io) |
+| 💰 **Cardmarket** | [cardmarket.com](https://www.cardmarket.com/en/Pokemon) |
