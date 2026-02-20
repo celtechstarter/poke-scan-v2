@@ -1,48 +1,65 @@
 import axios from "axios";
 
-const openAiApi = "https://integrate.api.nvidia.com/v1";
-const modelName = "moonshotai/kimi-k2-instruct";
-const apiKey = process.env.VITE_NVIDIA_API_KEY;
+interface CardRecognitionResult {
+  cardName: string;
+  set: string;
+  number: string;
+  rarity: string;
+  language: string;
+  confidence: number;
+}
 
-const recognizeCard = async (base64Image: string) => {
+const NVIDIA_API_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
+const MODEL_NAME = "moonshotai/kimi-k2-5";
+
+export const recognizeCard = async (base64Image: string): Promise<CardRecognitionResult | null> => {
+  const apiKey = import.meta.env.VITE_NVIDIA_API_KEY;
+  if (!apiKey) {
+    console.error("NVIDIA API Key nicht konfiguriert");
+    return null;
+  }
+
   try {
     const response = await axios.post(
-      `${openAiApi}/chat/completions`,
+      NVIDIA_API_URL,
       {
-        model: modelName,
+        model: MODEL_NAME,
         messages: [
           {
             role: "user",
-            content: {
-              image_url: base64Image,
-            },
-          },
+            content: [
+              {
+                type: "text",
+                text: `Analysiere diese Pokémon-Karte und gib mir folgende Informationen im JSON-Format zurück: { "cardName": "Name des Pokémon", "set": "Name des Sets", "number": "Kartennummer (z.B. 012/025)", "rarity": "Seltenheit (Common, Uncommon, Rare, Holo Rare, Ultra Rare, etc.)", "language": "Sprache der Karte (Deutsch, Englisch, Japanisch, etc.)", "confidence": 0.95 } Antworte NUR mit dem JSON, kein anderer Text.`,
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: base64Image.startsWith("data:") ? base64Image : `data:image/jpeg;base64,${base64Image}`
+                }
+              }
+            ]
+          }
         ],
+        max_tokens: 500,
+        temperature: 0.3
       },
       {
         headers: {
           "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
+          "Content-Type": "application/json"
+        }
       }
     );
 
-    const cardData = response.data.choices[0].message.content;
-    const cardName = cardData.split("\n")[0];
-    const set = cardData.split("\n")[1];
-    const number = cardData.split("\n")[2];
-    const rarity = cardData.split("\n")[3];
-
-    return {
-      cardName,
-      set,
-      number,
-      rarity,
-    };
+    const content = response.data.choices[0].message.content;
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]) as CardRecognitionResult;
+    }
+    return null;
   } catch (error) {
-    console.error(error);
+    console.error("Fehler bei Kartenerkennung:", error);
     return null;
   }
 };
-
-export { recognizeCard };
