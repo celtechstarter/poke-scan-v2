@@ -43,7 +43,7 @@ export default async function handler(request: Request) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'moonshot-ai/kimi-k2-instruct',
+        model: 'moonshotai/kimi-k2.5',
         messages: [{
           role: 'user',
           content: [
