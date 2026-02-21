@@ -1,219 +1,67 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
+:root {
+  --poke-yellow: #facc15;
+  --poke-cyan: #00f0ff;
+  --poke-red: #ef4444;
+  --poke-green: #22c55e;
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
+body {
+  background-color: #0a0a0f;
+  color: #f0f0f5;
 }
 
-/* Hier fügen wir einen Container-Stil hinzu, um den Content lesbar zu machen */
-.content-container {
-  @apply bg-white/80 dark:bg-black/80 backdrop-blur-sm rounded-lg shadow-lg;
-}
+/* Custom color utilities */
+.text-poke-yellow { color: var(--poke-yellow); }
+.text-poke-cyan { color: var(--poke-cyan); }
+.text-poke-red { color: var(--poke-red); }
+.text-poke-green { color: var(--poke-green); }
+.bg-poke-yellow { background-color: var(--poke-yellow); }
+.bg-poke-cyan { background-color: var(--poke-cyan); }
+.bg-poke-red { background-color: var(--poke-red); }
+.bg-poke-green { background-color: var(--poke-green); }
+.border-poke-yellow { border-color: var(--poke-yellow); }
+.border-poke-cyan { border-color: var(--poke-cyan); }
+.border-poke-red { border-color: var(--poke-red); }
+.border-poke-green { border-color: var(--poke-green); }
 
-/* Footer Styling */
-.app-footer {
-  display: flex;
-  flex-direction: column; /* Elemente untereinander */
-  align-items: center; /* Zentrierung */
-  justify-content: center; /* Vertikale Zentrierung */
-  padding: 20px;    
-  width: 100%;
-  position: relative; /* Sicherstellen, dass es nicht vom Parent überschrieben wird */
-  z-index: 100; /* Oberhalb von anderen transparenten Elementen */
-  text-align: center;
-  background: none; /* Kein Hintergrund */
-  box-shadow: none; /* Keine Schatten */
-}
-
-.footer-logo-container {
-  margin-bottom: 10px;
-}
-
-.rotating-logo-footer {
-  width: 40px;
-  height: 40px;
-  animation: spin-slow 6s linear infinite;
-}
-
-
-/* Custom Animations */
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
+/* Animations */
 @keyframes float {
-  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.6; }
-  50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
+  0%, 100% { transform: translateY(100vh); opacity: 0; }
+  10% { opacity: 0.4; }
+  90% { opacity: 0.4; }
+  100% { transform: translateY(-10vh); opacity: 0; }
 }
 
-@keyframes bounce-slow {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+@keyframes scan-line {
+  0% { top: 0%; }
+  100% { top: 100%; }
 }
 
-.animate-spin-slow {
-  animation: spin-slow 8s linear infinite;
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .animate-float {
-  animation: float 3s ease-in-out infinite;
+  animation: float 10s linear infinite;
 }
 
-.animate-bounce-slow {
-  animation: bounce-slow 2s ease-in-out infinite;
+.animate-scan-line {
+  animation: scan-line 2s linear infinite;
 }
 
-/* ========================================
-   POKE-SCAN CUSTOM ANIMATIONS
-   ======================================== */
-
-/* Pokeball spin animation */
-@keyframes pokeball-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
 }
 
-/* Sparkle float animation */
-@keyframes sparkle-float {
-  0%, 100% { transform: translateY(0) scale(1); opacity: 0.7; }
-  50% { transform: translateY(-12px) scale(1.15); opacity: 1; }
-}
-
-/* Fade in animation */
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Confetti burst animation */
-@keyframes confetti-fall {
-  0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(80px) rotate(360deg); opacity: 0; }
-}
-
-.animate-pokeball-spin {
-  animation: pokeball-spin 8s linear infinite;
-}
-
-.animate-sparkle-float {
-  animation: sparkle-float 3s ease-in-out infinite;
-}
-
-.animate-fade-in {
-  animation: fade-in 0.6s ease-out forwards;
-}
-
-.animate-confetti {
-  animation: confetti-fall 1.2s ease-in forwards;
-}
-
-/* Respect reduced motion for accessibility */
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .animate-pokeball-spin,
-  .animate-sparkle-float,
-  .animate-confetti {
-    animation: none;
-  }
-  .animate-fade-in {
-    animation: none;
-    opacity: 1;
-    transform: none;
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

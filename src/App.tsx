@@ -1,26 +1,33 @@
-import { AppHeader } from "./components/AppHeader";
-import { AppFooter } from "./components/AppFooter";
-import CardScanner from "./components/CardScanner";
+import { NeuralPokemonBackground } from "./components/poke-scan/neural-background";
+import { EnergyParticles } from "./components/poke-scan/energy-particles";
+import { PokeScanHeader } from "./components/poke-scan/poke-scan-header";
+import { AIStatusBar } from "./components/poke-scan/ai-status-bar";
+import { TechStackPokedex } from "./components/poke-scan/tech-stack-pokedex";
+import { CardScanner } from "./components/poke-scan/card-scanner";
+import { TrainerFooter } from "./components/poke-scan/trainer-footer";
 
 function App() {
   return (
-    <div className="flex min-h-screen flex-col bg-[#0f172a]">
-      <AppHeader />
+    <div className="relative min-h-screen overflow-hidden bg-[#0a0a0f] text-white">
+      {/* Background layers */}
+      <NeuralPokemonBackground />
+      <EnergyParticles count={25} />
 
-      <main id="main-content" className="flex flex-1 flex-col items-center px-4 py-10 md:py-16">
-        <div className="mb-6 text-center animate-fade-in">
-          <h2 className="text-xl font-semibold text-white md:text-2xl">
-            Lade ein Foto deiner Karte hoch
-          </h2>
-          <p className="mt-2 text-sm text-gray-400">
-            Wir identifizieren sie und zeigen dir den aktuellen Marktpreis.
-          </p>
-        </div>
+      {/* Main content */}
+      <div className="relative z-10">
+        <PokeScanHeader />
 
-        <CardScanner />
-      </main>
+        <main className="mx-auto flex max-w-5xl flex-col gap-10 px-4 pb-12">
+          <AIStatusBar />
 
-      <AppFooter />
+          <div className="grid gap-8 lg:grid-cols-[1fr_auto]">
+            <CardScanner />
+            <TechStackPokedex />
+          </div>
+        </main>
+
+        <TrainerFooter />
+      </div>
     </div>
   );
 }
