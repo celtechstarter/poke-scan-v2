@@ -5,18 +5,13 @@ export default async function handler(request: Request) {
     return new Response('Method not allowed', { status: 405 });
   }
 
-  const rawBody = await request.text();
-  const preview = rawBody.substring(0, 200);
-  
   let body;
   try {
-    body = JSON.parse(rawBody);
+    body = await request.json();
   } catch (e) {
     return new Response(JSON.stringify({ 
-      error: 'Invalid JSON', 
-      message: String(e),
-      bodyPreview: preview,
-      bodyLength: rawBody.length
+      error: 'Invalid request JSON', 
+      message: String(e)
     }), { 
       status: 400,
       headers: { 'Content-Type': 'application/json' }
@@ -61,8 +56,22 @@ export default async function handler(request: Request) {
       })
     });
 
-    const data = await response.json();
+    const responseText = await response.text();
     
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      return new Response(JSON.stringify({ 
+        error: 'NVIDIA returned invalid JSON', 
+        status: response.status,
+        responsePreview: responseText.substring(0, 500)
+      }), { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     if (!response.ok) {
       return new Response(JSON.stringify({ error: 'NVIDIA API error', details: data }), { 
         status: response.status,
@@ -74,7 +83,7 @@ export default async function handler(request: Request) {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Server error', message: String(error) }), { 
+    return new Response(JSON.stringify({ error: 'Fetch error', message: String(error) }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
