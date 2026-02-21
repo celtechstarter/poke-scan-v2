@@ -43,7 +43,7 @@ export default async function handler(request: Request) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'moonshotai/kimi-k2.5',
+        model: 'meta/llama-3.2-90b-vision-instruct',
         messages: [{
           role: 'user',
           content: [
