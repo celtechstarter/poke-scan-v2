@@ -41,6 +41,20 @@ export default async function handler(request: Request) {
     });
   }
 
+  const prompt = `Analysiere diese Pokemon-Karte und extrahiere folgende Informationen:
+
+WICHTIG: Die Kartennummer findest du UNTEN LINKS auf der Karte (z.B. "012/172" oder "025/198"). 
+Das ist NICHT die Pokedex-Nummer oben rechts neben den HP!
+
+Antworte NUR mit diesem JSON-Format:
+{
+  "cardName": "Name des Pokemon",
+  "set": "Name des Sets (z.B. Brilliant Stars, Obsidian Flames)",
+  "number": "Kartennummer UNTEN LINKS (z.B. 012/172)",
+  "rarity": "Seltenheit (Common, Uncommon, Rare, Holo Rare, Ultra Rare, etc.)",
+  "language": "Sprache der Karte (English, German, Japanese, etc.)"
+}`;
+
   let lastError = null;
   
   for (const model of VISION_MODELS) {
@@ -56,7 +70,7 @@ export default async function handler(request: Request) {
           messages: [{
             role: 'user',
             content: [
-              { type: 'text', text: 'Analysiere diese Pokemon-Karte. Antworte NUR mit JSON: {"cardName":"...","set":"...","number":"...","rarity":"...","language":"..."}' },
+              { type: 'text', text: prompt },
               { type: 'image_url', image_url: { url: image } }
             ]
           }],
@@ -74,11 +88,9 @@ export default async function handler(request: Request) {
       }
       
       lastError = { model, status: response.status, details: data };
-      console.log(`Model ${model} failed, trying next...`);
       
     } catch (error) {
       lastError = { model, error: String(error) };
-      console.log(`Model ${model} error, trying next...`);
     }
   }
 
