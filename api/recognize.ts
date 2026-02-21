@@ -1,4 +1,7 @@
-export const config = { runtime: 'edge' };
+export const config = { 
+  runtime: 'edge',
+  maxDuration: 30
+};
 
 export default async function handler(request: Request) {
   if (request.method !== 'POST') {
@@ -9,10 +12,7 @@ export default async function handler(request: Request) {
   try {
     body = await request.json();
   } catch (e) {
-    return new Response(JSON.stringify({ 
-      error: 'Invalid request JSON', 
-      message: String(e)
-    }), { 
+    return new Response(JSON.stringify({ error: 'Invalid JSON' }), { 
       status: 400,
       headers: { 'Content-Type': 'application/json' }
     });
@@ -51,27 +51,13 @@ export default async function handler(request: Request) {
             { type: 'image_url', image_url: { url: image } }
           ]
         }],
-        max_tokens: 500,
-        temperature: 0.3
+        max_tokens: 300,
+        temperature: 0.2
       })
     });
 
-    const responseText = await response.text();
+    const data = await response.json();
     
-    let data;
-    try {
-      data = JSON.parse(responseText);
-    } catch (e) {
-      return new Response(JSON.stringify({ 
-        error: 'NVIDIA returned invalid JSON', 
-        status: response.status,
-        responsePreview: responseText.substring(0, 500)
-      }), { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
     if (!response.ok) {
       return new Response(JSON.stringify({ error: 'NVIDIA API error', details: data }), { 
         status: response.status,
@@ -83,7 +69,7 @@ export default async function handler(request: Request) {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Fetch error', message: String(error) }), { 
+    return new Response(JSON.stringify({ error: 'Server error', message: String(error) }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
