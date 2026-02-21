@@ -44,7 +44,7 @@ export default async function handler(request: Request) {
     const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': 'Bearer ' + apiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -79,4 +79,5 @@ export default async function handler(request: Request) {
       headers: { 'Content-Type': 'application/json' }
     });
   }
+}
 }
