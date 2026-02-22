@@ -1,313 +1,249 @@
-# 🃏 Poke-Scan V2
-
-### Pokémon-Karte fotografieren → Preis erfahren. So einfach.
-
+🎮 POKE-SCAN V2
+AI-POWERED CARD RECOGNITION • EST. 2026
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Live_🚀-brightgreen?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/KI--gesteuert-🤖_Ja!-blue?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Kosten-~9€%2FMonat-green?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/AI_Agents-4_Online-blue?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Design-2050_Futuristic-purple?style=for-the-badge" />
 </p>
-
 <p align="center">
   <a href="https://poke-scan-v2.vercel.app">🌐 Live Demo</a> •
-  <a href="#-wie-funktioniert-die-kartenerkennung">🔍 Wie es funktioniert</a> •
-  <a href="#%EF%B8%8F-tech-stack">🛠️ Tech-Stack</a> •
-  <a href="#-das-team">👥 Das Team</a>
+  <a href="#-how-it-works">🔍 How it Works</a> •
+  <a href="#-tech-stack">⚡ Tech Stack</a> •
+  <a href="#-the-team">👥 The Team</a>
 </p>
 
----
+🎯 Live Demo
+👉 poke-scan-v2.vercel.app
+Upload a photo of your Pokémon card → Get the market price in seconds!
 
-## 🎯 Live Demo
+🤔 What is this?
+You find an old Pokémon card in the attic or at a flea market and wonder:
 
-**👉 [poke-scan-v2.vercel.app](https://poke-scan-v2.vercel.app)**
+"Is this worth anything?"
 
-Einfach Foto hochladen und in Sekunden den Marktwert erfahren!
+Poke-Scan gives you the answer in seconds:
+📸 Take Photo → 🦙 AI Recognizes Card → 💰 Price Displayed
+No Googling. No guessing. Just scan.
 
----
+✨ Features
+FeatureDescription🦙 AI Card RecognitionLlama 3.2 Vision identifies cards from photos🔄 3-Model FallbackAlways works - even when APIs are overloaded💰 Cardmarket LinkDirect link to current market prices📱 Mobile-FirstWorks on any device♿ AccessibleWCAG AA compliant🎮 2050 DesignFuturistic Pokemon + AI + Cyberpunk aesthetic
 
-## 🤔 Was ist das?
-
-Du findest eine alte Pokémon-Karte auf dem Dachboden oder auf dem Flohmarkt und fragst dich:
-
-> **"Ist die was wert?"**
-
-**Poke-Scan** gibt dir die Antwort in Sekunden:
-
-```
-📸 Foto machen → 🦙 KI erkennt die Karte → 💰 Preis wird angezeigt
-```
-
-Kein Googlen. Kein Rätseln. Einfach scannen.
-
----
-
-## ✨ Features
-
-| Feature | Beschreibung |
-|---------|-------------|
-| 📸 **KI-Kartenerkennung** | Llama 3.2 Vision erkennt Pokémon-Karten aus Fotos |
-| 🔄 **Fallback-System** | 3 Vision-Models für maximale Zuverlässigkeit |
-| 💰 **Cardmarket-Link** | Direkter Link zum aktuellen Marktpreis |
-| 📱 **Mobile-First** | Responsive Design, funktioniert auf jedem Gerät |
-| ♿ **Barrierefrei** | WCAG AA konform (Screen Reader, Tastaturnavigation) |
-| ✨ **Animationen** | Schönes UI mit Pokéball-Animation & Sparkles |
-
----
-
-## 🔍 Wie funktioniert die Kartenerkennung?
-
-Wir nutzen **KEINE klassische Texterkennung (OCR)** — das funktioniert bei Pokémon-Karten schlecht wegen der bunten Hintergründe und holografischen Effekte.
-
-Stattdessen: **KI-Vision mit Fallback-Chain**
-
-```
-📸 Foto der Karte
+🔍 How it Works
+We don't use OCR — it fails on holographic cards. Instead: AI Vision with Fallback Chain
+📸 Card Photo
      │
      ▼
 ┌─────────────────────────────────────────────┐
 │  🦙 NVIDIA NIM Vision API                   │
 │                                             │
-│  Fallback-Chain:                            │
+│  Fallback Chain:                            │
 │  1. meta/llama-3.2-90b-vision-instruct     │
 │  2. meta/llama-3.2-11b-vision-instruct     │
 │  3. microsoft/phi-3.5-vision-instruct      │
 │                                             │
-│  → Erkennt: Name, Set, Nummer, Seltenheit  │
+│  → Extracts: Name, Set, Number, Rarity     │
 └─────────────────────────────────────────────┘
      │
      ▼
-📊 Cardmarket-Link generiert
+📊 Cardmarket Link Generated
      │
      ▼
-📱 Ergebnis auf dem Bildschirm!
-```
+📱 Result on Screen!
+Smart Prompt Engineering: The AI is specifically instructed to read the card number from the bottom left (e.g., "012/172") — not the Pokédex number in the top right.
 
-**Warum Fallback?** Manchmal sind die großen Models überlastet. Mit 3 Models ist immer eins verfügbar.
-
-**Warum die Nummer unten links?** Die Kartennummer (z.B. "012/172") steht unten links auf der Karte — nicht die Pokédex-Nummer oben rechts. Unser Prompt ist darauf optimiert.
-
----
-
-## 🛠️ Tech-Stack
-
-### Frontend
-| Technologie | Verwendung |
-|-------------|------------|
-| **React 18** | UI-Framework |
-| **TypeScript** | Typsicherheit |
-| **Vite** | Build-Tool |
-| **Tailwind CSS** | Styling |
-
-### Backend / API
-| Technologie | Verwendung |
-|-------------|------------|
-| **Vercel Edge Functions** | Serverless API |
-| **NVIDIA NIM** | KI Vision API (kostenlos!) |
-| **Llama 3.2 Vision** | Kartenerkennung |
-
-### Infrastruktur
-| Technologie | Verwendung |
-|-------------|------------|
-| **Vercel** | Hosting & Deployment |
-| **GitHub** | Versionskontrolle |
-| **Hostinger VPS** | OpenClaw Agent |
-
-### Architektur-Diagramm
-
-```
+⚡ Tech Stack
+System Architecture
+╔══════════════════════════════════════╗
+║  ⚡ SYSTEM.POKEDEX                   ║
+╠══════════════════════════════════════╣
+║  FRONTEND                            ║
+║  ├─ React 18 + TypeScript            ║
+║  ├─ Vite + Tailwind CSS              ║
+║  └─ Vercel Edge Functions            ║
+║                                      ║
+║  AI CORE                             ║
+║  ├─ Llama 3.2 Vision (90B)           ║
+║  ├─ NVIDIA NIM API (FREE!)           ║
+║  └─ 3-Model Fallback Chain           ║
+║                                      ║
+║  INFRASTRUCTURE                      ║
+║  ├─ ▲ Vercel (Frontend + Edge)       ║
+║  ├─ 🟦 Hostinger VPS (AI Agents)     ║
+║  └─ 🐙 GitHub (Source Code)          ║
+╚══════════════════════════════════════╝
+Architecture Flow
 ┌─────────────────────────────────────────────────────┐
 │                    BROWSER                          │
 │  React + TypeScript + Tailwind                      │
 └────────────────────┬────────────────────────────────┘
                      │ POST /api/recognize
-                     │ Body: { image: "data:image/..." }
                      ▼
 ┌─────────────────────────────────────────────────────┐
 │              VERCEL EDGE FUNCTION                   │
 │              /api/recognize.ts                      │
-│                                                     │
-│  • Validiert Request                                │
-│  • Fallback-Chain durch 3 Models                   │
-│  • Gibt JSON zurück                                 │
+│  • Validates request                                │
+│  • Tries 3 models in sequence                       │
+│  • Returns JSON result                              │
 └────────────────────┬────────────────────────────────┘
-                     │ Authorization: Bearer $NVIDIA_KEY
+                     │ Authorization: Bearer $KEY
                      ▼
 ┌─────────────────────────────────────────────────────┐
 │              NVIDIA NIM API                         │
-│                                                     │
-│  Models (in Reihenfolge):                          │
-│  1. meta/llama-3.2-90b-vision-instruct            │
-│  2. meta/llama-3.2-11b-vision-instruct            │
-│  3. microsoft/phi-3.5-vision-instruct             │
+│  Models (Fallback Order):                           │
+│  1. llama-3.2-90b-vision-instruct                  │
+│  2. llama-3.2-11b-vision-instruct                  │
+│  3. phi-3.5-vision-instruct                        │
 └─────────────────────────────────────────────────────┘
-```
 
-### Warum diese Entscheidungen?
+🎨 Design: Pokemon × AI × 2050
+The UI was designed to visualize the fusion of:
 
-| Entscheidung | Alternative | Warum diese Wahl |
-|-------------|------------|------------------|
-| **Llama Vision statt OCR** | EasyOCR, Tesseract | OCR versagt bei holografischen Karten |
-| **Edge Functions** | Eigener Server | CORS-Problem gelöst, kein Server nötig |
-| **Fallback-Chain** | Einzelnes Model | Zuverlässigkeit bei API-Überlastung |
-| **NVIDIA NIM** | OpenAI, Anthropic | Komplett kostenlos! |
-| **Vercel** | Netlify, Railway | Auto-Deploy, perfekte GitHub Integration |
+Pokemon Universe — Pokeballs, energy particles, Pokedex-style displays
+AI/Neural Networks — Data streams, connection lines, status indicators
+Year 2050 Aesthetics — Cyberpunk, holographic effects, dark theme
 
----
+Design Features
 
-## 🎨 Design & Accessibility
+🔮 Holographic Pokeball — Pulses with energy
+⚡ Neural Network Background — Animated nodes and connections
+✨ Energy Particles — Floating Pokemon stardust
+🖥️ Pokedex-Style UI — Card results displayed like Pokedex entries
+🟢 AI Status Bar — Shows all 4 agents are LIVE
 
-Das UI wurde mit **v0.dev** generiert und ist vollständig **barrierefrei** (WCAG AA):
+Accessibility (WCAG AA)
 
-### Design-Features
-- 🎱 **Animierter Pokéball** — dreht sich sanft im Header
-- ✨ **Floating Sparkles** — schwebende Sterne für mehr Leben
-- 🎊 **Konfetti-Animation** — bei erfolgreicher Erkennung
-- 🌈 **Gradient-Header** — Blau → Lila → Pink
+⌨️ Keyboard navigation
+🔗 Skip-to-content link
+👁️ Visible focus states
+🏷️ ARIA labels everywhere
+🎬 Respects prefers-reduced-motion
 
-### Accessibility-Features
-- ⌨️ **Tastaturnavigation** — alle Elemente erreichbar
-- 🔗 **Skip-to-Content Link** — für Screen Reader
-- 👁️ **Focus-States** — sichtbare Fokus-Ringe
-- 🏷️ **ARIA-Labels** — alle Elemente beschriftet
-- 🎬 **Reduced Motion** — Animationen respektieren System-Einstellung
 
----
+👥 The Team
+This project was built by one human coordinating multiple AI agents:
+┌─ POKEMON TRAINER ─────────────────────────────────┐
+│                                                   │
+│              👨‍💻 MARCEL WELK                       │
+│              Lead Trainer & Project Architect     │
+│                                                   │
+└───────────────────────────────────────────────────┘
 
-## 📁 Projektstruktur
+┌─ AI PARTNER POKEMON (AGENTS) ─────────────────────┐
+│                                                   │
+│  🧠 Claude        │  Architect - Planning & Code  │
+│  🦞 OpenClaw      │  Builder - Implementation     │
+│  🦙 Llama Vision  │  Eyes - Card Recognition      │
+│  🎨 v0.dev        │  Designer - UI Generation     │
+│                                                   │
+└───────────────────────────────────────────────────┘
 
-```
-poke-scan-v2/
-├── api/
-│   └── recognize.ts        # Vercel Edge Function
-├── src/
-│   ├── components/
-│   │   ├── AnimatedPokeball.tsx
-│   │   ├── AppFooter.tsx
-│   │   ├── AppHeader.tsx
-│   │   ├── CardScanner.tsx
-│   │   ├── FloatingSparkles.tsx
-│   │   ├── GitHubLink.tsx
-│   │   ├── LoadingSpinner.tsx
-│   │   └── SuccessAnimation.tsx
-│   ├── services/
-│   │   └── kimiVision.ts   # API Client
-│   ├── App.tsx
-│   └── index.css           # Animationen
-├── .env.example
-└── package.json
-```
+┌─ POWERED BY ──────────────────────────────────────┐
+│                                                   │
+│  ⚡ NVIDIA NIM    │  Free Vision API              │
+│  ▲ Vercel        │  Frontend + Edge Functions    │
+│  🟦 Hostinger    │  VPS for AI Agents            │
+│  📊 Cardmarket   │  Price Data                   │
+│  🐙 GitHub       │  Version Control              │
+│                                                   │
+└───────────────────────────────────────────────────┘
 
----
+🚀 Run Locally
+Prerequisites
 
-## 🚀 Selber ausprobieren
+Node.js 18+
+NVIDIA NIM API Key (free at build.nvidia.com)
 
-### Voraussetzungen
-- Node.js 18+
-- NVIDIA NIM API Key (kostenlos auf [build.nvidia.com](https://build.nvidia.com))
-
-### Installation
-
-```bash
-# Repository klonen
+Installation
+bash# Clone
 git clone https://github.com/celtechstarter/poke-scan-v2.git
-
-# In den Ordner wechseln
 cd poke-scan-v2
 
-# Abhängigkeiten installieren
+# Install
 npm install
 
-# Environment Variables setzen
+# Configure
 cp .env.example .env.local
-# Dann NVIDIA_API_KEY in .env.local eintragen
+# Add your NVIDIA_API_KEY to .env.local
 
-# Starten!
+# Run
 npm run dev
-```
-
-Dann öffne `http://localhost:5173` im Browser. 🎉
-
-### Environment Variables
-
-```env
-# Für lokale Entwicklung (.env.local)
+Open http://localhost:5173 🎉
+Environment Variables
+env# Local Development (.env.local)
 VITE_NVIDIA_API_KEY=nvapi-xxx
 
-# Für Vercel (in Project Settings)
+# Vercel Production (Project Settings)
 NVIDIA_API_KEY=nvapi-xxx
-```
+Important: Edge Functions need NVIDIA_API_KEY (without VITE_ prefix)!
 
-**Wichtig:** Vercel Edge Functions brauchen `NVIDIA_API_KEY` (ohne `VITE_` Prefix)!
+📁 Project Structure
+poke-scan-v2/
+├── api/
+│   └── recognize.ts           # Edge Function (3-Model Fallback)
+├── src/
+│   ├── components/
+│   │   └── poke-scan/
+│   │       ├── ai-status-bar.tsx
+│   │       ├── card-scanner.tsx      # Main Scanner (Real API!)
+│   │       ├── confidence-bar.tsx
+│   │       ├── energy-particles.tsx
+│   │       ├── evolution-loader.tsx
+│   │       ├── holographic-pokeball.tsx
+│   │       ├── neural-background.tsx
+│   │       ├── poke-scan-header.tsx
+│   │       ├── pokedex-card.tsx
+│   │       ├── rarity-stars.tsx
+│   │       ├── scanner-frame.tsx
+│   │       ├── tech-stack-pokedex.tsx
+│   │       └── trainer-footer.tsx
+│   ├── services/
+│   │   └── kimiVision.ts
+│   ├── App.tsx
+│   └── index.css
+└── package.json
 
----
+📋 Roadmap
 
-## 📋 Roadmap
+ 🏗️ React + TypeScript + Vite foundation
+ 🦙 Llama Vision Integration
+ 🔄 3-Model Fallback Chain
+ 📊 Cardmarket Link
+ 🎮 Futuristic 2050 Design
+ ♿ WCAG AA Accessibility
+ 🟢 AI Status Bar (4 Agents LIVE)
+ 📱 PWA Support
+ 🦞 Telegram Bot
+ 💰 Direct Price Scraping
+ 📈 Price History Charts
+ 🗃️ Collection Management
 
-- [x] 🏗️ Grundgerüst mit React + TypeScript + Vite
-- [x] 🎨 UI mit Tailwind CSS
-- [x] 🦙 Llama Vision Integration
-- [x] 🔄 Fallback-Chain mit 3 Models
-- [x] 🎨 Professionelles Design (v0.dev)
-- [x] ♿ Accessibility (WCAG AA)
-- [x] 📊 Cardmarket-Link
-- [ ] 📱 PWA Support (App installierbar)
-- [ ] 🦞 Telegram Bot
-- [ ] 💰 Preis direkt von Cardmarket scrapen
-- [ ] 📈 Preis-Verlaufs-Graphen
-- [ ] 🗃️ Sammlungs-Verwaltung
 
----
+💰 Running Costs
+ServiceCostNVIDIA NIM API€0 (free!)Vercel Hosting€0 (free tier)Hostinger VPS~€9/monthTotal~€9/month
+Development: Claude Pro €18/month (for architecture & planning)
 
-## 👥 Das Team
+🔒 Security
 
-Dieses Projekt wurde von **einem Menschen und mehreren KI-Agenten** gebaut:
+✅ API keys server-side only (Edge Functions)
+✅ No secrets in client code
+✅ HTTPS everywhere
+✅ Input validation
 
-| Wer | Rolle | Was |
-|-----|-------|-----|
-| 👨‍💻 **Marcel Welk** | Creator & Chef | Idee, Koordination, Entscheidungen |
-| 🧠 **Claude** | Architekt | Planung, Code, Debugging |
-| 🦞 **OpenClaw** | Handwerker | Implementierung auf VPS |
-| 🎨 **v0.dev** | Designer | UI-Komponenten generiert |
-| 🦙 **Llama 3.2 Vision** | Kartenerkennung | Das "Auge" der App |
-| ⚡ **NVIDIA NIM** | Infrastruktur | Kostenlose Vision API |
-| 🚀 **Vercel** | Deployment | Hosting & Edge Functions |
 
----
-
-## 💰 Was kostet der Betrieb?
-
-| Service | Kosten |
-|---------|--------|
-| NVIDIA NIM API | 0€ (kostenlos!) |
-| Vercel Hosting | 0€ (Free Tier) |
-| Hostinger VPS | ~9€/Monat |
-| **Gesamt** | **~9€/Monat** |
-
-**Entwicklungskosten:**
-- Claude Pro: 18€/Monat (für Architektur & Planung)
-
----
-
-## 🔒 Sicherheit
-
-- ✅ API-Keys nur serverseitig (Edge Functions)
-- ✅ Keine Secrets im Client-Code
-- ✅ HTTPS überall
-- ✅ Input-Validierung
-
----
-
-## 📄 Lizenz
-
-MIT — Mach damit was du willst. ✌️
-
----
+📄 License
+MIT — Do whatever you want. ✌️
 
 <p align="center">
-  <b>Created by Marcel Welk</b><br/>
-  <sub>Mit Unterstützung von Claude 🧠 • OpenClaw 🦞 • Llama Vision 🦙</sub>
+  <b>● ALL SYSTEMS OPERATIONAL</b><br/>
+  <sub>HOSTED ON HOSTINGER • DEPLOYED ON VERCEL</sub>
 </p>
-
+<p align="center">
+  <b>Created by Marcel Welk</b><br/>
+  <sub>With 🧠 Claude • 🦞 OpenClaw • 🦙 Llama Vision • 🎨 v0.dev</sub>
+</p>
+<p align="center">
+  <b>© 2026 POKE-SCAN • GOTTA SCAN 'EM ALL • HUMANS + AI = FUTURE</b>
+</p>
 <p align="center">
   <a href="https://github.com/celtechstarter/poke-scan-v2">
     <img src="https://img.shields.io/github/stars/celtechstarter/poke-scan-v2?style=social" alt="GitHub Stars" />
