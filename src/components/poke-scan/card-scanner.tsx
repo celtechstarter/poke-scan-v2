@@ -80,6 +80,11 @@ export function CardScanner() {
 
   const rarityInfo = result ? getRarityInfo(result.rarity) : { stars: 1, label: "COMMON" };
 
+  const getCardmarketUrl = () => {
+    if (!result) return "#";
+    return "https://www.cardmarket.com/de/Pokemon/Products/Search?searchString=" + encodeURIComponent(result.cardName + " " + result.set);
+  };
+
   return (
     <section id="main-scanner" aria-label="Pokemon Card Scanner">
       <PokedexCard className="mx-auto w-full max-w-xl" glowColor="rgba(239, 68, 68, 0.1)">
@@ -102,7 +107,10 @@ export function CardScanner() {
             accept="image/*"
             capture="environment"
             className="sr-only"
-            onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFile(file);
+            }}
           />
 
           {state === "idle" && (
@@ -111,7 +119,7 @@ export function CardScanner() {
                 className={"flex min-h-[220px] cursor-pointer flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed transition-colors " + (isDragOver ? "border-poke-yellow bg-poke-yellow/5" : "border-white/10 hover:border-poke-cyan/30")}
                 onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
                 onDragLeave={() => setIsDragOver(false)}
-                onDrop={(e) => { e.preventDefault(); setIsDragOver(false); e.dataTransfer.files[0] && handleFile(e.dataTransfer.files[0]); }}
+                onDrop={(e) => { e.preventDefault(); setIsDragOver(false); const file = e.dataTransfer.files[0]; if (file) handleFile(file); }}
                 onClick={() => fileInputRef.current?.click()}
                 role="button"
                 tabIndex={0}
@@ -167,8 +175,8 @@ export function CardScanner() {
 
               <ConfidenceBar value={94.7} />
 
-              
-                href={"https://www.cardmarket.com/de/Pokemon/Products/Search?searchString=" + encodeURIComponent(result.cardName + " " + result.set)}
+              <a
+                href={getCardmarketUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 rounded-lg border border-poke-cyan/30 bg-poke-cyan/5 px-4 py-3 font-mono text-xs tracking-wider text-poke-cyan hover:bg-poke-cyan/10"
