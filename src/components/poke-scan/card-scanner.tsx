@@ -25,6 +25,22 @@ function getRarityInfo(rarity: string): { stars: number; label: string } {
   return { stars: 1, label: "COMMON" };
 }
 
+function compressImage(base64: string, maxWidth: number = 800): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
+      canvas.width = img.width * ratio;
+      canvas.height = img.height * ratio;
+      const ctx = canvas.getContext("2d");
+      ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", 0.8));
+    };
+    img.src = base64;
+  });
+}
+
 export function CardScanner() {
   const [state, setState] = useState<ScanState>("idle");
   const [isDragOver, setIsDragOver] = useState(false);
@@ -37,10 +53,11 @@ export function CardScanner() {
     setState("scanning");
     setError(null);
     try {
+      const compressed = await compressImage(base64Image, 800);
       const response = await fetch("/api/recognize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: base64Image }),
+        body: JSON.stringify({ image: compressed }),
       });
       if (!response.ok) throw new Error("API Fehler");
       const data = await response.json();
@@ -105,7 +122,6 @@ export function CardScanner() {
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            
             className="sr-only"
             onChange={(e) => {
               const file = e.target.files?.[0];
@@ -175,7 +191,7 @@ export function CardScanner() {
 
               <ConfidenceBar value={94.7} />
 
-              <a
+              
                 href={getCardmarketUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
