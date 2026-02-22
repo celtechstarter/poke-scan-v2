@@ -246,30 +246,6 @@ export function CardScanner() {
                   <span className="font-mono text-[8px] text-white/30">
                     {"via " + modelUsed.split("/").pop()}
                   </span>
-                )}
-              </div>
-
-              {preview && (
-                <img
-                  src={preview}
-                  alt={result.cardName}
-                  className="mx-auto max-h-48 rounded-lg shadow-lg shadow-poke-cyan/20"
-                />
-              )}
-
-              <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-lg border border-white/5 bg-white/5 p-4">
-                <span className="font-mono text-[10px] tracking-wider text-white/40">NAME</span>
-                <span className="font-mono text-xs font-bold text-white">{result.cardName}</span>
-                <span className="font-mono text-[10px] tracking-wider text-white/40">SET</span>
-                <span className="font-mono text-xs text-white">{result.set}</span>
-                <span className="font-mono text-[10px] tracking-wider text-white/40">NUMBER</span>
-                <span className="font-mono text-xs text-white">{result.number}</span>
-                <span className="font-mono text-[10px] tracking-wider text-white/40">RARITY</span>
-                <RarityStars rating={rarityInfo.stars} label={rarityInfo.label} />
-                <span className="font-mono text-[10px] tracking-wider text-white/40">LANGUAGE</span>
-                <span className="font-mono text-xs text-white">{result.language}</span>
-              </div>
-
               <ConfidenceBar value={94.7} />
 
               
