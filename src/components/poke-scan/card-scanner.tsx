@@ -18,10 +18,18 @@ interface CardResult {
 
 function getRarityInfo(rarity: string): { stars: number; label: string } {
   const lower = rarity.toLowerCase();
-  if (lower.includes("ultra") || lower.includes("secret") || lower.includes("illustration")) return { stars: 5, label: "ULTRA RARE" };
-  if (lower.includes("holo") || lower.includes("rare holo")) return { stars: 4, label: "HOLO RARE" };
-  if (lower.includes("rare")) return { stars: 3, label: "RARE" };
-  if (lower.includes("uncommon")) return { stars: 2, label: "UNCOMMON" };
+  if (lower.includes("ultra") || lower.includes("secret") || lower.includes("illustration")) {
+    return { stars: 5, label: "ULTRA RARE" };
+  }
+  if (lower.includes("holo") || lower.includes("rare holo")) {
+    return { stars: 4, label: "HOLO RARE" };
+  }
+  if (lower.includes("rare")) {
+    return { stars: 3, label: "RARE" };
+  }
+  if (lower.includes("uncommon")) {
+    return { stars: 2, label: "UNCOMMON" };
+  }
   return { stars: 1, label: "COMMON" };
 }
 
@@ -40,12 +48,14 @@ export function CardScanner() {
     setModelUsed(null);
 
     try {
+      const imageData = base64Image.startsWith("data:") 
+        ? base64Image 
+        : "data:image/jpeg;base64," + base64Image;
+
       const response = await fetch("/api/recognize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          image: base64Image.startsWith("data:") ? base64Image : `data:image/jpeg;base64,${base64Image}`
-        }),
+        body: JSON.stringify({ image: imageData }),
       });
 
       if (!response.ok) {
@@ -54,7 +64,7 @@ export function CardScanner() {
       }
 
       const data = await response.json();
-      
+
       if (data.model_used) {
         setModelUsed(data.model_used);
       }
@@ -75,7 +85,8 @@ export function CardScanner() {
       }
     } catch (err) {
       console.error("Scan error:", err);
-      setError(err instanceof Error ? err.message : "Karte konnte nicht erkannt werden.");
+      const message = err instanceof Error ? err.message : "Karte konnte nicht erkannt werden.";
+      setError(message);
       setState("error");
     }
   }, []);
@@ -127,8 +138,8 @@ export function CardScanner() {
   }, []);
 
   const generateCardmarketUrl = (cardName: string, setName: string) => {
-    const query = encodeURIComponent(`${cardName} ${setName}`);
-    return `https://www.cardmarket.com/de/Pokemon/Products/Search?searchString=${query}`;
+    const query = encodeURIComponent(cardName + " " + setName);
+    return "https://www.cardmarket.com/de/Pokemon/Products/Search?searchString=" + query;
   };
 
   const rarityInfo = result ? getRarityInfo(result.rarity) : { stars: 1, label: "COMMON" };
@@ -164,11 +175,12 @@ export function CardScanner() {
           {state === "idle" && (
             <ScannerFrame>
               <div
-                className={`flex min-h-[220px] cursor-pointer flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed transition-colors ${
-                  isDragOver
+                className={
+                  "flex min-h-[220px] cursor-pointer flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed transition-colors " +
+                  (isDragOver
                     ? "border-poke-yellow bg-poke-yellow/5"
-                    : "border-white/10 hover:border-poke-cyan/30"
-                }`}
+                    : "border-white/10 hover:border-poke-cyan/30")
+                }
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
@@ -191,12 +203,8 @@ export function CardScanner() {
                   )}
                 </div>
                 <div className="text-center">
-                  <p className="font-mono text-xs font-medium text-white">
-                    SCAN YOUR CARD
-                  </p>
-                  <p className="font-mono text-[10px] text-white/50">
-                    Tap to open camera or drop image
-                  </p>
+                  <p className="font-mono text-xs font-medium text-white">SCAN YOUR CARD</p>
+                  <p className="font-mono text-[10px] text-white/50">Tap to open camera or drop image</p>
                 </div>
               </div>
             </ScannerFrame>
@@ -206,11 +214,7 @@ export function CardScanner() {
             <ScannerFrame scanning>
               <div className="flex min-h-[220px] flex-col items-center justify-center gap-4">
                 {preview && (
-                  <img
-                    src={preview}
-                    alt="Scanning preview"
-                    className="max-h-32 rounded-lg opacity-50"
-                  />
+                  <img src={preview} alt="Scanning preview" className="max-h-32 rounded-lg opacity-50" />
                 )}
                 <EvolutionLoader />
               </div>
@@ -240,7 +244,7 @@ export function CardScanner() {
                 </span>
                 {modelUsed && (
                   <span className="font-mono text-[8px] text-white/30">
-                    via {modelUsed.split('/').pop()}
+                    {"via " + modelUsed.split("/").pop()}
                   </span>
                 )}
               </div>
@@ -256,16 +260,12 @@ export function CardScanner() {
               <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-lg border border-white/5 bg-white/5 p-4">
                 <span className="font-mono text-[10px] tracking-wider text-white/40">NAME</span>
                 <span className="font-mono text-xs font-bold text-white">{result.cardName}</span>
-
                 <span className="font-mono text-[10px] tracking-wider text-white/40">SET</span>
                 <span className="font-mono text-xs text-white">{result.set}</span>
-
                 <span className="font-mono text-[10px] tracking-wider text-white/40">NUMBER</span>
                 <span className="font-mono text-xs text-white">{result.number}</span>
-
                 <span className="font-mono text-[10px] tracking-wider text-white/40">RARITY</span>
                 <RarityStars rating={rarityInfo.stars} label={rarityInfo.label} />
-
                 <span className="font-mono text-[10px] tracking-wider text-white/40">LANGUAGE</span>
                 <span className="font-mono text-xs text-white">{result.language}</span>
               </div>
@@ -278,11 +278,6 @@ export function CardScanner() {
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 rounded-lg border border-poke-cyan/30 bg-poke-cyan/5 px-4 py-3 font-mono text-xs tracking-wider text-poke-cyan transition-colors hover:bg-poke-cyan/10 focus:outline-none focus:ring-2 focus:ring-poke-cyan/50"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                  <polyline points="15 3 21 3 21 9" />
-                  <line x1="10" y1="14" x2="21" y2="3" />
-                </svg>
                 VIEW ON CARDMARKET
               </a>
             </div>
