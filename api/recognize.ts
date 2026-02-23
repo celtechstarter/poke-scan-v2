@@ -9,18 +9,33 @@ const VISION_MODELS = [
   'microsoft/phi-3.5-vision-instruct',
 ];
 
-const PROMPT = `Analysiere diese Pokemon-Karte genau und antworte NUR mit einem JSON-Objekt.
+const PROMPT = `Analysiere diese Pokemon-Karte und antworte NUR mit JSON.
+
+SET-ERKENNUNG: Die Zahl nach dem "/" in der Kartennummer (unten links) identifiziert das Set:
+/165 = "Scarlet & Violet - 151"
+/197 = "Scarlet & Violet - Obsidian Flames"
+/193 = "Scarlet & Violet - Paldea Evolved"
+/198 = "Scarlet & Violet"
+/182 = "Scarlet & Violet - Paradox Rift"
+/162 = "Scarlet & Violet - Temporal Forces"
+/172 = "Sword & Shield - Brilliant Stars"
+/264 = "Sword & Shield - Fusion Strike"
+/203 = "Sword & Shield - Evolving Skies"
+/196 = "Sword & Shield - Lost Origin"
+/195 = "Sword & Shield - Silver Tempest"
+/189 = "Sword & Shield - Astral Radiance"
+/159 = "Sword & Shield - Crown Zenith"
 
 Felder:
-- cardName: Kartenname in der Sprache der Karte (z.B. "Glurak VMAX" auf Deutsch, "Charizard VMAX" auf Englisch)
-- nameEn: Englischer Kartenname (IMMER auf Englisch, z.B. "Charizard VMAX" auch wenn die Karte deutsch ist)
-- set: Name des Sets (z.B. "Darkness Ablaze", "Vivid Voltage", "Evolving Skies")
-- number: Kartennummer UNTEN LINKS (z.B. "020/189") - NICHT die Pokédex-Nummer oben rechts!
-- rarity: Seltenheit (Common / Uncommon / Rare / Holo Rare / Ultra Rare / Secret Rare)
-- language: Sprache der Karte (Englisch / Deutsch / Japanisch / Französisch etc.)
+- cardName: Name exakt wie auf der Karte gedruckt (z.B. "Glurak ex" deutsch, "Charizard ex" englisch)
+- nameEn: IMMER englischer Name (z.B. "Charizard ex" - auch wenn Karte deutsch ist!)
+- set: Set-Name auf Englisch (nutze die Tabelle oben!)
+- number: Nummer UNTEN LINKS exakt wie gedruckt (z.B. "006/165")
+- rarity: Common / Uncommon / Rare / Holo Rare / Ultra Rare / Secret Rare
+- language: Deutsch / Englisch / Japanisch / Französisch etc.
 
 Antworte ausschließlich mit: {"cardName":"...","nameEn":"...","set":"...","number":"...","rarity":"...","language":"..."}
-Kein weiterer Text, keine Erklärung.`;
+Kein weiterer Text.`;
 
 async function callModel(model: string, image: string, apiKey: string, timeoutMs: number) {
   const controller = new AbortController();
