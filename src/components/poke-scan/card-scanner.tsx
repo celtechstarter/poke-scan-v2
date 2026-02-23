@@ -225,24 +225,24 @@ export function CardScanner() {
                   <span className="h-1.5 w-1.5 rounded-full bg-poke-yellow" />
                   <span className="font-mono text-[10px] font-bold tracking-wider text-poke-yellow">CARDMARKET PREISE (EUR)</span>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-0.5">
-                    <span className="font-mono text-[9px] tracking-wider text-white/40">AB (MIN)</span>
-                    <span className="font-mono text-sm font-bold text-white">
-                      {prices?.cardmarketMin !== null && prices?.cardmarketMin !== undefined
-                        ? `€${prices.cardmarketMin.toFixed(2)}`
-                        : <span className="text-white/30 text-xs">wird geladen…</span>}
-                    </span>
+                {prices === null ? (
+                  <p className="font-mono text-[10px] text-white/40 animate-pulse">Preise werden geladen…</p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-mono text-[9px] tracking-wider text-white/40">AB (MIN)</span>
+                      <span className="font-mono text-sm font-bold text-white">
+                        {prices.cardmarketMin !== null ? `€${prices.cardmarketMin.toFixed(2)}` : "–"}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-mono text-[9px] tracking-wider text-white/40">TREND</span>
+                      <span className="font-mono text-sm font-bold text-poke-yellow">
+                        {prices.cardmarketTrend !== null ? `€${prices.cardmarketTrend.toFixed(2)}` : "–"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-0.5">
-                    <span className="font-mono text-[9px] tracking-wider text-white/40">TREND</span>
-                    <span className="font-mono text-sm font-bold text-poke-yellow">
-                      {prices?.cardmarketTrend !== null && prices?.cardmarketTrend !== undefined
-                        ? `€${prices.cardmarketTrend.toFixed(2)}`
-                        : <span className="text-white/30 text-xs">wird geladen…</span>}
-                    </span>
-                  </div>
-                </div>
+                )}
               </div>
 
               <ConfidenceBar value={94.7} />
