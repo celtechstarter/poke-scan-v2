@@ -5,7 +5,6 @@ import { ScannerFrame } from "./scanner-frame";
 import { EvolutionLoader } from "./evolution-loader";
 import { RarityStars } from "./rarity-stars";
 import { ConfidenceBar } from "./confidence-bar";
-import { fetchCardPrices, type CardPrices } from "@/services/pokemonTCG";
 import { supabase } from "@/integrations/supabase/client";
 
 type ScanState = "idle" | "scanning" | "result" | "error";
@@ -65,7 +64,7 @@ export function CardScanner() {
   const [result, setResult] = useState<CardResult | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [prices, setPrices] = useState<CardPrices | null>(null);
+  const [prices, setPrices] = useState<{ min: number | null; trend: number | null; url: string | null } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scanCard = useCallback(async (base64Image: string) => {
@@ -87,16 +86,13 @@ export function CardScanner() {
       if (!jsonMatch) throw new Error("Nicht erkannt");
 
       const cardResult: CardResult = JSON.parse(jsonMatch[0]);
+      // Preise kommen direkt aus der API-Antwort (server-seitig abgerufen)
+      const cardPrices = data.cardmarket ?? null;
+      setPrices(cardPrices);
       setResult(cardResult);
       setState("result");
 
-      // Preise + History im Hintergrund laden
-      // Englischen Namen für API nutzen (deutsche Karten haben deutschen cardName)
-      const searchName = cardResult.nameEn || cardResult.cardName;
-      const cardPrices = await fetchCardPrices(searchName, cardResult.set, cardResult.number);
-      setPrices(cardPrices);
-
-      const cardmarketUrl = cardPrices.cardmarketUrl ?? getCardmarketUrl(cardResult.cardName, cardResult.set);
+      const cardmarketUrl = cardPrices?.url ?? getCardmarketUrl(cardResult.cardName, cardResult.set);
       await supabase.from("scan_history").insert({
         session_id: getSessionId(),
         card_name: cardResult.cardName,
@@ -104,7 +100,7 @@ export function CardScanner() {
         card_number: cardResult.number,
         rarity: cardResult.rarity,
         language: cardResult.language,
-        tcg_price_usd: cardPrices.cardmarketTrend,
+        tcg_price_usd: cardPrices?.trend ?? null,
         cardmarket_url: cardmarketUrl,
       });
     } catch (err) {
@@ -235,13 +231,13 @@ export function CardScanner() {
                     <div className="flex flex-col gap-0.5">
                       <span className="font-mono text-[9px] tracking-wider text-white/40">AB (MIN)</span>
                       <span className="font-mono text-sm font-bold text-white">
-                        {prices.cardmarketMin !== null ? `€${prices.cardmarketMin.toFixed(2)}` : "–"}
+                        {prices.min !== null ? `€${prices.min.toFixed(2)}` : "–"}
                       </span>
                     </div>
                     <div className="flex flex-col gap-0.5">
                       <span className="font-mono text-[9px] tracking-wider text-white/40">TREND</span>
                       <span className="font-mono text-sm font-bold text-poke-yellow">
-                        {prices.cardmarketTrend !== null ? `€${prices.cardmarketTrend.toFixed(2)}` : "–"}
+                        {prices.trend !== null ? `€${prices.trend.toFixed(2)}` : "–"}
                       </span>
                     </div>
                   </div>
@@ -251,7 +247,7 @@ export function CardScanner() {
               <ConfidenceBar value={94.7} />
 
               <a
-                href={prices?.cardmarketUrl ?? getCardmarketUrl(result.cardName, result.set)}
+                href={prices?.url ?? getCardmarketUrl(result.cardName, result.set)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 rounded-lg border border-poke-cyan/30 bg-poke-cyan/5 px-4 py-3 font-mono text-xs tracking-wider text-poke-cyan hover:bg-poke-cyan/10"

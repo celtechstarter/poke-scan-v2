@@ -4,7 +4,6 @@ export const config = {
   maxDuration: 60
 };
 
-// Schnelle Modelle zuerst - Vercel Free Tier hat 10s Limit
 const VISION_MODELS = [
   'meta/llama-3.2-11b-vision-instruct',
   'microsoft/phi-3.5-vision-instruct',
@@ -22,6 +21,48 @@ Felder:
 
 Antworte ausschließlich mit: {"cardName":"...","nameEn":"...","set":"...","number":"...","rarity":"...","language":"..."}
 Kein weiterer Text, keine Erklärung.`;
+
+interface CardmarketPrices {
+  min: number | null;
+  trend: number | null;
+  url: string | null;
+}
+
+async function fetchCardmarketPrices(nameEn: string, number: string): Promise<CardmarketPrices> {
+  const empty: CardmarketPrices = { min: null, trend: null, url: null };
+  // Nur die Zahl vor dem "/" (z.B. "020/189" → "020", dann führende Nullen entfernen → "20")
+  const cardNum = number.split('/')[0].replace(/^0+/, '') || number.split('/')[0];
+
+  const queries = [
+    `name:${nameEn.split(' ')[0]} number:${cardNum}`,   // Erster Name + Nummer
+    `name:${nameEn.split(' ')[0]}`,                      // Nur erster Name
+  ];
+
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), 4000);
+
+  for (const q of queries) {
+    try {
+      const url = `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(q)}&pageSize=8`;
+      const res = await fetch(url, { signal: controller.signal });
+      if (!res.ok) continue;
+      const data = await res.json();
+      for (const card of (data.data ?? [])) {
+        const cm = card.cardmarket;
+        if (cm?.prices?.lowPrice || cm?.prices?.trendPrice) {
+          return {
+            min: cm.prices.lowPrice ?? null,
+            trend: cm.prices.trendPrice ?? null,
+            url: cm.url ?? null,
+          };
+        }
+      }
+    } catch {
+      break;
+    }
+  }
+  return empty;
+}
 
 async function callModel(model: string, image: string, apiKey: string, timeoutMs: number) {
   const controller = new AbortController();
@@ -70,15 +111,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   for (const model of VISION_MODELS) {
     const elapsed = Date.now() - start;
-    const remaining = 8500 - elapsed; // 8.5s Budget (1.5s Puffer für Vercel)
+    const remaining = 8500 - elapsed;
     if (remaining < 1000) break;
 
     const response = await callModel(model, image, apiKey, remaining);
-    if (response) {
-      const data = await response.json();
-      return res.status(200).json({ ...data, model_used: model });
+    if (!response) {
+      console.error(`Model ${model} failed after ${Date.now() - start}ms`);
+      continue;
     }
-    console.error(`Model ${model} failed after ${Date.now() - start}ms`);
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content ?? '';
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+
+    if (jsonMatch) {
+      try {
+        const card = JSON.parse(jsonMatch[0]);
+        const searchName = card.nameEn || card.cardName;
+        const prices = await fetchCardmarketPrices(searchName, card.number ?? '');
+        return res.status(200).json({
+          ...data,
+          model_used: model,
+          cardmarket: prices,
+        });
+      } catch {
+        return res.status(200).json({ ...data, model_used: model });
+      }
+    }
+
+    return res.status(200).json({ ...data, model_used: model });
   }
 
   return res.status(500).json({ error: 'Karte nicht erkannt. Bitte erneut versuchen.' });
