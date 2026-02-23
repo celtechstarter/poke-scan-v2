@@ -9,28 +9,13 @@ const VISION_MODELS = [
   'microsoft/phi-3.5-vision-instruct',
 ];
 
-const PROMPT = `Analysiere diese Pokemon-Karte und antworte NUR mit JSON.
-
-SET-ERKENNUNG: Die Zahl nach dem "/" in der Kartennummer (unten links) identifiziert das Set:
-/165 = "Scarlet & Violet - 151"
-/197 = "Scarlet & Violet - Obsidian Flames"
-/193 = "Scarlet & Violet - Paldea Evolved"
-/198 = "Scarlet & Violet"
-/182 = "Scarlet & Violet - Paradox Rift"
-/162 = "Scarlet & Violet - Temporal Forces"
-/172 = "Sword & Shield - Brilliant Stars"
-/264 = "Sword & Shield - Fusion Strike"
-/203 = "Sword & Shield - Evolving Skies"
-/196 = "Sword & Shield - Lost Origin"
-/195 = "Sword & Shield - Silver Tempest"
-/189 = "Sword & Shield - Astral Radiance"
-/159 = "Sword & Shield - Crown Zenith"
+const PROMPT = `Analysiere diese Pokemon-Karte und antworte NUR mit einem JSON-Objekt.
 
 Felder:
-- cardName: Name exakt wie auf der Karte gedruckt (z.B. "Glurak ex" deutsch, "Charizard ex" englisch)
-- nameEn: IMMER englischer Name (z.B. "Charizard ex" - auch wenn Karte deutsch ist!)
-- set: Set-Name auf Englisch (nutze die Tabelle oben!)
-- number: Nummer UNTEN LINKS exakt wie gedruckt (z.B. "006/165")
+- cardName: Name exakt wie auf der Karte gedruckt (z.B. "Glurak ex" auf Deutsch, "Charizard ex" auf Englisch)
+- nameEn: IMMER der englische Kartenname (z.B. "Charizard ex" - auch wenn die Karte deutsch ist!)
+- set: Set-Name auf Englisch - erkenne ihn am Set-Symbol und der Kartennummer (z.B. "Scarlet & Violet - 151", "Sword & Shield - Evolving Skies", "Base Set")
+- number: Kartennummer UNTEN LINKS exakt wie gedruckt (z.B. "006/165") - NICHT die Pokédex-Nummer oben rechts!
 - rarity: Common / Uncommon / Rare / Holo Rare / Ultra Rare / Secret Rare
 - language: Deutsch / Englisch / Japanisch / Französisch etc.
 
