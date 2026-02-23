@@ -1,48 +1,57 @@
 const POKEMON_TCG_API = "https://api.pokemontcg.io/v2";
 
-function extractPrice(tcgplayer: Record<string, unknown> | undefined): number | null {
-  if (!tcgplayer) return null;
-  const prices = tcgplayer.prices as Record<string, { market?: number }> | undefined;
-  if (!prices) return null;
-  const price =
-    prices.holofoil?.market ??
-    prices.normal?.market ??
-    prices.reverseHolofoil?.market ??
-    prices["1stEditionHolofoil"]?.market ??
-    null;
-  return price ?? null;
+export interface CardPrices {
+  cardmarketMin: number | null;    // Cardmarket lowPrice (EUR)
+  cardmarketTrend: number | null;  // Cardmarket trendPrice (EUR)
+  cardmarketUrl: string | null;
 }
 
-export async function fetchTCGPrice(
-  cardName: string,
-  set: string,
-  number: string
-): Promise<number | null> {
+function extractCardmarketPrices(cm: Record<string, unknown> | undefined): Omit<CardPrices, "cardmarketUrl"> {
+  if (!cm) return { cardmarketMin: null, cardmarketTrend: null };
+  const prices = cm.prices as Record<string, number> | undefined;
+  return {
+    cardmarketMin: prices?.lowPrice ?? null,
+    cardmarketTrend: prices?.trendPrice ?? null,
+  };
+}
+
+async function searchCards(query: string): Promise<Record<string, unknown>[]> {
   try {
-    // Erst: Name + Nummer suchen
-    const nameEncoded = encodeURIComponent(`name:"${cardName}" number:${number}`);
-    const res = await fetch(`${POKEMON_TCG_API}/cards?q=${nameEncoded}&pageSize=5`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.data?.length > 0) {
-        const price = extractPrice(data.data[0].tcgplayer);
-        if (price !== null) return price;
-      }
-    }
-
-    // Fallback: Nur Name suchen
-    const fallbackEncoded = encodeURIComponent(`name:"${cardName}"`);
-    const fallbackRes = await fetch(`${POKEMON_TCG_API}/cards?q=${fallbackEncoded}&pageSize=5`);
-    if (fallbackRes.ok) {
-      const fallbackData = await fallbackRes.json();
-      for (const card of fallbackData.data ?? []) {
-        const price = extractPrice(card.tcgplayer);
-        if (price !== null) return price;
-      }
-    }
-
-    return null;
+    const res = await fetch(`${POKEMON_TCG_API}/cards?q=${encodeURIComponent(query)}&pageSize=8`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.data ?? [];
   } catch {
-    return null;
+    return [];
   }
+}
+
+export async function fetchCardPrices(
+  cardName: string,
+  _set: string,
+  number: string
+): Promise<CardPrices> {
+  const empty: CardPrices = { cardmarketMin: null, cardmarketTrend: null, cardmarketUrl: null };
+
+  // Versuch 1: Name + Nummer
+  const cards = await searchCards(`name:"${cardName}" number:${number}`);
+  for (const card of cards) {
+    const { cardmarketMin, cardmarketTrend } = extractCardmarketPrices(card.cardmarket as Record<string, unknown>);
+    const cm = card.cardmarket as Record<string, unknown> | undefined;
+    if (cardmarketMin !== null || cardmarketTrend !== null) {
+      return { cardmarketMin, cardmarketTrend, cardmarketUrl: (cm?.url as string) ?? null };
+    }
+  }
+
+  // Versuch 2: Nur Name
+  const fallback = await searchCards(`name:"${cardName}"`);
+  for (const card of fallback) {
+    const { cardmarketMin, cardmarketTrend } = extractCardmarketPrices(card.cardmarket as Record<string, unknown>);
+    const cm = card.cardmarket as Record<string, unknown> | undefined;
+    if (cardmarketMin !== null || cardmarketTrend !== null) {
+      return { cardmarketMin, cardmarketTrend, cardmarketUrl: (cm?.url as string) ?? null };
+    }
+  }
+
+  return empty;
 }

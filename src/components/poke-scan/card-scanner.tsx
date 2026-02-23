@@ -5,7 +5,7 @@ import { ScannerFrame } from "./scanner-frame";
 import { EvolutionLoader } from "./evolution-loader";
 import { RarityStars } from "./rarity-stars";
 import { ConfidenceBar } from "./confidence-bar";
-import { fetchTCGPrice } from "@/services/pokemonTCG";
+import { fetchCardPrices, type CardPrices } from "@/services/pokemonTCG";
 import { supabase } from "@/integrations/supabase/client";
 
 type ScanState = "idle" | "scanning" | "result" | "error";
@@ -64,13 +64,13 @@ export function CardScanner() {
   const [result, setResult] = useState<CardResult | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [tcgPrice, setTcgPrice] = useState<number | null>(null);
+  const [prices, setPrices] = useState<CardPrices | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scanCard = useCallback(async (base64Image: string) => {
     setState("scanning");
     setError(null);
-    setTcgPrice(null);
+    setPrices(null);
     try {
       const compressed = await compressImage(base64Image, 800);
       const response = await fetch("/api/recognize", {
@@ -89,11 +89,11 @@ export function CardScanner() {
       setResult(cardResult);
       setState("result");
 
-      // Preis + History parallel im Hintergrund
-      const cardmarketUrl = getCardmarketUrl(cardResult.cardName, cardResult.set);
-      const price = await fetchTCGPrice(cardResult.cardName, cardResult.set, cardResult.number);
-      setTcgPrice(price);
+      // Preise + History im Hintergrund laden
+      const cardPrices = await fetchCardPrices(cardResult.cardName, cardResult.set, cardResult.number);
+      setPrices(cardPrices);
 
+      const cardmarketUrl = cardPrices.cardmarketUrl ?? getCardmarketUrl(cardResult.cardName, cardResult.set);
       await supabase.from("scan_history").insert({
         session_id: getSessionId(),
         card_name: cardResult.cardName,
@@ -101,7 +101,7 @@ export function CardScanner() {
         card_number: cardResult.number,
         rarity: cardResult.rarity,
         language: cardResult.language,
-        tcg_price_usd: price,
+        tcg_price_usd: cardPrices.cardmarketTrend,
         cardmarket_url: cardmarketUrl,
       });
     } catch (err) {
@@ -126,7 +126,7 @@ export function CardScanner() {
     setResult(null);
     setPreview(null);
     setError(null);
-    setTcgPrice(null);
+    setPrices(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
@@ -217,21 +217,43 @@ export function CardScanner() {
                 <RarityStars rating={rarityInfo.stars} label={rarityInfo.label} />
                 <span className="font-mono text-[10px] tracking-wider text-white/40">LANGUAGE</span>
                 <span className="font-mono text-xs text-white">{result.language}</span>
-                <span className="font-mono text-[10px] tracking-wider text-white/40">PRICE</span>
-                <span className="font-mono text-xs text-poke-yellow">
-                  {tcgPrice !== null ? `$${tcgPrice.toFixed(2)} USD (TCGPlayer)` : "–"}
-                </span>
+              </div>
+
+              {/* Cardmarket Preise */}
+              <div className="rounded-lg border border-poke-yellow/20 bg-poke-yellow/5 p-4">
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-poke-yellow" />
+                  <span className="font-mono text-[10px] font-bold tracking-wider text-poke-yellow">CARDMARKET PREISE (EUR)</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-mono text-[9px] tracking-wider text-white/40">AB (MIN)</span>
+                    <span className="font-mono text-sm font-bold text-white">
+                      {prices?.cardmarketMin !== null && prices?.cardmarketMin !== undefined
+                        ? `€${prices.cardmarketMin.toFixed(2)}`
+                        : <span className="text-white/30 text-xs">wird geladen…</span>}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-mono text-[9px] tracking-wider text-white/40">TREND</span>
+                    <span className="font-mono text-sm font-bold text-poke-yellow">
+                      {prices?.cardmarketTrend !== null && prices?.cardmarketTrend !== undefined
+                        ? `€${prices.cardmarketTrend.toFixed(2)}`
+                        : <span className="text-white/30 text-xs">wird geladen…</span>}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <ConfidenceBar value={94.7} />
 
               <a
-                href={getCardmarketUrl(result.cardName, result.set)}
+                href={prices?.cardmarketUrl ?? getCardmarketUrl(result.cardName, result.set)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 rounded-lg border border-poke-cyan/30 bg-poke-cyan/5 px-4 py-3 font-mono text-xs tracking-wider text-poke-cyan hover:bg-poke-cyan/10"
               >
-                VIEW ON CARDMARKET (EUR)
+                AUF CARDMARKET ANSCHAUEN
               </a>
             </div>
           )}
