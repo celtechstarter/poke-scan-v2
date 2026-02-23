@@ -30,20 +30,33 @@ interface CardmarketPrices {
 
 async function fetchCardmarketPrices(nameEn: string, number: string): Promise<CardmarketPrices> {
   const empty: CardmarketPrices = { min: null, trend: null, url: null };
-  // Nur die Zahl vor dem "/" (z.B. "020/189" → "020", dann führende Nullen entfernen → "20")
-  const cardNum = number.split('/')[0].replace(/^0+/, '') || number.split('/')[0];
 
-  const queries = [
-    `name:${nameEn.split(' ')[0]} number:${cardNum}`,   // Erster Name + Nummer
-    `name:${nameEn.split(' ')[0]}`,                      // Nur erster Name
+  // Nummer normalisieren: "006/165" → "6"
+  const cardNum = number.split('/')[0].replace(/^0+/, '') || number.split('/')[0];
+  // Erstes Wort des englischen Namens (z.B. "Charizard" aus "Charizard ex")
+  const firstName = nameEn.split(' ')[0];
+
+  // WICHTIG: Doppelpunkte NICHT encoden - sind Teil der Lucene-Syntax
+  // Nur den Namens-Wert encoden (Leerzeichen etc.)
+  const nameEncoded = encodeURIComponent(nameEn);
+  const firstNameEncoded = encodeURIComponent(firstName);
+
+  const urls = [
+    // Vollständiger Name + Nummer
+    `https://api.pokemontcg.io/v2/cards?q=name:${nameEncoded}+number:${cardNum}&pageSize=8`,
+    // Nur vollständiger Name (kein Set-Filter)
+    `https://api.pokemontcg.io/v2/cards?q=name:${nameEncoded}&pageSize=8`,
+    // Erster Name + Nummer
+    `https://api.pokemontcg.io/v2/cards?q=name:${firstNameEncoded}+number:${cardNum}&pageSize=8`,
+    // Nur erster Name
+    `https://api.pokemontcg.io/v2/cards?q=name:${firstNameEncoded}&pageSize=8`,
   ];
 
   const controller = new AbortController();
-  setTimeout(() => controller.abort(), 4000);
+  setTimeout(() => controller.abort(), 5000);
 
-  for (const q of queries) {
+  for (const url of urls) {
     try {
-      const url = `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(q)}&pageSize=8`;
       const res = await fetch(url, { signal: controller.signal });
       if (!res.ok) continue;
       const data = await res.json();
