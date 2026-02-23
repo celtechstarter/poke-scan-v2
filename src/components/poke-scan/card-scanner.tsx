@@ -30,7 +30,7 @@ function compressImage(base64: string, maxWidth: number = 800): Promise<string> 
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
-      const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
+      const ratio = Math.min(1, maxWidth / img.width, maxWidth / img.height);
       canvas.width = img.width * ratio;
       canvas.height = img.height * ratio;
       const ctx = canvas.getContext("2d");
@@ -191,7 +191,7 @@ export function CardScanner() {
 
               <ConfidenceBar value={94.7} />
 
-              
+              <a
                 href={getCardmarketUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
