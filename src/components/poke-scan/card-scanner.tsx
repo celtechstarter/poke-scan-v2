@@ -5,6 +5,7 @@ import { ScannerFrame } from "./scanner-frame";
 import { EvolutionLoader } from "./evolution-loader";
 import { RarityStars } from "./rarity-stars";
 import { ConfidenceBar } from "./confidence-bar";
+import { fetchCardPrices } from "@/services/pokemonTCG";
 import { supabase } from "@/integrations/supabase/client";
 
 type ScanState = "idle" | "scanning" | "result" | "error";
@@ -86,13 +87,15 @@ export function CardScanner() {
       if (!jsonMatch) throw new Error("Nicht erkannt");
 
       const cardResult: CardResult = JSON.parse(jsonMatch[0]);
-      // Preise kommen direkt aus der API-Antwort (server-seitig abgerufen)
-      const cardPrices = data.cardmarket ?? null;
-      setPrices(cardPrices);
       setResult(cardResult);
       setState("result");
 
-      const cardmarketUrl = cardPrices?.url ?? getCardmarketUrl(cardResult.cardName, cardResult.set);
+      // Preise client-seitig laden (Pokemon TCG API braucht Browser-Kontext)
+      const searchName = cardResult.nameEn || cardResult.cardName;
+      const cardPrices = await fetchCardPrices(searchName, cardResult.set, cardResult.number);
+      setPrices(cardPrices);
+
+      const cardmarketUrl = cardPrices.url ?? getCardmarketUrl(cardResult.cardName, cardResult.set);
       await supabase.from("scan_history").insert({
         session_id: getSessionId(),
         card_name: cardResult.cardName,
@@ -100,7 +103,7 @@ export function CardScanner() {
         card_number: cardResult.number,
         rarity: cardResult.rarity,
         language: cardResult.language,
-        tcg_price_usd: cardPrices?.trend ?? null,
+        tcg_price_usd: cardPrices.trend,
         cardmarket_url: cardmarketUrl,
       });
     } catch (err) {

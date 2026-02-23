@@ -1,31 +1,32 @@
-const POKEMON_TCG_API = "https://api.pokemontcg.io/v2";
+const API = "https://api.pokemontcg.io/v2/cards";
 
 export interface CardPrices {
-  cardmarketMin: number | null;
-  cardmarketTrend: number | null;
-  cardmarketUrl: string | null;
-  found: boolean; // true = API hat geantwortet (auch wenn kein Preis)
+  min: number | null;
+  trend: number | null;
+  url: string | null;
+  found: boolean;
 }
 
-function extractCardmarketPrices(cm: Record<string, unknown> | undefined): Pick<CardPrices, "cardmarketMin" | "cardmarketTrend" | "cardmarketUrl"> {
-  if (!cm) return { cardmarketMin: null, cardmarketTrend: null, cardmarketUrl: null };
+function extractPrices(card: Record<string, unknown>): CardPrices | null {
+  const cm = card.cardmarket as Record<string, unknown> | undefined;
+  if (!cm) return null;
   const prices = cm.prices as Record<string, number> | undefined;
-  return {
-    cardmarketMin: prices?.lowPrice ?? null,
-    cardmarketTrend: prices?.trendPrice ?? null,
-    cardmarketUrl: (cm.url as string) ?? null,
-  };
+  if (!prices) return null;
+  const min = prices.lowPrice ?? null;
+  const trend = prices.trendPrice ?? null;
+  if (min === null && trend === null) return null;
+  return { min, trend, url: (cm.url as string) ?? null, found: true };
 }
 
-async function searchCards(query: string): Promise<Record<string, unknown>[]> {
-  try {
-    const res = await fetch(`${POKEMON_TCG_API}/cards?q=${encodeURIComponent(query)}&pageSize=8`);
-    if (!res.ok) return [];
-    const data = await res.json();
-    return Array.isArray(data.data) ? data.data : [];
-  } catch {
-    return [];
-  }
+// Korrekte URL für Pokemon TCG API:
+// Doppelpunkte NICHT encoden (Lucene-Syntax), nur Werte encoden
+function buildUrl(name: string, num?: string): string {
+  // Anführungszeichen um mehrteilige Namen (z.B. "Charizard ex")
+  const namePart = name.includes(' ')
+    ? `name:%22${encodeURIComponent(name)}%22`
+    : `name:${encodeURIComponent(name)}`;
+  const numPart = num ? `%20number:${num}` : '';
+  return `${API}?q=${namePart}${numPart}&pageSize=10`;
 }
 
 export async function fetchCardPrices(
@@ -33,35 +34,31 @@ export async function fetchCardPrices(
   _set: string,
   number: string
 ): Promise<CardPrices> {
-  // Erstes Wort des Kartennamens (z.B. "Charizard" aus "Charizard VMAX")
-  const firstName = cardName.split(" ")[0];
+  const notFound: CardPrices = { min: null, trend: null, url: null, found: true };
+  const firstName = cardName.split(' ')[0];
+  // Nummer normalisieren: "006/165" → "6"
+  const num = number.split('/')[0].replace(/^0+/, '') || number.split('/')[0];
 
-  // Versuch 1: Exakter Name + Nummer
-  const cards1 = await searchCards(`name:"${cardName}" number:${number}`);
-  for (const card of cards1) {
-    const prices = extractCardmarketPrices(card.cardmarket as Record<string, unknown>);
-    if (prices.cardmarketMin !== null || prices.cardmarketTrend !== null) {
-      return { ...prices, found: true };
+  const urls = [
+    buildUrl(cardName, num),   // "Charizard ex" + Nummer
+    buildUrl(cardName),        // "Charizard ex" ohne Nummer
+    buildUrl(firstName, num),  // "Charizard" + Nummer
+    buildUrl(firstName),       // "Charizard" (breiteste Suche)
+  ];
+
+  for (const url of urls) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const data = await res.json();
+      for (const card of (data.data ?? [])) {
+        const prices = extractPrices(card as Record<string, unknown>);
+        if (prices) return prices;
+      }
+    } catch {
+      continue;
     }
   }
 
-  // Versuch 2: Erster Namensteil + Nummer
-  const cards2 = await searchCards(`name:${firstName} number:${number}`);
-  for (const card of cards2) {
-    const prices = extractCardmarketPrices(card.cardmarket as Record<string, unknown>);
-    if (prices.cardmarketMin !== null || prices.cardmarketTrend !== null) {
-      return { ...prices, found: true };
-    }
-  }
-
-  // Versuch 3: Nur erster Namensteil
-  const cards3 = await searchCards(`name:${firstName}`);
-  for (const card of cards3) {
-    const prices = extractCardmarketPrices(card.cardmarket as Record<string, unknown>);
-    if (prices.cardmarketMin !== null || prices.cardmarketTrend !== null) {
-      return { ...prices, found: true };
-    }
-  }
-
-  return { cardmarketMin: null, cardmarketTrend: null, cardmarketUrl: null, found: true };
+  return notFound;
 }

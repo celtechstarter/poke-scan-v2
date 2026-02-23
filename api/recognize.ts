@@ -22,61 +22,6 @@ Felder:
 Antworte ausschließlich mit: {"cardName":"...","nameEn":"...","set":"...","number":"...","rarity":"...","language":"..."}
 Kein weiterer Text, keine Erklärung.`;
 
-interface CardmarketPrices {
-  min: number | null;
-  trend: number | null;
-  url: string | null;
-}
-
-async function fetchCardmarketPrices(nameEn: string, number: string): Promise<CardmarketPrices> {
-  const empty: CardmarketPrices = { min: null, trend: null, url: null };
-
-  // Nummer normalisieren: "006/165" → "6"
-  const cardNum = number.split('/')[0].replace(/^0+/, '') || number.split('/')[0];
-  // Erstes Wort des englischen Namens (z.B. "Charizard" aus "Charizard ex")
-  const firstName = nameEn.split(' ')[0];
-
-  // WICHTIG: Doppelpunkte NICHT encoden - sind Teil der Lucene-Syntax
-  // Nur den Namens-Wert encoden (Leerzeichen etc.)
-  const nameEncoded = encodeURIComponent(nameEn);
-  const firstNameEncoded = encodeURIComponent(firstName);
-
-  const urls = [
-    // Vollständiger Name + Nummer
-    `https://api.pokemontcg.io/v2/cards?q=name:${nameEncoded}+number:${cardNum}&pageSize=8`,
-    // Nur vollständiger Name (kein Set-Filter)
-    `https://api.pokemontcg.io/v2/cards?q=name:${nameEncoded}&pageSize=8`,
-    // Erster Name + Nummer
-    `https://api.pokemontcg.io/v2/cards?q=name:${firstNameEncoded}+number:${cardNum}&pageSize=8`,
-    // Nur erster Name
-    `https://api.pokemontcg.io/v2/cards?q=name:${firstNameEncoded}&pageSize=8`,
-  ];
-
-  const controller = new AbortController();
-  setTimeout(() => controller.abort(), 5000);
-
-  for (const url of urls) {
-    try {
-      const res = await fetch(url, { signal: controller.signal });
-      if (!res.ok) continue;
-      const data = await res.json();
-      for (const card of (data.data ?? [])) {
-        const cm = card.cardmarket;
-        if (cm?.prices?.lowPrice || cm?.prices?.trendPrice) {
-          return {
-            min: cm.prices.lowPrice ?? null,
-            trend: cm.prices.trendPrice ?? null,
-            url: cm.url ?? null,
-          };
-        }
-      }
-    } catch {
-      break;
-    }
-  }
-  return empty;
-}
-
 async function callModel(model: string, image: string, apiKey: string, timeoutMs: number) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -128,31 +73,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (remaining < 1000) break;
 
     const response = await callModel(model, image, apiKey, remaining);
-    if (!response) {
-      console.error(`Model ${model} failed after ${Date.now() - start}ms`);
-      continue;
+    if (response) {
+      const data = await response.json();
+      return res.status(200).json({ ...data, model_used: model });
     }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content ?? '';
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-
-    if (jsonMatch) {
-      try {
-        const card = JSON.parse(jsonMatch[0]);
-        const searchName = card.nameEn || card.cardName;
-        const prices = await fetchCardmarketPrices(searchName, card.number ?? '');
-        return res.status(200).json({
-          ...data,
-          model_used: model,
-          cardmarket: prices,
-        });
-      } catch {
-        return res.status(200).json({ ...data, model_used: model });
-      }
-    }
-
-    return res.status(200).json({ ...data, model_used: model });
+    console.error(`Model ${model} failed after ${Date.now() - start}ms`);
   }
 
   return res.status(500).json({ error: 'Karte nicht erkannt. Bitte erneut versuchen.' });
