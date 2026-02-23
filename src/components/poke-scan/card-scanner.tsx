@@ -91,6 +91,7 @@ export function CardScanner() {
       setState("result");
 
       // Preise client-seitig laden (Pokemon TCG API braucht Browser-Kontext)
+      console.error(`[Scan] cardName="${cardResult.cardName}" nameEn="${cardResult.nameEn}" number="${cardResult.number}"`);
       const searchName = cardResult.nameEn || cardResult.cardName;
       const cardPrices = await fetchCardPrices(searchName, cardResult.set, cardResult.number);
       setPrices(cardPrices);
