@@ -12,6 +12,7 @@ type ScanState = "idle" | "scanning" | "result" | "error";
 
 interface CardResult {
   cardName: string;
+  nameEn?: string;   // englischer Name für API-Suche
   set: string;
   number: string;
   rarity: string;
@@ -90,7 +91,9 @@ export function CardScanner() {
       setState("result");
 
       // Preise + History im Hintergrund laden
-      const cardPrices = await fetchCardPrices(cardResult.cardName, cardResult.set, cardResult.number);
+      // Englischen Namen für API nutzen (deutsche Karten haben deutschen cardName)
+      const searchName = cardResult.nameEn || cardResult.cardName;
+      const cardPrices = await fetchCardPrices(searchName, cardResult.set, cardResult.number);
       setPrices(cardPrices);
 
       const cardmarketUrl = cardPrices.cardmarketUrl ?? getCardmarketUrl(cardResult.cardName, cardResult.set);

@@ -13,13 +13,14 @@ const VISION_MODELS = [
 const PROMPT = `Analysiere diese Pokemon-Karte genau und antworte NUR mit einem JSON-Objekt.
 
 Felder:
-- cardName: Vollständiger Kartenname (z.B. "Charizard VMAX", "Pikachu V", "Umbreon VMAX")
+- cardName: Kartenname in der Sprache der Karte (z.B. "Glurak VMAX" auf Deutsch, "Charizard VMAX" auf Englisch)
+- nameEn: Englischer Kartenname (IMMER auf Englisch, z.B. "Charizard VMAX" auch wenn die Karte deutsch ist)
 - set: Name des Sets (z.B. "Darkness Ablaze", "Vivid Voltage", "Evolving Skies")
 - number: Kartennummer UNTEN LINKS (z.B. "020/189") - NICHT die Pokédex-Nummer oben rechts!
 - rarity: Seltenheit (Common / Uncommon / Rare / Holo Rare / Ultra Rare / Secret Rare)
 - language: Sprache der Karte (Englisch / Deutsch / Japanisch / Französisch etc.)
 
-Antworte ausschließlich mit: {"cardName":"...","set":"...","number":"...","rarity":"...","language":"..."}
+Antworte ausschließlich mit: {"cardName":"...","nameEn":"...","set":"...","number":"...","rarity":"...","language":"..."}
 Kein weiterer Text, keine Erklärung.`;
 
 async function callModel(model: string, image: string, apiKey: string, timeoutMs: number) {
