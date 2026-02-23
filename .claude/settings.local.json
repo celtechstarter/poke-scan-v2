@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(taskkill:*)",
+      "Bash(tail:*)",
+      "Bash(cd:*)",
+      "Bash(cd /c/Users/marce/Desktop/poke-scan-v2 && npm audit 2>&1)",
+      "Bash(ls:*)",
+      "Bash(cd /c/Users/marce/Desktop/poke-scan-v2 && npm run build 2>&1)"
+    ]
+  }
+}

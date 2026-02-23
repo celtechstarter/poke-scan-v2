@@ -4,6 +4,7 @@ import { PokeScanHeader } from "./components/poke-scan/poke-scan-header";
 import { AIStatusBar } from "./components/poke-scan/ai-status-bar";
 import { TechStackPokedex } from "./components/poke-scan/tech-stack-pokedex";
 import { CardScanner } from "./components/poke-scan/card-scanner";
+import { ScanHistory } from "./components/poke-scan/scan-history";
 import { TrainerFooter } from "./components/poke-scan/trainer-footer";
 
 function App() {
@@ -24,6 +25,8 @@ function App() {
             <CardScanner />
             <TechStackPokedex />
           </div>
+
+          <ScanHistory />
         </main>
 
         <TrainerFooter />

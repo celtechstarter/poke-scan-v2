@@ -10,7 +10,17 @@ const VISION_MODELS = [
   'microsoft/phi-3.5-vision-instruct',
 ];
 
-const PROMPT = 'Analysiere diese Pokemon-Karte. WICHTIG: Die Kartennummer findest du UNTEN LINKS auf der Karte (z.B. "012/172"). Das ist NICHT die Pokedex-Nummer oben rechts! Antworte NUR mit JSON: {"cardName":"...","set":"...","number":"...","rarity":"...","language":"..."}';
+const PROMPT = `Analysiere diese Pokemon-Karte genau und antworte NUR mit einem JSON-Objekt.
+
+Felder:
+- cardName: Vollständiger Kartenname (z.B. "Charizard VMAX", "Pikachu V", "Umbreon VMAX")
+- set: Name des Sets (z.B. "Darkness Ablaze", "Vivid Voltage", "Evolving Skies")
+- number: Kartennummer UNTEN LINKS (z.B. "020/189") - NICHT die Pokédex-Nummer oben rechts!
+- rarity: Seltenheit (Common / Uncommon / Rare / Holo Rare / Ultra Rare / Secret Rare)
+- language: Sprache der Karte (Englisch / Deutsch / Japanisch / Französisch etc.)
+
+Antworte ausschließlich mit: {"cardName":"...","set":"...","number":"...","rarity":"...","language":"..."}
+Kein weiterer Text, keine Erklärung.`;
 
 async function callModel(model: string, image: string, apiKey: string, timeoutMs: number) {
   const controller = new AbortController();

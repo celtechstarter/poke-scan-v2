@@ -1,50 +1,48 @@
-import axios from "axios";
+const POKEMON_TCG_API = "https://api.pokemontcg.io/v2";
 
-interface PokemonTCGCard {
-  id: string;
-  name: string;
-  setName: string;
-  number: string;
-  imageUrl: string;
-  rarity: string;
-  prices: {
-    market: string;
-    retail: string;
-  };
+function extractPrice(tcgplayer: Record<string, unknown> | undefined): number | null {
+  if (!tcgplayer) return null;
+  const prices = tcgplayer.prices as Record<string, { market?: number }> | undefined;
+  if (!prices) return null;
+  const price =
+    prices.holofoil?.market ??
+    prices.normal?.market ??
+    prices.reverseHolofoil?.market ??
+    prices["1stEditionHolofoil"]?.market ??
+    null;
+  return price ?? null;
 }
 
-const pokemonTCGApi = "https://api.pokemontcg.io/v2";
-const apiKey = process.env.VITE_POKEMON_TCG_API_KEY;
-
-const searchCard = async (name: string, set: string, number: string) => {
+export async function fetchTCGPrice(
+  cardName: string,
+  set: string,
+  number: string
+): Promise<number | null> {
   try {
-    const response = await axios.get(
-      `${pokemonTCGApi}/cards?q=name:${name}+set:${set}+number:${number}`,
-      {
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
+    // Erst: Name + Nummer suchen
+    const nameEncoded = encodeURIComponent(`name:"${cardName}" number:${number}`);
+    const res = await fetch(`${POKEMON_TCG_API}/cards?q=${nameEncoded}&pageSize=5`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.data?.length > 0) {
+        const price = extractPrice(data.data[0].tcgplayer);
+        if (price !== null) return price;
       }
-    );
+    }
 
-    const cardData = response.data.data[0];
-    return {
-      id: cardData.id,
-      name: cardData.name,
-      setName: cardData.set.name,
-      number: cardData.number,
-      imageUrl: cardData.images.large,
-      rarity: cardData.rarity,
-      prices: {
-        market: cardData.tcgplayer.prices.market,
-        retail: cardData.tcgplayer.prices.retail,
-      },
-    };
-  } catch (error) {
-    console.error(error);
+    // Fallback: Nur Name suchen
+    const fallbackEncoded = encodeURIComponent(`name:"${cardName}"`);
+    const fallbackRes = await fetch(`${POKEMON_TCG_API}/cards?q=${fallbackEncoded}&pageSize=5`);
+    if (fallbackRes.ok) {
+      const fallbackData = await fallbackRes.json();
+      for (const card of fallbackData.data ?? []) {
+        const price = extractPrice(card.tcgplayer);
+        if (price !== null) return price;
+      }
+    }
+
+    return null;
+  } catch {
     return null;
   }
-};
-
-export { searchCard };
+}

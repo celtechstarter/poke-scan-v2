@@ -5,6 +5,8 @@ import { ScannerFrame } from "./scanner-frame";
 import { EvolutionLoader } from "./evolution-loader";
 import { RarityStars } from "./rarity-stars";
 import { ConfidenceBar } from "./confidence-bar";
+import { fetchTCGPrice } from "@/services/pokemonTCG";
+import { supabase } from "@/integrations/supabase/client";
 
 type ScanState = "idle" | "scanning" | "result" | "error";
 
@@ -14,6 +16,16 @@ interface CardResult {
   number: string;
   rarity: string;
   language: string;
+}
+
+function getSessionId(): string {
+  const key = "poke_scan_session_id";
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(key, id);
+  }
+  return id;
 }
 
 function getRarityInfo(rarity: string): { stars: number; label: string } {
@@ -41,17 +53,24 @@ function compressImage(base64: string, maxWidth: number = 800): Promise<string> 
   });
 }
 
+function getCardmarketUrl(cardName: string, set: string): string {
+  return "https://www.cardmarket.com/de/Pokemon/Products/Search?searchString=" +
+    encodeURIComponent(`${cardName} ${set}`);
+}
+
 export function CardScanner() {
   const [state, setState] = useState<ScanState>("idle");
   const [isDragOver, setIsDragOver] = useState(false);
   const [result, setResult] = useState<CardResult | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [tcgPrice, setTcgPrice] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scanCard = useCallback(async (base64Image: string) => {
     setState("scanning");
     setError(null);
+    setTcgPrice(null);
     try {
       const compressed = await compressImage(base64Image, 800);
       const response = await fetch("/api/recognize", {
@@ -64,12 +83,27 @@ export function CardScanner() {
       const content = data.choices?.[0]?.message?.content;
       if (!content) throw new Error("Keine Antwort");
       const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        setResult(JSON.parse(jsonMatch[0]));
-        setState("result");
-      } else {
-        throw new Error("Nicht erkannt");
-      }
+      if (!jsonMatch) throw new Error("Nicht erkannt");
+
+      const cardResult: CardResult = JSON.parse(jsonMatch[0]);
+      setResult(cardResult);
+      setState("result");
+
+      // Preis + History parallel im Hintergrund
+      const cardmarketUrl = getCardmarketUrl(cardResult.cardName, cardResult.set);
+      const price = await fetchTCGPrice(cardResult.cardName, cardResult.set, cardResult.number);
+      setTcgPrice(price);
+
+      await supabase.from("scan_history").insert({
+        session_id: getSessionId(),
+        card_name: cardResult.cardName,
+        set_name: cardResult.set,
+        card_number: cardResult.number,
+        rarity: cardResult.rarity,
+        language: cardResult.language,
+        tcg_price_usd: price,
+        cardmarket_url: cardmarketUrl,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Fehler");
       setState("error");
@@ -92,15 +126,11 @@ export function CardScanner() {
     setResult(null);
     setPreview(null);
     setError(null);
+    setTcgPrice(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
   const rarityInfo = result ? getRarityInfo(result.rarity) : { stars: 1, label: "COMMON" };
-
-  const getCardmarketUrl = () => {
-    if (!result) return "#";
-    return "https://www.cardmarket.com/de/Pokemon/Products/Search?searchString=" + encodeURIComponent(result.cardName + " " + result.set);
-  };
 
   return (
     <section id="main-scanner" aria-label="Pokemon Card Scanner">
@@ -187,17 +217,21 @@ export function CardScanner() {
                 <RarityStars rating={rarityInfo.stars} label={rarityInfo.label} />
                 <span className="font-mono text-[10px] tracking-wider text-white/40">LANGUAGE</span>
                 <span className="font-mono text-xs text-white">{result.language}</span>
+                <span className="font-mono text-[10px] tracking-wider text-white/40">PRICE</span>
+                <span className="font-mono text-xs text-poke-yellow">
+                  {tcgPrice !== null ? `$${tcgPrice.toFixed(2)} USD (TCGPlayer)` : "–"}
+                </span>
               </div>
 
               <ConfidenceBar value={94.7} />
 
               <a
-                href={getCardmarketUrl()}
+                href={getCardmarketUrl(result.cardName, result.set)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 rounded-lg border border-poke-cyan/30 bg-poke-cyan/5 px-4 py-3 font-mono text-xs tracking-wider text-poke-cyan hover:bg-poke-cyan/10"
               >
-                VIEW ON CARDMARKET
+                VIEW ON CARDMARKET (EUR)
               </a>
             </div>
           )}
