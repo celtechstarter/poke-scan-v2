@@ -5,7 +5,6 @@ import { ScannerFrame } from "./scanner-frame";
 import { EvolutionLoader } from "./evolution-loader";
 import { RarityStars } from "./rarity-stars";
 import { ConfidenceBar } from "./confidence-bar";
-import { fetchCardPrices } from "@/services/pokemonTCG";
 import { supabase } from "@/integrations/supabase/client";
 
 type ScanState = "idle" | "scanning" | "result" | "error";
@@ -90,10 +89,16 @@ export function CardScanner() {
       setResult(cardResult);
       setState("result");
 
-      // Preise client-seitig laden (Pokemon TCG API braucht Browser-Kontext)
-      console.error(`[Scan] cardName="${cardResult.cardName}" nameEn="${cardResult.nameEn}" number="${cardResult.number}"`);
+      // Preise über eigene API-Route laden (vermeidet CORS/504 Probleme)
       const searchName = cardResult.nameEn || cardResult.cardName;
-      const cardPrices = await fetchCardPrices(searchName, cardResult.set, cardResult.number);
+      const pricesRes = await fetch("/api/prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: searchName, number: cardResult.number }),
+      });
+      const cardPrices = pricesRes.ok
+        ? await pricesRes.json()
+        : { min: null, trend: null, url: null, found: true };
       setPrices(cardPrices);
 
       const cardmarketUrl = cardPrices.url ?? getCardmarketUrl(cardResult.cardName, cardResult.set);

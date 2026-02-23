@@ -49,22 +49,13 @@ export async function fetchCardPrices(
   for (const url of urls) {
     try {
       const res = await fetch(url);
-      if (!res.ok) {
-        console.error(`[TCG] ${res.status} for: ${url}`);
-        continue;
-      }
+      if (!res.ok) continue;
       const data = await res.json();
-      const cards = data.data ?? [];
-      console.error(`[TCG] ${cards.length} Ergebnisse für: ${url}`);
-      for (const card of cards) {
+      for (const card of (data.data ?? [])) {
         const prices = extractPrices(card as Record<string, unknown>);
-        if (prices) {
-          console.error(`[TCG] Preis gefunden: min=${prices.min} trend=${prices.trend}`);
-          return prices;
-        }
+        if (prices) return prices;
       }
-    } catch (e) {
-      console.error(`[TCG] Fehler für: ${url}`, e);
+    } catch {
       continue;
     }
   }
