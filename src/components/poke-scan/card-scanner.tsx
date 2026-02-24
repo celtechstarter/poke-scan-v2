@@ -67,7 +67,7 @@ export function CardScanner() {
   const [result, setResult] = useState<CardResult | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [prices, setPrices] = useState<{ min: number | null; trend: number | null; url: string | null; found: boolean } | null>(null);
+  const [prices, setPrices] = useState<{ min: number | null; trend: number | null; url: string | null; found: boolean; verifiedSet?: string; verifiedName?: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scanCard = useCallback(async (base64Image: string) => {
@@ -113,7 +113,7 @@ export function CardScanner() {
       await supabase.from("scan_history").insert({
         session_id: getSessionId(),
         card_name: cardResult.cardName,
-        set_name: cardResult.set,
+        set_name: cardPrices.verifiedSet ?? cardResult.set,
         card_number: cardResult.number,
         rarity: cardResult.rarity,
         language: cardResult.language,
@@ -226,7 +226,12 @@ export function CardScanner() {
                 <span className="font-mono text-[10px] tracking-wider text-white/40">NAME</span>
                 <span className="font-mono text-xs font-bold text-white">{result.cardName}</span>
                 <span className="font-mono text-[10px] tracking-wider text-white/40">SET</span>
-                <span className="font-mono text-xs text-white">{result.set}</span>
+                <span className="font-mono text-xs text-white">
+                  {prices?.verifiedSet ?? result.set}
+                  {prices?.verifiedSet && prices.verifiedSet !== result.set && (
+                    <span className="ml-1 text-[9px] text-white/30">(KI: {result.set})</span>
+                  )}
+                </span>
                 <span className="font-mono text-[10px] tracking-wider text-white/40">NUMBER</span>
                 <span className="font-mono text-xs text-white">{result.number}</span>
                 <span className="font-mono text-[10px] tracking-wider text-white/40">RARITY</span>

@@ -39,7 +39,13 @@ const SETNAME_TO_TCGDEX: Record<string, string> = {
   'Neo Destiny':  'neo4',
 };
 
-type PriceResult = { min: number | null; trend: number | null; url: string | null };
+type PriceResult = {
+  min: number | null;
+  trend: number | null;
+  url: string | null;
+  verifiedSet?: string;   // Set-Name aus TCGdex (z.B. "151", "Temporal Forces")
+  verifiedName?: string;  // Kartenname aus TCGdex (z.B. "Charizard ex")
+};
 
 async function fetchFromTCGdex(tcgdexId: string, localId: string): Promise<PriceResult | null> {
   const controller = new AbortController();
@@ -57,7 +63,11 @@ async function fetchFromTCGdex(tcgdexId: string, localId: string): Promise<Price
     const trend = cm.trend ?? null;
     if (min === null && trend === null) return null;
 
-    return { min, trend, url: null };
+    // Set-Name und Karten-Name direkt aus TCGdex übernehmen – zuverlässiger als KI
+    const verifiedSet = (card?.set?.name as string) || undefined;
+    const verifiedName = (card?.name as string) || undefined;
+
+    return { min, trend, url: null, verifiedSet, verifiedName };
   } catch {
     clearTimeout(timer);
     return null;
