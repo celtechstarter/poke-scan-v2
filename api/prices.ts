@@ -1,28 +1,90 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
+// ─── TCGdex (Prio 0) ────────────────────────────────────────────────────────
+// Direkte EUR-Preise von Cardmarket, kein API-Key nötig.
+// Set-IDs sind NICHT identisch mit ptcgoCodes – Mapping-Tabelle nötig.
+
+const TCGDEX_API = 'https://api.tcgdex.net/v2/en/sets';
+
+// Mapping: ptcgoCode (aus KI-Erkennung) → TCGdex Set-ID
+const PTCGO_TO_TCGDEX: Record<string, string> = {
+  // Scarlet & Violet Ära
+  SVI:  'sv01',    // Scarlet & Violet
+  PAL:  'sv02',    // Paldea Evolved
+  OBF:  'sv03',    // Obsidian Flames
+  MEW:  'sv03.5',  // 151
+  PAR:  'sv04',    // Paradox Rift
+  PAF:  'sv04.5',  // Paldean Fates
+  TEF:  'sv05',    // Temporal Forces
+  TWM:  'sv06',    // Twilight Masquerade
+  SFA:  'sv06.5',  // Shrouded Fable
+  SSP:  'sv07',    // Stellar Crown
+  SCR:  'sv08',    // Surging Sparks
+  PRE:  'sv08.5',  // Prismatic Evolutions
+  SVP:  'svp',     // Scarlet & Violet Promos
+};
+
+// Mapping: Set-Name (Vintage, kein setCode) → TCGdex Set-ID
+const SETNAME_TO_TCGDEX: Record<string, string> = {
+  'Base Set':     'base1',
+  'Jungle':       'base2',
+  'Fossil':       'base3',
+  'Base Set 2':   'base4',
+  'Team Rocket':  'base5',
+  'Gym Heroes':   'gym1',
+  'Gym Challenge':'gym2',
+  'Neo Genesis':  'neo1',
+  'Neo Discovery':'neo2',
+  'Neo Revelation':'neo3',
+  'Neo Destiny':  'neo4',
+};
+
+type PriceResult = { min: number | null; trend: number | null; url: string | null };
+
+async function fetchFromTCGdex(tcgdexId: string, localId: string): Promise<PriceResult | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+  try {
+    const res = await fetch(`${TCGDEX_API}/${tcgdexId}/${localId}`, { signal: controller.signal });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+
+    const card = await res.json();
+    const cm = card?.pricing?.cardmarket as Record<string, number> | null | undefined;
+    if (!cm) return null;
+
+    const min = cm.low ?? null;
+    const trend = cm.trend ?? null;
+    if (min === null && trend === null) return null;
+
+    return { min, trend, url: null };
+  } catch {
+    clearTimeout(timer);
+    return null;
+  }
+}
+
+// ─── Pokemon TCG API (Fallback) ──────────────────────────────────────────────
+
 const TCG_API = 'https://api.pokemontcg.io/v2/cards';
 
-// Suche per setCode + Nummer (präziseste Methode – nutzt den Code unten auf der Karte)
 function buildSetCodeUrl(setCode: string, num: string): string {
   return `${TCG_API}?q=set.ptcgoCode:${encodeURIComponent(setCode)}%20number:${encodeURIComponent(num)}&pageSize=5`;
 }
 
-// Suche per set.name + Nummer (Prio 0.5 – für Vintage-Karten ohne setCode)
 function buildSetNameUrl(setName: string, num: string): string {
   return `${TCG_API}?q=set.name:%22${encodeURIComponent(setName)}%22%20number:${encodeURIComponent(num)}&pageSize=5`;
 }
 
-// Suche per Name (Fallback wenn kein setCode vorhanden)
 function buildNameUrl(name: string, num?: string): string {
   const encodedName = name.includes(' ')
     ? `%22${encodeURIComponent(name)}%22`
     : encodeURIComponent(name);
-  const namePart = `name:${encodedName}`;
   const numPart = num ? `%20number:${num}` : '';
-  return `${TCG_API}?q=${namePart}${numPart}&pageSize=10`;
+  return `${TCG_API}?q=name:${encodedName}${numPart}&pageSize=10`;
 }
 
-async function fetchPriceFromUrl(url: string, headers: Record<string, string>): Promise<{ min: number | null; trend: number | null; url: string | null } | null> {
+async function fetchFromPokemonTCG(url: string, headers: Record<string, string>): Promise<PriceResult | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 5000);
   try {
@@ -49,6 +111,8 @@ async function fetchPriceFromUrl(url: string, headers: Record<string, string>): 
   }
 }
 
+// ─── Handler ─────────────────────────────────────────────────────────────────
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -57,27 +121,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { name, number, setCode, set } = req.body ?? {};
   if (!name) return res.status(400).json({ error: 'name required' });
 
-  const headers: Record<string, string> = {};
-  const apiKey = process.env.POKEMON_TCG_API_KEY;
-  if (apiKey) headers['X-Api-Key'] = apiKey;
+  const rawNum = (number as string | undefined)?.split('/')[0] ?? '';
+  // localId für TCGdex: führende Nullen entfernen ("006" → "6")
+  const localId = rawNum.replace(/^0+/, '') || rawNum;
+  // num für Pokemon TCG API: führende Nullen entfernen
+  const num = localId;
 
   const firstName = (name as string).split(' ')[0];
-  const rawNum = (number as string | undefined)?.split('/')[0] ?? '';
-  const num = rawNum.replace(/^0+/, '') || rawNum;
 
-  // Prio 0: setCode + Nummer (exakt) – moderne Karten mit Buchstaben-Kürzel
+  // ── Prio 0: TCGdex via setCode (schnell, direkte EUR-Preise) ──────────────
+  if (setCode && localId) {
+    const tcgdexId = PTCGO_TO_TCGDEX[(setCode as string).toUpperCase()];
+    if (tcgdexId) {
+      const result = await fetchFromTCGdex(tcgdexId, localId);
+      if (result) return res.status(200).json({ ...result, found: true, source: 'tcgdex' });
+    }
+  }
+
+  // ── Prio 1: TCGdex via Set-Name (Vintage ohne setCode) ───────────────────
+  if (!setCode && set && localId) {
+    const tcgdexId = SETNAME_TO_TCGDEX[set as string];
+    if (tcgdexId) {
+      const result = await fetchFromTCGdex(tcgdexId, localId);
+      if (result) return res.status(200).json({ ...result, found: true, source: 'tcgdex-vintage' });
+    }
+  }
+
+  // ── Prio 2: Pokemon TCG API via setCode (liefert direkten Cardmarket-Link) ─
   if (setCode && num) {
-    const result = await fetchPriceFromUrl(buildSetCodeUrl(setCode as string, num), headers);
-    if (result) return res.status(200).json({ ...result, found: true, source: 'setCode' });
+    const result = await fetchFromPokemonTCG(buildSetCodeUrl(setCode as string, num), {});
+    if (result) return res.status(200).json({ ...result, found: true, source: 'ptcg-setCode' });
   }
 
-  // Prio 0.5: set.name + Nummer – Vintage-Karten ohne setCode (Base Set, Jungle, Fossil ...)
+  // ── Prio 3: Pokemon TCG API via Set-Name (Vintage) ───────────────────────
   if (!setCode && set && num) {
-    const result = await fetchPriceFromUrl(buildSetNameUrl(set as string, num), headers);
-    if (result) return res.status(200).json({ ...result, found: true, source: 'setName' });
+    const result = await fetchFromPokemonTCG(buildSetNameUrl(set as string, num), {});
+    if (result) return res.status(200).json({ ...result, found: true, source: 'ptcg-setName' });
   }
 
-  // Prio 1–4: Name-basierte Fallbacks (wie bisher)
+  // ── Prio 4–7: Pokemon TCG API Name-Fallbacks ─────────────────────────────
+  const apiKey = process.env.POKEMON_TCG_API_KEY;
+  const headers: Record<string, string> = apiKey ? { 'X-Api-Key': apiKey } : {};
+
   const fallbackUrls = [
     buildNameUrl(name as string, num || undefined),
     buildNameUrl(name as string),
@@ -86,8 +171,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   ];
 
   for (const url of fallbackUrls) {
-    const result = await fetchPriceFromUrl(url, headers);
-    if (result) return res.status(200).json({ ...result, found: true, source: 'name' });
+    const result = await fetchFromPokemonTCG(url, headers);
+    if (result) return res.status(200).json({ ...result, found: true, source: 'ptcg-name' });
   }
 
   return res.status(200).json({ min: null, trend: null, url: null, found: false });
