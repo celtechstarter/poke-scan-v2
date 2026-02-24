@@ -54,9 +54,10 @@ function compressImage(base64: string, maxWidth: number = 800): Promise<string> 
   });
 }
 
-function getCardmarketUrl(cardName: string, set: string): string {
+function getCardmarketUrl(cardName: string, set: string, number?: string): string {
+  const query = number ? `${cardName} ${number}` : `${cardName} ${set}`;
   return "https://www.cardmarket.com/de/Pokemon/Products/Search?searchString=" +
-    encodeURIComponent(`${cardName} ${set}`);
+    encodeURIComponent(query);
 }
 
 export function CardScanner() {
@@ -98,7 +99,8 @@ export function CardScanner() {
         body: JSON.stringify({
           name: searchName,
           number: cardResult.number,
-          setCode: cardResult.setCode,  // präzise Suche via Set-Kürzel
+          setCode: cardResult.setCode,  // moderne Karten: z.B. "TEF"
+          set: cardResult.set,          // Vintage-Fallback: z.B. "Jungle"
         }),
       });
       const cardPrices = pricesRes.ok
@@ -256,9 +258,19 @@ export function CardScanner() {
                     </div>
                   </div>
                 ) : (
-                  <p className="font-mono text-[10px] text-white/40">
-                    Preise aktuell nicht verfügbar – direkt auf Cardmarket prüfen.
-                  </p>
+                  <div className="flex flex-col gap-2">
+                    <p className="font-mono text-[10px] text-white/40">
+                      Kein Preis in der Datenbank gefunden.
+                    </p>
+                    <a
+                      href={getCardmarketUrl(result.cardName, result.set, result.number)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 rounded-md border border-poke-yellow/40 bg-poke-yellow/10 px-3 py-2 font-mono text-[10px] tracking-wider text-poke-yellow hover:bg-poke-yellow/20"
+                    >
+                      PREIS AUF CARDMARKET PRÜFEN →
+                    </a>
+                  </div>
                 )}
               </div>
 

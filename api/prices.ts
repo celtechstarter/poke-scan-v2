@@ -7,6 +7,11 @@ function buildSetCodeUrl(setCode: string, num: string): string {
   return `${TCG_API}?q=set.ptcgoCode:${encodeURIComponent(setCode)}%20number:${encodeURIComponent(num)}&pageSize=5`;
 }
 
+// Suche per set.name + Nummer (Prio 0.5 – für Vintage-Karten ohne setCode)
+function buildSetNameUrl(setName: string, num: string): string {
+  return `${TCG_API}?q=set.name:%22${encodeURIComponent(setName)}%22%20number:${encodeURIComponent(num)}&pageSize=5`;
+}
+
 // Suche per Name (Fallback wenn kein setCode vorhanden)
 function buildNameUrl(name: string, num?: string): string {
   const encodedName = name.includes(' ')
@@ -49,7 +54,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { name, number, setCode } = req.body ?? {};
+  const { name, number, setCode, set } = req.body ?? {};
   if (!name) return res.status(400).json({ error: 'name required' });
 
   const headers: Record<string, string> = {};
@@ -60,10 +65,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const rawNum = (number as string | undefined)?.split('/')[0] ?? '';
   const num = rawNum.replace(/^0+/, '') || rawNum;
 
-  // Prio 0: setCode + Nummer (exakt) – nur möglich wenn KI den Code erkannt hat
+  // Prio 0: setCode + Nummer (exakt) – moderne Karten mit Buchstaben-Kürzel
   if (setCode && num) {
     const result = await fetchPriceFromUrl(buildSetCodeUrl(setCode as string, num), headers);
     if (result) return res.status(200).json({ ...result, found: true, source: 'setCode' });
+  }
+
+  // Prio 0.5: set.name + Nummer – Vintage-Karten ohne setCode (Base Set, Jungle, Fossil ...)
+  if (!setCode && set && num) {
+    const result = await fetchPriceFromUrl(buildSetNameUrl(set as string, num), headers);
+    if (result) return res.status(200).json({ ...result, found: true, source: 'setName' });
   }
 
   // Prio 1–4: Name-basierte Fallbacks (wie bisher)
