@@ -13,9 +13,13 @@ const PROMPT = `Analysiere diese Pokemon-Karte. Lies ZUERST den unteren Kartenra
 
 SCHRITT 1 – UNTERER KARTENRAND (höchste Priorität):
 - setCode: Das kurze GROSSBUCHSTABEN-Kürzel direkt neben dem Set-Symbol unten auf der Karte.
-  Exakt 2–4 Buchstaben, z.B. "TEF", "OBF", "SIT", "PAR", "MEW", "SVP", "PRE", "SSP", "TWM".
-  ACHTUNG: Sprachkürzel wie "de", "en", "fr" sind KEIN setCode – ignoriere diese!
-  Wenn kein Buchstaben-Code sichtbar ist → setCode: "" (leer lassen, siehe Vintage-Hinweis unten)
+  Das Format unten auf der Karte ist immer: [Set-Symbol] [SETCODE] [Sprache] [Nummer/Gesamt]
+  Beispiel: "MEW de 006/165" → setCode ist "MEW", Sprache ist "de", number ist "006/165"
+  Weitere gültige setCode-Beispiele: "TEF", "OBF", "SIT", "PAR", "MEW", "SVP", "PRE", "SSP", "TWM", "SCR", "SFA", "PRE"
+  KRITISCH – diese sind KEIN setCode, niemals verwenden:
+    • "ex", "GX", "V", "VMAX", "VSTAR" → das sind Kartentyp-Suffixe im NAMEN (z.B. "Glurak ex")
+    • "de", "en", "fr", "it", "es", "pt" → das sind Sprachkürzel
+  Wenn kein Code sichtbar ist → setCode: "" (leer lassen, siehe Vintage-Hinweis unten)
 - number: Kartennummer exakt wie gedruckt, z.B. "197/192", "006/165", "4/102", "TG01/TG30".
   NICHT die Pokédex-Nummer oben rechts!
 
