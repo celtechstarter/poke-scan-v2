@@ -11,12 +11,13 @@ type ScanState = "idle" | "scanning" | "result" | "error";
 
 interface CardResult {
   cardName: string;
-  nameEn?: string;   // englischer Name für API-Suche
+  nameEn?: string;        // englischer Name für API-Suche
   set: string;
-  setCode?: string;  // z.B. "TEF", "OBF" – für präzise TCG-API Suche
+  setCode?: string;       // z.B. "TEF", "OBF" – für präzise TCG-API Suche
   number: string;
   rarity: string;
   language: string;
+  visual_type?: string;  // z.B. "holo", "full_art", "rainbow" – für Varianten-Unterscheidung
 }
 
 function getSessionId(): string {
@@ -232,6 +233,14 @@ export function CardScanner() {
                 <RarityStars rating={rarityInfo.stars} label={rarityInfo.label} />
                 <span className="font-mono text-[10px] tracking-wider text-white/40">LANGUAGE</span>
                 <span className="font-mono text-xs text-white">{result.language}</span>
+                {result.visual_type && result.visual_type !== "normal" && (
+                  <>
+                    <span className="font-mono text-[10px] tracking-wider text-white/40">VISUAL</span>
+                    <span className="font-mono text-xs text-poke-cyan">
+                      {result.visual_type.replace(/_/g, " ").toUpperCase()}
+                    </span>
+                  </>
+                )}
               </div>
 
               {/* Cardmarket Preise */}
