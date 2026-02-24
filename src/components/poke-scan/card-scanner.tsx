@@ -13,6 +13,7 @@ interface CardResult {
   cardName: string;
   nameEn?: string;   // englischer Name für API-Suche
   set: string;
+  setCode?: string;  // z.B. "TEF", "OBF" – für präzise TCG-API Suche
   number: string;
   rarity: string;
   language: string;
@@ -64,7 +65,7 @@ export function CardScanner() {
   const [result, setResult] = useState<CardResult | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [prices, setPrices] = useState<{ min: number | null; trend: number | null; url: string | null } | null>(null);
+  const [prices, setPrices] = useState<{ min: number | null; trend: number | null; url: string | null; found: boolean } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scanCard = useCallback(async (base64Image: string) => {
@@ -94,11 +95,15 @@ export function CardScanner() {
       const pricesRes = await fetch("/api/prices", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: searchName, number: cardResult.number }),
+        body: JSON.stringify({
+          name: searchName,
+          number: cardResult.number,
+          setCode: cardResult.setCode,  // präzise Suche via Set-Kürzel
+        }),
       });
       const cardPrices = pricesRes.ok
         ? await pricesRes.json()
-        : { min: null, trend: null, url: null, found: true };
+        : { min: null, trend: null, url: null, found: false };
       setPrices(cardPrices);
 
       const cardmarketUrl = cardPrices.url ?? getCardmarketUrl(cardResult.cardName, cardResult.set);
@@ -235,7 +240,7 @@ export function CardScanner() {
                 </div>
                 {prices === null ? (
                   <p className="font-mono text-[10px] text-white/40 animate-pulse">Preise werden geladen…</p>
-                ) : (
+                ) : prices.found && (prices.min !== null || prices.trend !== null) ? (
                   <div className="grid grid-cols-2 gap-3">
                     <div className="flex flex-col gap-0.5">
                       <span className="font-mono text-[9px] tracking-wider text-white/40">AB (MIN)</span>
@@ -250,6 +255,10 @@ export function CardScanner() {
                       </span>
                     </div>
                   </div>
+                ) : (
+                  <p className="font-mono text-[10px] text-white/40">
+                    Preise aktuell nicht verfügbar – direkt auf Cardmarket prüfen.
+                  </p>
                 )}
               </div>
 

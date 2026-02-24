@@ -9,17 +9,23 @@ const VISION_MODELS = [
   'microsoft/phi-3.5-vision-instruct',
 ];
 
-const PROMPT = `Analysiere diese Pokemon-Karte und antworte NUR mit einem JSON-Objekt.
+const PROMPT = `Analysiere diese Pokemon-Karte. Lies ZUERST den unteren Kartenrand – dort stehen die wichtigsten Codes in kleiner Schrift.
 
-Felder:
-- cardName: Name exakt wie auf der Karte gedruckt (z.B. "Glurak ex" auf Deutsch, "Charizard ex" auf Englisch)
-- nameEn: IMMER der englische Kartenname (z.B. "Charizard ex" - auch wenn die Karte deutsch ist!)
-- set: Set-Name auf Englisch - erkenne ihn am Set-Symbol und der Kartennummer (z.B. "Scarlet & Violet - 151", "Sword & Shield - Evolving Skies", "Base Set")
-- number: Kartennummer UNTEN LINKS exakt wie gedruckt (z.B. "006/165") - NICHT die Pokédex-Nummer oben rechts!
+SCHRITT 1 – UNTERER KARTENRAND (höchste Priorität, lies diese Codes zuerst):
+- setCode: Das kurze GROSSBUCHSTABEN-Kürzel direkt neben dem Set-Symbol unten auf der Karte.
+  Exakt 2–4 Buchstaben, z.B. "TEF", "OBF", "SIT", "PAR", "MEW", "SVP", "PRE", "SSP", "TWM".
+  ACHTUNG: Sprachkürzel wie "de", "en", "fr" sind KEIN setCode – ignoriere diese!
+- number: Kartennummer exakt wie gedruckt, z.B. "197/192", "006/165", "TG01/TG30".
+  NICHT die Pokédex-Nummer oben rechts!
+
+SCHRITT 2 – KARTENINFORMATIONEN:
+- cardName: Name exakt wie auf der Karte gedruckt (z.B. "Glurak ex" oder "Charizard ex")
+- nameEn: IMMER der englische Kartenname (z.B. "Charizard ex" – auch wenn die Karte deutsch ist!)
+- set: Set-Name auf Englisch (z.B. "Temporal Forces", "Obsidian Flames", "151", "Base Set")
 - rarity: Common / Uncommon / Rare / Holo Rare / Ultra Rare / Secret Rare
 - language: Deutsch / Englisch / Japanisch / Französisch etc.
 
-Antworte ausschließlich mit: {"cardName":"...","nameEn":"...","set":"...","number":"...","rarity":"...","language":"..."}
+Antworte ausschließlich mit: {"cardName":"...","nameEn":"...","set":"...","setCode":"...","number":"...","rarity":"...","language":"..."}
 Kein weiterer Text.`;
 
 async function callModel(model: string, image: string, apiKey: string, timeoutMs: number) {
