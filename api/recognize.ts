@@ -37,6 +37,41 @@ NIEMALS als setCode verwenden:
 
 Kein Code sichtbar => setCode: "" (dann Zone B lesen)
 
+=== PLAUSIBILITAETS-REGELN (Nostalgie-Fehler vermeiden!) ===
+
+REGEL 1 - Gesamtzahl-Heuristik (die Zahl nach dem Schraegstrich):
+  Die Gesamtzahl im Format "xxx/GESAMT" identifiziert das Set eindeutig.
+  Nutze sie als Kontrolle, wenn der setCode unklar ist:
+    .../102  =>  Base Set (1999, WotC, 102 Karten)   - VINTAGE
+    .../64   =>  Jungle (1999, WotC, 64 Karten)      - VINTAGE
+    .../62   =>  Fossil (1999, WotC, 62 Karten)      - VINTAGE
+    .../165  =>  "151" / Scarlet & Violet 151         - MODERN  (setCode: MEW)
+    .../197  =>  Obsidian Flames                      - MODERN  (setCode: OBF)
+    .../193  =>  Paradox Rift                         - MODERN  (setCode: PAR)
+    .../192  =>  Rebel Clash oder Temporal Forces     - MODERN
+    .../182  =>  Temporal Forces                      - MODERN  (setCode: TEF)
+    .../162  =>  Twilight Masquerade                  - MODERN  (setCode: TWM)
+  Wenn Gesamtzahl groesser als 110 => es ist KEIN Vintage-Set!
+
+REGEL 2 - "ex" im Kartennamen (Kleinschreibung beachten!):
+  Wenn cardName "ex" enthaelt (z.B. "Glurak ex", "Pikachu ex", "Mewtu ex"):
+  => Die Karte stammt aus der EX-Aera (2003-2007) oder Scarlet & Violet (2023+)
+  => NIEMALS Base Set, Jungle, Fossil oder andere WotC-Sets (1999-2003)!
+  => "Glurak ex" mit /165 => definitiv set="151", setCode="MEW"
+
+REGEL 3 - Explizites Set-Code-zu-Set-Mapping (bekannte Codes):
+  MEW  =>  set: "151"                     (Scarlet & Violet 151, 2023)
+  TEF  =>  set: "Temporal Forces"         (2024)
+  OBF  =>  set: "Obsidian Flames"         (2023)
+  PAR  =>  set: "Paradox Rift"            (2023)
+  TWM  =>  set: "Twilight Masquerade"     (2024)
+  SSP  =>  set: "Stellar Crown"           (2024)
+  SCR  =>  set: "Surging Sparks"          (2024)
+  SFA  =>  set: "Shrouded Fable"          (2024)
+  SVI  =>  set: "Scarlet & Violet"        (2023)
+  PAL  =>  set: "Paldea Evolved"          (2023)
+  SVP  =>  set: "Scarlet & Violet Promos" (2023+)
+
 === ZONE B: COPYRIGHT-ZEILE GANZ UNTEN (nur wenn Zone A keinen setCode lieferte) ===
 
 Lies die Jahreszahl in der Copyright-Zeile ganz am unteren Rand:
