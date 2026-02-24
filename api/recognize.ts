@@ -22,6 +22,13 @@ Beispiele - genau so steht es auf echten Karten:
   "OBF en 215/230"  =>  setCode="OBF",  number="215/230"
   "PAR en 068/193"  =>  setCode="PAR",  number="068/193"
   "TWM de 103/162"  =>  setCode="TWM",  number="103/162"
+  "SVP de 047"      =>  setCode="SVP",  number="047"      (Promo: kein Schraegstrich!)
+  "SVP en 084"      =>  setCode="SVP",  number="084"      (Promo englisch)
+
+WICHTIG fuer Promo-Karten (SVP):
+  - Keine Gesamtzahl nach Schraegstrich - nur eine einzelne Nummer wie "047"
+  - Oft ein kleines Promo-Stern-Symbol (Sternchen mit "PROMO" Text) sichtbar
+  - Das Promo-Symbol bestaetigt setCode="SVP"
 
 Gueltige setCode-Werte: MEW, TEF, OBF, SIT, PAR, SVP, PRE, SSP, TWM, SCR, SFA, SVI, PAL, SSP, SCR, SFA, PRE, JTG
 
@@ -70,7 +77,7 @@ REGEL 3 - Explizites Set-Code-zu-Set-Mapping (bekannte Codes):
   SFA  =>  set: "Shrouded Fable"          (2024)
   SVI  =>  set: "Scarlet & Violet"        (2023)
   PAL  =>  set: "Paldea Evolved"          (2023)
-  SVP  =>  set: "Scarlet & Violet Promos" (2023+)
+  SVP  =>  set: "Scarlet & Violet Promos" (2023+)  - Nummern OHNE Schraegstrich (z.B. "047", nicht "047/xxx")
 
 === ZONE B: COPYRIGHT-ZEILE GANZ UNTEN (nur wenn Zone A keinen setCode lieferte) ===
 
