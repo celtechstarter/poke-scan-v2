@@ -9,40 +9,49 @@ const VISION_MODELS = [
   'microsoft/phi-3.5-vision-instruct',
 ];
 
-const PROMPT = `Analysiere diese Pokemon-Karte. Lies ZUERST den unteren Kartenrand – dort stehen die wichtigsten Codes in kleiner Schrift.
+const PROMPT = `Du analysierst eine Pokemon-Karte. Deine wichtigste Aufgabe ist es, die kleinen Codes in der UNTEREN LINKEN ECKE der Karte zu lesen.
 
-SCHRITT 1 – UNTERER KARTENRAND (höchste Priorität):
-- setCode: Das kurze GROSSBUCHSTABEN-Kürzel direkt neben dem Set-Symbol unten auf der Karte.
-  Das Format unten auf der Karte ist immer: [Set-Symbol] [SETCODE] [Sprache] [Nummer/Gesamt]
-  Beispiel: "MEW de 006/165" → setCode ist "MEW", Sprache ist "de", number ist "006/165"
-  Weitere gültige setCode-Beispiele: "TEF", "OBF", "SIT", "PAR", "MEW", "SVP", "PRE", "SSP", "TWM", "SCR", "SFA", "PRE"
-  KRITISCH – diese sind KEIN setCode, niemals verwenden:
-    • "ex", "GX", "V", "VMAX", "VSTAR" → das sind Kartentyp-Suffixe im NAMEN (z.B. "Glurak ex")
-    • "de", "en", "fr", "it", "es", "pt" → das sind Sprachkürzel
-  Wenn kein Code sichtbar ist → setCode: "" (leer lassen, siehe Vintage-Hinweis unten)
-- number: Kartennummer exakt wie gedruckt, z.B. "197/192", "006/165", "4/102", "TG01/TG30".
-  NICHT die Pokédex-Nummer oben rechts!
+=== SCHRITT 1: UNTERE LINKE ECKE (zuerst lesen!) ===
 
-VINTAGE-KARTEN (Wizards of the Coast, ca. 1999–2003) – kein alphanumerischer setCode:
-Diese Karten haben nur ein kleines Symbol oder gar keins. Erkenne das Set stattdessen an Symbol + Copyright-Jahr
-und trage den englischen Set-Namen ins Feld "set" ein:
-  Kein Symbol + "© 1995, 96, 98, 99 Nintendo" oder "1999 Wizards" → set: "Base Set"
-  Kleines Blatt/Pflanzensymbol → set: "Jungle"
-  Fossilien-Symbol (Spirale) → set: "Fossil"
-  Raketen-Symbol → set: "Team Rocket"
-  Abzeichen-Symbol → set: "Gym Heroes" oder "Gym Challenge" (je nach Jahreszahl)
-  Kugel-Symbol → set: "Neo Genesis"
-  Sonne/Halbmond-Symbol → set: "Neo Discovery" oder "Neo Revelation"
-  Stern-Symbol → set: "Neo Destiny"
+In der unteren linken Ecke steht immer diese Sequenz in kleiner Schrift:
+  [Set-Symbol]  [SETCODE]  [Sprachkuerzel]  [Nummer/Gesamt]
 
-SCHRITT 2 – KARTENINFORMATIONEN:
-- cardName: Name exakt wie auf der Karte gedruckt (z.B. "Glurak ex" oder "Charizard")
-- nameEn: IMMER der englische Kartenname (z.B. "Charizard" – auch wenn die Karte deutsch ist!)
-- set: Set-Name auf Englisch (z.B. "Temporal Forces", "Base Set", "Jungle")
+Konkrete Beispiele - genau so sieht es auf der Karte aus:
+  "MEW de 006/165"  =>  setCode="MEW"  number="006/165"
+  "TEF de 197/192"  =>  setCode="TEF"  number="197/192"
+  "OBF en 215/230"  =>  setCode="OBF"  number="215/230"
+  "PAR en 068/193"  =>  setCode="PAR"  number="068/193"
+
+Regeln fuer setCode:
+  - Immer 2-4 GROSSBUCHSTABEN direkt nach dem Set-Symbol, VOR dem Sprachkuerzel
+  - Gueltige Beispiele: MEW, TEF, OBF, SIT, PAR, SVP, PRE, SSP, TWM, SCR, SFA, SVI, PAL
+
+  NIEMALS als setCode verwenden:
+  - "ex", "GX", "V", "VMAX", "VSTAR" => das sind Kartentitel-Suffixe oben auf der Karte, NICHT unten!
+  - "de", "en", "fr", "it", "es", "pt" => Sprachkuerzel, kommen NACH dem setCode
+  - Pokedex-Nummer oben rechts => gehoert nicht hierher
+
+Wenn unten links kein Buchstaben-Code erkennbar ist (aeltere Karten) => setCode: ""
+
+=== SCHRITT 2: KARTEN-INFORMATIONEN ===
+
+- cardName: Name oben auf der Karte (z.B. "Glurak ex", "Pikachu", "Mewtu ex"). "ex"/"GX" etc. gehoeren zum Namen!
+- nameEn: Englischer Name der Karte (z.B. "Charizard ex", "Pikachu", "Mewtwo ex")
+- set: Set-Name auf Englisch (z.B. "151", "Temporal Forces", "Obsidian Flames")
 - rarity: Common / Uncommon / Rare / Holo Rare / Ultra Rare / Secret Rare
-- language: Deutsch / Englisch / Japanisch / Französisch etc.
+- language: Deutsch / Englisch / Japanisch / Franzoesisch etc.
 
-Antworte ausschließlich mit: {"cardName":"...","nameEn":"...","set":"...","setCode":"...","number":"...","rarity":"...","language":"..."}
+=== VINTAGE-KARTEN (WotC 1999-2003, kein setCode) ===
+
+Diese Karten haben kein Buchstaben-Kuerzel. Erkenne das Set am kleinen Symbol + Copyright:
+  Kein Symbol + "1999 Wizards" => set: "Base Set"
+  Blatt-Symbol => set: "Jungle"
+  Fossil-Symbol => set: "Fossil"
+  Raketen-Symbol => set: "Team Rocket"
+  Abzeichen-Symbol => set: "Gym Heroes" oder "Gym Challenge"
+  Kugel-Symbol => set: "Neo Genesis"
+
+Antworte ausschliesslich mit: {"cardName":"...","nameEn":"...","set":"...","setCode":"...","number":"...","rarity":"...","language":"..."}
 Kein weiterer Text.`;
 
 async function callModel(model: string, image: string, apiKey: string, timeoutMs: number) {
