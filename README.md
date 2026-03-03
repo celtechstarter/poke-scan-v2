@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://poke-scan-v2.vercel.app">🔗 Live Demo</a>
+  <a href="https://poke-scan-v2.vercel.app">🔗 Live-Demo</a>
 </p>
 
 ---
