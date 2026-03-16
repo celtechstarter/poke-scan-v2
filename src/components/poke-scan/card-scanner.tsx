@@ -148,6 +148,18 @@ export function CardScanner() {
 
   const rarityInfo = result ? getRarityInfo(result.rarity) : { stars: 1, label: "COMMON" };
 
+  const handleDemoCard = useCallback(async (src: string) => {
+    const res = await fetch(src);
+    const blob = await res.blob();
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string;
+      setPreview(base64);
+      scanCard(base64);
+    };
+    reader.readAsDataURL(blob);
+  }, [scanCard]);
+
   return (
     <section id="main-scanner" aria-label="Pokemon Card Scanner">
       <PokedexCard className="mx-auto w-full max-w-xl" glowColor="rgba(239, 68, 68, 0.1)">
@@ -302,6 +314,38 @@ export function CardScanner() {
           )}
         </div>
       </PokedexCard>
+
+      {/* Demo-Bereich */}
+      {state === "idle" && (
+        <div className="mx-auto mt-4 w-full max-w-xl rounded-lg border border-white/5 bg-white/5 p-4">
+          <p className="mb-3 text-center font-mono text-[11px] tracking-wider text-white/50">
+            KEINE KARTE ZUR HAND? TESTE MIT EINER DEMO:
+          </p>
+          <div className="flex items-center justify-center gap-4">
+            {[
+              { src: "/demo/charizard.png", label: "Charizard" },
+              { src: "/demo/pikachu.png",   label: "Pikachu"   },
+              { src: "/demo/mewtwo.png",    label: "Mewtwo"    },
+            ].map((card) => (
+              <button
+                key={card.src}
+                onClick={() => handleDemoCard(card.src)}
+                className="group flex flex-col items-center gap-1.5 rounded-lg border border-white/10 bg-black/30 p-2 transition-all hover:border-poke-cyan/40 hover:bg-poke-cyan/5"
+                aria-label={`Demo: ${card.label} scannen`}
+              >
+                <img
+                  src={card.src}
+                  alt={card.label}
+                  className="h-24 w-auto rounded shadow-md shadow-black/40 transition-transform group-hover:scale-105"
+                />
+                <span className="font-mono text-[9px] tracking-wider text-white/40 group-hover:text-poke-cyan">
+                  {card.label.toUpperCase()}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
