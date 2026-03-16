@@ -81,12 +81,23 @@ export function CardScanner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image: compressed }),
       });
-      if (!response.ok) throw new Error("API Fehler");
+      if (!response.ok) {
+        const errBody = await response.json().catch(() => ({}));
+        const msg = errBody?.error ?? `HTTP ${response.status}`;
+        console.error("[scanner] /api/recognize Fehler:", msg);
+        throw new Error(msg);
+      }
       const data = await response.json();
       const content = data.choices?.[0]?.message?.content;
-      if (!content) throw new Error("Keine Antwort");
+      if (!content) {
+        console.error("[scanner] Kein Inhalt in API-Antwort:", JSON.stringify(data));
+        throw new Error("KI hat keine Antwort geliefert");
+      }
       const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("Nicht erkannt");
+      if (!jsonMatch) {
+        console.error("[scanner] KI-Antwort enthält kein JSON:", content);
+        throw new Error(`Karte nicht erkannt – KI antwortete: "${content.slice(0, 80)}"`);
+      }
 
       const cardResult: CardResult = JSON.parse(jsonMatch[0]);
       setResult(cardResult);

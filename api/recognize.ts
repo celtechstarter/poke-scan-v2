@@ -145,8 +145,23 @@ async function callModel(model: string, image: string, apiKey: string, timeoutMs
       }),
       signal: controller.signal
     });
-    return response.ok ? response : null;
-  } catch {
+
+    if (!response.ok) {
+      console.error(`[recognize] ${model} HTTP ${response.status} ${response.statusText}`);
+      return null;
+    }
+
+    // Fix 3: HTTP 200 kann trotzdem einen Fehler-Body enthalten (z.B. Rate Limit)
+    const data = await response.json();
+    if (data.error || data.detail) {
+      console.error(`[recognize] ${model} API-Fehler im Body:`, data.error ?? data.detail);
+      return null;
+    }
+
+    return data;
+  } catch (err) {
+    const reason = (err as Error).name === 'AbortError' ? `Timeout nach ${timeoutMs}ms` : (err as Error).message;
+    console.error(`[recognize] ${model} Exception: ${reason}`);
     return null;
   } finally {
     clearTimeout(timer);
@@ -165,19 +180,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!image) return res.status(400).json({ error: 'No image provided' });
 
   const start = Date.now();
+  const TOTAL_BUDGET_MS = 25000; // Fix 1: 25s statt 8.5s
 
   for (const model of VISION_MODELS) {
     const elapsed = Date.now() - start;
-    const remaining = 8500 - elapsed;
-    if (remaining < 1000) break;
+    const remaining = TOTAL_BUDGET_MS - elapsed;
+    if (remaining < 2000) {
+      console.error(`[recognize] Budget erschöpft (${elapsed}ms), überspringe ${model}`);
+      break;
+    }
 
-    const response = await callModel(model, image, apiKey, remaining);
-    if (response) {
-      const data = await response.json();
+    console.error(`[recognize] Versuche ${model} (${elapsed}ms elapsed, ${remaining}ms remaining)`);
+    const data = await callModel(model, image, apiKey, remaining);
+
+    if (data) {
+      console.error(`[recognize] Erfolg mit ${model} nach ${Date.now() - start}ms`);
       return res.status(200).json({ ...data, model_used: model });
     }
-    console.error(`Model ${model} failed after ${Date.now() - start}ms`);
+
+    console.error(`[recognize] ${model} fehlgeschlagen nach ${Date.now() - start}ms – nächstes Modell`);
   }
 
+  console.error(`[recognize] Alle Modelle fehlgeschlagen nach ${Date.now() - start}ms`);
   return res.status(500).json({ error: 'Karte nicht erkannt. Bitte erneut versuchen.' });
 }
