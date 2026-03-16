@@ -12,6 +12,16 @@ dist
 dist-ssr
 *.local
 
+# Environment variables
+.env
+.env.local
+.env.production
+.env.development
+.env*.local
+
+# TypeScript build info
+*.tsbuildinfo
+
 # Claude Kontext (lokal, nicht im Repo)
 CLAUDE.md
 
@@ -25,3 +35,8 @@ CLAUDE.md
 *.njsproj
 *.sln
 *.sw?
+*.swp
+*.swo
+
+# Test responses / temp files
+response.json

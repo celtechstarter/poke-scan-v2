@@ -1,7 +1,7 @@
 {
-  "name": "Poke-Scan",
+  "name": "Poke-Scan V2",
   "short_name": "PokeScan",
-  "description": "Pokemon-Karten per Foto scannen und Marktpreis anzeigen",
+  "description": "Pokémon-Karten per Foto scannen und Cardmarket-Preis anzeigen",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

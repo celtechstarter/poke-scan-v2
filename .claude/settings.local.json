@@ -7,7 +7,20 @@
       "Bash(cd:*)",
       "Bash(cd /c/Users/marce/Desktop/poke-scan-v2 && npm audit 2>&1)",
       "Bash(ls:*)",
-      "Bash(cd /c/Users/marce/Desktop/poke-scan-v2 && npm run build 2>&1)"
+      "Bash(cd /c/Users/marce/Desktop/poke-scan-v2 && npm run build 2>&1)",
+      "Bash(node:*)",
+      "Bash(head:*)",
+      "WebFetch(domain:api.tcgdex.net)",
+      "WebSearch",
+      "WebFetch(domain:tcgdex.dev)",
+      "Bash(grep:*)",
+      "WebFetch(domain:scrydex.com)",
+      "Bash(git:*)",
+      "Bash(npm run:*)",
+      "Bash(npm audit:*)",
+      "Bash(rm:*)",
+      "Bash(npm install:*)",
+      "Bash(npx update-browserslist-db@latest:*)"
     ]
   }
 }

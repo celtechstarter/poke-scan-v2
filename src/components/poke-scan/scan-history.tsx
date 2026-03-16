@@ -116,7 +116,7 @@ export function ScanHistory() {
                 </div>
                 <div className="flex flex-col items-end gap-0.5 shrink-0">
                   <span className="font-mono text-xs text-poke-yellow">
-                    {entry.tcg_price_usd !== null ? `$${entry.tcg_price_usd.toFixed(2)}` : "–"}
+                    {entry.tcg_price_usd !== null ? `€${entry.tcg_price_usd.toFixed(2)}` : "–"}
                   </span>
                   {entry.cardmarket_url && (
                     <a
