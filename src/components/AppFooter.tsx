@@ -43,10 +43,6 @@ export function AppFooter() {
               Claude (Architect)
             </span>
             <span className="text-xs text-gray-400">
-              <span aria-hidden="true" className="mr-0.5">🦞</span>
-              OpenClaw (Builder)
-            </span>
-            <span className="text-xs text-gray-400">
               <span aria-hidden="true" className="mr-0.5">⚡</span>
               NVIDIA NIM (AI Infrastructure)
             </span>

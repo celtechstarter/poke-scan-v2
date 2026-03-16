@@ -17,15 +17,15 @@ export function TechStackPokedex() {
         
         <div>
           <p className="mb-1 text-white/40">AI CORE</p>
-          <p className="text-white/80">├─ Llama 3.2 Vision (90B)</p>
+          <p className="text-white/80">├─ Llama 3.2 Vision (11B)</p>
           <p className="text-white/80">├─ NVIDIA NIM API</p>
-          <p className="text-white/80">└─ 3-Model Fallback Chain</p>
+          <p className="text-white/80">└─ 2-Model Fallback Chain</p>
         </div>
         
         <div>
           <p className="mb-1 text-white/40">HABITAT</p>
           <p className="text-white/80">├─ ▲ Vercel (Frontend)</p>
-          <p className="text-white/80">├─ 🟦 Hostinger VPS</p>
+          <p className="text-white/80">├─ 🗄️ Supabase (Database)</p>
           <p className="text-white/80">└─ 🐙 GitHub</p>
         </div>
       </div>
