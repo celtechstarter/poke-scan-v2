@@ -5,7 +5,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Beta_🚀-green?style=for-the-badge" />
   <img src="https://img.shields.io/badge/KI--Vision-NVIDIA_NIM-76B900?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Kosten-~27€%2FMonat-blue?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Kosten-~18€%2FMonat-blue?style=for-the-badge" />
 </p>
 
 <p align="center">
@@ -90,7 +90,7 @@ Die KI **sieht** die Karte wie ein Mensch – nicht nur Text, sondern das ganze 
 | **Frontend** | React 18, TypeScript, Vite, Tailwind CSS |
 | **UI** | shadcn/ui, Framer Motion |
 | **Backend** | Vercel Serverless Functions |
-| **KI-Vision** | NVIDIA NIM API (Llama 3.2 90B Vision) |
+| **KI-Vision** | NVIDIA NIM API (Llama 3.2 Vision) |
 | **Preise** | TCGdex API, Pokemon TCG API, Cardmarket |
 | **Datenbank** | Supabase (PostgreSQL) |
 | **Deployment** | Vercel (Auto-Deploy) |
@@ -156,24 +156,22 @@ VITE_SUPABASE_ANON_KEY=xxx        # Supabase
 |-------|-------|------------------|
 | 1 | 03/2025 | Projekt-Start mit Lovable |
 | 2 | 04/2025 | OCR-Experimente (Tesseract, EasyOCR) → verworfen |
-| 3 | 20.02.2026 | KI-Vision Revolution (Kimi API) |
-| 4 | 21.02.2026 | NVIDIA NIM API + Fallback Chain |
+| 3 | 20.02.2026 | KI-Vision mit NVIDIA NIM API eingeführt |
+| 4 | 21.02.2026 | Fallback Chain + Bildkomprimierung |
 | 5 | 22.02.2026 | Mobile/PWA + Kamera-Integration |
-| 6 | 23.02.2026 | Preissystem (TCG API, Cardmarket) |
+| 6 | 23.02.2026 | Preissystem (TCGdex, TCG API, Cardmarket) |
 | 7 | 24.02.2026 | Präzisions-Optimierung, Multi-Zonen-Scan |
 
 ---
 
 ## 🤖 Das Team
 
-Dieses Projekt wird von einem **Mensch + KI Team** gebaut:
+Dieses Projekt wird von einem **Mensch + KI** gebaut:
 
 | Wer | Rolle |
 |-----|-------|
-| 👨‍💻 **Marcel** | Chef, Ideen, Koordination |
-| 🧠 **Claude** | Architekt, Plant & schreibt Code |
-| 💻 **Claude Code** | Implementierung, Debugging |
-| 🎨 **v0.dev** | UI Komponenten |
+| 👨‍💻 **Marcel** | Ideen, Koordination, Entscheidungen |
+| 🧠 **Claude** | Code, Architektur, Debugging |
 | 🚀 **Vercel** | Auto-Deployment |
 
 ---
@@ -183,11 +181,10 @@ Dieses Projekt wird von einem **Mensch + KI Team** gebaut:
 | Service | Kosten |
 |---------|--------|
 | Claude Pro | 18€/Monat |
-| VPS (Hostinger) | ~9€/Monat |
 | NVIDIA NIM API | 0€ (Free Tier) |
 | Vercel | 0€ (Free Tier) |
 | Supabase | 0€ (Free Tier) |
-| **Gesamt** | **~27€/Monat** |
+| **Gesamt** | **~18€/Monat** |
 
 ---
 
