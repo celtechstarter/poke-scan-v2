@@ -22,9 +22,13 @@ function getSessionId(): string {
   return id;
 }
 
+const ITEM_HEIGHT_PX = 56; // ca. Höhe eines Eintrags inkl. gap
+const VISIBLE_COUNT = 5;
+
 export function ScanHistory() {
   const [entries, setEntries] = useState<ScanEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
 
   const loadHistory = useCallback(async () => {
     setLoading(true);
@@ -33,24 +37,55 @@ export function ScanHistory() {
       .select("id, card_name, set_name, card_number, tcg_price_usd, cardmarket_url, scanned_at")
       .eq("session_id", getSessionId())
       .order("scanned_at", { ascending: false })
-      .limit(20);
+      .limit(50);
     setEntries(data ?? []);
     setLoading(false);
   }, []);
 
+  const clearHistory = useCallback(async () => {
+    await supabase.from("scan_history").delete().eq("session_id", getSessionId());
+    setEntries([]);
+  }, []);
+
   useEffect(() => { loadHistory(); }, [loadHistory]);
+
+  const maxHeight = ITEM_HEIGHT_PX * VISIBLE_COUNT;
 
   return (
     <PokedexCard className="w-full" glowColor="rgba(0, 240, 255, 0.08)">
       <div className="flex flex-col gap-4">
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="font-mono text-sm font-bold tracking-wider text-poke-cyan">SCAN HISTORY</h2>
-          <button
-            onClick={loadHistory}
-            className="rounded-md border border-white/10 bg-white/5 px-3 py-1 font-mono text-[10px] tracking-wider text-white/60 hover:border-poke-cyan/30 hover:text-poke-cyan"
-          >
-            REFRESH
-          </button>
+          <h2 className="font-mono text-sm font-bold tracking-wider text-poke-cyan">
+            SCAN HISTORY
+            {entries.length > 0 && (
+              <span className="ml-2 text-white/40">({entries.length} Scans)</span>
+            )}
+          </h2>
+          <div className="flex items-center gap-2">
+            {entries.length > 0 && (
+              <button
+                onClick={clearHistory}
+                className="rounded-md border border-red-500/20 bg-red-500/5 px-3 py-1 font-mono text-[10px] tracking-wider text-red-400/60 hover:border-red-500/40 hover:text-red-400"
+              >
+                CLEAR
+              </button>
+            )}
+            {entries.length > 0 && (
+              <button
+                onClick={() => setCollapsed((c) => !c)}
+                className="rounded-md border border-white/10 bg-white/5 px-3 py-1 font-mono text-[10px] tracking-wider text-white/60 hover:border-poke-cyan/30 hover:text-poke-cyan"
+              >
+                {collapsed ? "▼ ANZEIGEN" : "▲ EINKLAPPEN"}
+              </button>
+            )}
+            <button
+              onClick={loadHistory}
+              className="rounded-md border border-white/10 bg-white/5 px-3 py-1 font-mono text-[10px] tracking-wider text-white/60 hover:border-poke-cyan/30 hover:text-poke-cyan"
+            >
+              REFRESH
+            </button>
+          </div>
         </div>
 
         {loading && (
@@ -63,8 +98,11 @@ export function ScanHistory() {
           </p>
         )}
 
-        {!loading && entries.length > 0 && (
-          <div className="flex flex-col gap-2">
+        {!loading && entries.length > 0 && !collapsed && (
+          <div
+            className="flex flex-col gap-2 overflow-y-auto pr-1"
+            style={{ maxHeight: `${maxHeight}px` }}
+          >
             {entries.map((entry) => (
               <div
                 key={entry.id}
