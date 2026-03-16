@@ -55,8 +55,10 @@ function compressImage(base64: string, maxWidth: number = 800): Promise<string> 
   });
 }
 
-function getCardmarketUrl(cardName: string, set: string, number?: string): string {
-  const query = number ? `${cardName} ${number}` : `${cardName} ${set}`;
+function getCardmarketUrl(cardName: string, _set: string, number?: string): string {
+  // Nur Nummer vor dem Slash verwenden ("003/165" → "3"), Cardmarket sucht nach Name + Nummer
+  const num = number?.split('/')[0]?.replace(/^0+/, '') || '';
+  const query = num ? `${cardName} ${num}` : cardName;
   return "https://www.cardmarket.com/de/Pokemon/Products/Search?searchString=" +
     encodeURIComponent(query);
 }

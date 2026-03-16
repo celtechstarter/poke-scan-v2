@@ -67,7 +67,12 @@ async function fetchFromTCGdex(tcgdexId: string, localId: string): Promise<Price
     const verifiedSet = (card?.set?.name as string) || undefined;
     const verifiedName = (card?.name as string) || undefined;
 
-    return { min, trend, url: null, verifiedSet, verifiedName };
+    // Cardmarket-Suchlink aus verifizierten Daten bauen (Name + Nummer ohne führende Nullen)
+    const cmSearch = verifiedName
+      ? `https://www.cardmarket.com/de/Pokemon/Products/Search?searchString=${encodeURIComponent(verifiedName + ' ' + localId)}`
+      : null;
+
+    return { min, trend, url: cmSearch, verifiedSet, verifiedName };
   } catch {
     clearTimeout(timer);
     return null;
