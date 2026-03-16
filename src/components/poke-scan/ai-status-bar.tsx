@@ -16,11 +16,11 @@ export function AIStatusBar() {
           </span>
         </div>
         <span className="font-mono text-xs text-white/60">
-          [ POWERED BY: NVIDIA NIM • Llama 3.2 Vision • TCGdex • Supabase ]
+          [ POWERED BY ]
         </span>
       </div>
 
-      <div className="flex flex-wrap justify-center gap-4">
+      <div className="flex flex-wrap items-center justify-center gap-6">
         {techStack.map((tech) => (
           <div key={tech.name} className="flex items-center gap-2">
             <span aria-hidden="true">{tech.emoji}</span>
