@@ -26,23 +26,11 @@ export function TrainerFooter() {
           </a>
         </div>
         
-        {/* AI Agents */}
-        <div className="grid grid-cols-2 gap-2 text-[10px] md:grid-cols-4">
-          <div className="rounded border border-white/5 bg-white/5 p-2">
-            <span className="text-white/40">🧠 Claude</span>
-            <p className="text-white/80">Architect</p>
-          </div>
-          <div className="rounded border border-white/5 bg-white/5 p-2">
-            <span className="text-white/40">🦞 OpenClaw</span>
-            <p className="text-white/80">Builder</p>
-          </div>
+        {/* AI Vision */}
+        <div className="flex justify-center text-[10px]">
           <div className="rounded border border-white/5 bg-white/5 p-2">
             <span className="text-white/40">🦙 Llama</span>
             <p className="text-white/80">Vision AI</p>
-          </div>
-          <div className="rounded border border-white/5 bg-white/5 p-2">
-            <span className="text-white/40">🎨 v0.dev</span>
-            <p className="text-white/80">Designer</p>
           </div>
         </div>
         
@@ -50,19 +38,17 @@ export function TrainerFooter() {
         <div className="flex flex-wrap items-center justify-center gap-4 text-[10px] text-white/40">
           <span>⚡ NVIDIA NIM</span>
           <span>•</span>
-          <span>🟦 Hostinger VPS</span>
+          <span>▲ Vercel</span>
           <span>•</span>
-          <span>▲ Vercel Edge</span>
+          <span>🗄️ Supabase</span>
           <span>•</span>
-          <span>📊 Cardmarket</span>
+          <span>📦 TCGdex</span>
         </div>
         
         {/* Status */}
         <div className="flex items-center justify-center gap-2 text-[10px]">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-poke-green" />
           <span className="text-poke-green">ALL SYSTEMS OPERATIONAL</span>
-          <span className="text-white/30">•</span>
-          <span className="text-white/40">HOSTED ON HOSTINGER</span>
           <span className="text-white/30">•</span>
           <span className="text-white/40">DEPLOYED ON VERCEL</span>
         </div>
