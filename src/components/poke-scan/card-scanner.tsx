@@ -323,9 +323,9 @@ export function CardScanner() {
           </p>
           <div className="flex items-center justify-center gap-4">
             {[
-              { src: "/demo/charizard.png", label: "Charizard" },
-              { src: "/demo/pikachu.png",   label: "Pikachu"   },
-              { src: "/demo/mewtwo.png",    label: "Mewtwo"    },
+              { src: "/demo/pokescan1.png", label: "Demo 1" },
+              { src: "/demo/pokescan2.png", label: "Demo 2" },
+              { src: "/demo/pokescan3.png", label: "Demo 3" },
             ].map((card) => (
               <button
                 key={card.src}
