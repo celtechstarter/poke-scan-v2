@@ -107,6 +107,7 @@ export function CardScanner() {
 
   // Sammlung-State
   const [collectionCount, setCollectionCount] = useState<number | null>(null);
+  const [collectionEntryId, setCollectionEntryId] = useState<string | null>(null);
   const [addingToCollection, setAddingToCollection] = useState(false);
 
   const scanCard = useCallback(async (base64Image: string) => {
@@ -196,9 +197,12 @@ export function CardScanner() {
           .update({ quantity: existing.quantity + 1 })
           .eq("id", existing.id);
         if (dbError) console.error("[scanner] Collection update fehlgeschlagen:", dbError.message);
-        else setCollectionCount(existing.quantity + 1);
+        else {
+          setCollectionCount(existing.quantity + 1);
+          setCollectionEntryId(existing.id as string);
+        }
       } else {
-        const { error: dbError } = await supabase
+        const { data: inserted, error: dbError } = await supabase
           .from("collection")
           .insert({
             session_id: sessionId,
@@ -209,14 +213,61 @@ export function CardScanner() {
             number: result.number,
             variant,
             image_url: prices.image ?? null,
-          });
+          })
+          .select("id")
+          .single();
         if (dbError) console.error("[scanner] Collection insert fehlgeschlagen:", dbError.message);
-        else setCollectionCount(1);
+        else {
+          setCollectionCount(1);
+          setCollectionEntryId((inserted as { id: string }).id);
+        }
       }
     } finally {
       setAddingToCollection(false);
     }
   }, [result, prices]);
+
+  const incrementCollection = useCallback(async () => {
+    if (!collectionEntryId || collectionCount === null) return;
+    setAddingToCollection(true);
+    try {
+      const { error } = await supabase
+        .from("collection")
+        .update({ quantity: collectionCount + 1 })
+        .eq("id", collectionEntryId);
+      if (error) console.error("[scanner] Increment fehlgeschlagen:", error.message);
+      else setCollectionCount(collectionCount + 1);
+    } finally {
+      setAddingToCollection(false);
+    }
+  }, [collectionEntryId, collectionCount]);
+
+  const decrementCollection = useCallback(async () => {
+    if (!collectionEntryId || collectionCount === null) return;
+    setAddingToCollection(true);
+    try {
+      if (collectionCount <= 1) {
+        const { error } = await supabase
+          .from("collection")
+          .delete()
+          .eq("id", collectionEntryId);
+        if (error) console.error("[scanner] Delete fehlgeschlagen:", error.message);
+        else {
+          setCollectionCount(null);
+          setCollectionEntryId(null);
+        }
+      } else {
+        const { error } = await supabase
+          .from("collection")
+          .update({ quantity: collectionCount - 1 })
+          .eq("id", collectionEntryId);
+        if (error) console.error("[scanner] Decrement fehlgeschlagen:", error.message);
+        else setCollectionCount(collectionCount - 1);
+      }
+    } finally {
+      setAddingToCollection(false);
+    }
+  }, [collectionEntryId, collectionCount]);
 
   const applyCorrection = useCallback(async () => {
     if (!corrSetCode || !corrNumber || !result) return;
@@ -266,6 +317,7 @@ export function CardScanner() {
     setCorrSetCode("");
     setCorrNumber("");
     setCollectionCount(null);
+    setCollectionEntryId(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
@@ -447,26 +499,52 @@ export function CardScanner() {
                 )}
               </div>
 
-              {/* Zur Sammlung / Verwerfen */}
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={handleReset}
-                  className="rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 font-mono text-xs tracking-wider text-red-400/70 hover:border-red-500/40 hover:text-red-400"
-                >
-                  ✖ VERWERFEN
-                </button>
-                <button
-                  onClick={addToCollection}
-                  disabled={!prices?.tcgdexSet || !prices?.localId || addingToCollection}
-                  className="rounded-lg border border-poke-green/30 bg-poke-green/5 px-4 py-3 font-mono text-xs tracking-wider text-poke-green hover:bg-poke-green/10 disabled:cursor-not-allowed disabled:opacity-30"
-                >
-                  {collectionCount !== null
-                    ? `NOCH EINE (+1) · ${collectionCount}×`
-                    : addingToCollection
-                      ? "HINZUFÜGEN…"
-                      : "➕ ZUR SAMMLUNG"}
-                </button>
-              </div>
+              {/* Zur Sammlung / Erfolgs-Panel */}
+              {collectionCount !== null ? (
+                <div className="flex flex-col gap-2 rounded-lg border border-poke-green/30 bg-poke-green/5 p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-poke-green">✓</span>
+                      <span className="font-mono text-xs font-bold tracking-wider text-poke-green">IN DEINER SAMMLUNG</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={decrementCollection}
+                        disabled={addingToCollection}
+                        className="flex h-7 w-7 items-center justify-center rounded border border-white/10 bg-white/5 font-mono text-sm text-white/60 hover:border-red-500/40 hover:text-red-400 disabled:opacity-40"
+                      >−</button>
+                      <span className="w-8 text-center font-mono text-sm font-bold text-white">{collectionCount}×</span>
+                      <button
+                        onClick={incrementCollection}
+                        disabled={addingToCollection}
+                        className="flex h-7 w-7 items-center justify-center rounded border border-white/10 bg-white/5 font-mono text-sm text-white/60 hover:border-poke-green/40 hover:text-poke-green disabled:opacity-40"
+                      >+</button>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => document.getElementById("my-collection")?.scrollIntoView({ behavior: "smooth" })}
+                    className="text-left font-mono text-[10px] text-white/30 hover:text-poke-cyan"
+                  >
+                    → Zum Pokédex
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={handleReset}
+                    className="rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 font-mono text-xs tracking-wider text-red-400/70 hover:border-red-500/40 hover:text-red-400"
+                  >
+                    ✖ VERWERFEN
+                  </button>
+                  <button
+                    onClick={addToCollection}
+                    disabled={!prices?.tcgdexSet || !prices?.localId || addingToCollection}
+                    className="rounded-lg border border-poke-green/30 bg-poke-green/5 px-4 py-3 font-mono text-xs tracking-wider text-poke-green hover:bg-poke-green/10 disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    {addingToCollection ? "HINZUFÜGEN…" : "➕ ZUR SAMMLUNG"}
+                  </button>
+                </div>
+              )}
 
               <a
                 href={prices?.url ?? getCardmarketUrl(result.cardName, result.set)}

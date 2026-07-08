@@ -181,6 +181,7 @@ export function MyCollection() {
     .map(s => ({ date: s.snapshot_date, value: s.price_trend as number }));
 
   return (
+    <div id="my-collection">
     <PokedexCard className="w-full" glowColor="rgba(255, 215, 0, 0.05)">
       <div className="flex flex-col gap-4">
         {/* Header */}
@@ -368,5 +369,6 @@ export function MyCollection() {
         )}
       </div>
     </PokedexCard>
+    </div>
   );
 }
