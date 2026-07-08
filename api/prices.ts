@@ -11,8 +11,11 @@ type PriceResult = {
   min: number | null;
   trend: number | null;
   url: string | null;
-  verifiedSet?: string;   // Set-Name aus TCGdex (z.B. "151", "Temporal Forces")
-  verifiedName?: string;  // Kartenname aus TCGdex (z.B. "Charizard ex")
+  verifiedSet?: string;      // Set-Name aus TCGdex (z.B. "151", "Temporal Forces")
+  verifiedName?: string;     // Kartenname aus TCGdex (z.B. "Charizard ex")
+  tcgdexSet?: string | null; // TCGdex Set-ID (nur bei TCGdex-Quelle), z.B. 'sv03.5'
+  localId?: string | null;   // TCGdex Karten-ID im Set, z.B. '6'
+  image?: string | null;     // TCGdex Bild-Basis-URL (anhängen: /low.webp oder /high.webp)
 };
 
 async function fetchFromTCGdex(tcgdexId: string, localId: string, searchName: string): Promise<PriceResult | null> {
@@ -49,7 +52,9 @@ async function fetchFromTCGdex(tcgdexId: string, localId: string, searchName: st
       ? `https://www.cardmarket.com/de/Pokemon/Products/Search?searchString=${encodeURIComponent(verifiedName + ' ' + localId)}`
       : null;
 
-    return { min, trend, url: cmSearch, verifiedSet, verifiedName };
+    const image = (card?.image as string) || null;
+
+    return { min, trend, url: cmSearch, verifiedSet, verifiedName, tcgdexSet: tcgdexId, localId, image };
   } catch {
     clearTimeout(timer);
     return null;

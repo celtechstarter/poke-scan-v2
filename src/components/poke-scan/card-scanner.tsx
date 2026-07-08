@@ -5,19 +5,32 @@ import { ScannerFrame } from "./scanner-frame";
 import { EvolutionLoader } from "./evolution-loader";
 import { RarityStars } from "./rarity-stars";
 import { supabase } from "@/integrations/supabase/client";
+import { PTCGO_CODES } from "@/lib/set-codes";
 
 type ScanState = "idle" | "scanning" | "result" | "error";
 
 interface CardResult {
   cardName: string;
-  nameEn?: string;        // englischer Name für API-Suche
+  nameEn?: string;
   set: string;
-  setCode?: string;       // z.B. "TEF", "OBF" – für präzise TCG-API Suche
+  setCode?: string;
   number: string;
   rarity: string;
   language: string;
-  visual_type?: string;  // z.B. "holo", "full_art", "rainbow" – für Varianten-Unterscheidung
+  visual_type?: string;
 }
+
+type Prices = {
+  min: number | null;
+  trend: number | null;
+  url: string | null;
+  found: boolean;
+  verifiedSet?: string;
+  verifiedName?: string;
+  tcgdexSet?: string | null;
+  localId?: string | null;
+  image?: string | null;
+};
 
 function getSessionId(): string {
   const key = "poke_scan_session_id";
@@ -51,7 +64,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 // Iterativ verkleinern, bis das Limit sicher unterschritten ist.
 async function compressImage(base64: string): Promise<string> {
   const img = await loadImage(base64);
-  const MAX_CHARS = 170_000; // Base64-Zeichen, entspricht ~127 KB binär - sicher unter dem Limit
+  const MAX_CHARS = 170_000;
   const widths = [1000, 800, 640, 512];
   const qualities = [0.8, 0.65, 0.5];
   let result = "";
@@ -66,11 +79,10 @@ async function compressImage(base64: string): Promise<string> {
       if (result.length <= MAX_CHARS) return result;
     }
   }
-  return result; // kleinste Variante, auch wenn knapp drüber
+  return result;
 }
 
 function getCardmarketUrl(cardName: string, _set: string, number?: string): string {
-  // Nur Nummer vor dem Slash verwenden ("003/165" → "3"), Cardmarket sucht nach Name + Nummer
   const num = number?.split('/')[0]?.replace(/^0+/, '') || '';
   const query = num ? `${cardName} ${num}` : cardName;
   return "https://www.cardmarket.com/de/Pokemon/Products/Search?searchString=" +
@@ -83,15 +95,27 @@ export function CardScanner() {
   const [result, setResult] = useState<CardResult | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [prices, setPrices] = useState<{ min: number | null; trend: number | null; url: string | null; found: boolean; verifiedSet?: string; verifiedName?: string } | null>(null);
+  const [prices, setPrices] = useState<Prices | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scanIdRef = useRef(0);
+
+  // Korrektur-State
+  const [showCorrection, setShowCorrection] = useState(false);
+  const [corrSetCode, setCorrSetCode] = useState("");
+  const [corrNumber, setCorrNumber] = useState("");
+  const [correcting, setCorrecting] = useState(false);
+
+  // Sammlung-State
+  const [collectionCount, setCollectionCount] = useState<number | null>(null);
+  const [addingToCollection, setAddingToCollection] = useState(false);
 
   const scanCard = useCallback(async (base64Image: string) => {
     const scanId = ++scanIdRef.current;
     setState("scanning");
     setError(null);
     setPrices(null);
+    setCollectionCount(null);
+    setShowCorrection(false);
     try {
       const compressed = await compressImage(base64Image);
       const response = await fetch("/api/recognize", {
@@ -101,21 +125,20 @@ export function CardScanner() {
       });
       if (!response.ok) {
         const errBody = await response.json().catch(() => ({}));
-        const msg = errBody?.error ?? `HTTP ${response.status}`;
+        const msg = (errBody as Record<string, unknown>)?.error ?? `HTTP ${response.status}`;
         console.error("[scanner] /api/recognize Fehler:", msg);
-        throw new Error(msg);
+        throw new Error(String(msg));
       }
-      const data = await response.json();
-      const cardResult: CardResult | undefined = data.card;
+      const data = await response.json() as Record<string, unknown>;
+      const cardResult = data.card as CardResult | undefined;
       if (!cardResult?.cardName) {
         throw new Error("Karte nicht erkannt. Bitte erneut versuchen.");
       }
-      if (scanIdRef.current !== scanId) return; // Nutzer hat inzwischen resettet
+      if (scanIdRef.current !== scanId) return;
 
       setResult(cardResult);
       setState("result");
 
-      // Preise über eigene API-Route laden
       const searchName = cardResult.nameEn || cardResult.cardName;
       const pricesRes = await fetch("/api/prices", {
         method: "POST",
@@ -127,8 +150,8 @@ export function CardScanner() {
           set: cardResult.set,
         }),
       });
-      const cardPrices = pricesRes.ok
-        ? await pricesRes.json()
+      const cardPrices: Prices = pricesRes.ok
+        ? await pricesRes.json() as Prices
         : { min: null, trend: null, url: null, found: false };
       if (scanIdRef.current !== scanId) return;
       setPrices(cardPrices);
@@ -152,6 +175,75 @@ export function CardScanner() {
     }
   }, []);
 
+  const addToCollection = useCallback(async () => {
+    if (!result || !prices?.tcgdexSet || !prices?.localId) return;
+    setAddingToCollection(true);
+    try {
+      const variant = result.visual_type ?? "normal";
+      const sessionId = getSessionId();
+      const { data: existing } = await supabase
+        .from("collection")
+        .select("id, quantity")
+        .eq("session_id", sessionId)
+        .eq("tcgdex_set", prices.tcgdexSet)
+        .eq("local_id", prices.localId)
+        .eq("variant", variant)
+        .maybeSingle();
+
+      if (existing) {
+        const { error: dbError } = await supabase
+          .from("collection")
+          .update({ quantity: existing.quantity + 1 })
+          .eq("id", existing.id);
+        if (dbError) console.error("[scanner] Collection update fehlgeschlagen:", dbError.message);
+        else setCollectionCount(existing.quantity + 1);
+      } else {
+        const { error: dbError } = await supabase
+          .from("collection")
+          .insert({
+            session_id: sessionId,
+            tcgdex_set: prices.tcgdexSet,
+            local_id: prices.localId,
+            card_name: prices.verifiedName ?? result.cardName,
+            set_name: prices.verifiedSet ?? result.set,
+            number: result.number,
+            variant,
+            image_url: prices.image ?? null,
+          });
+        if (dbError) console.error("[scanner] Collection insert fehlgeschlagen:", dbError.message);
+        else setCollectionCount(1);
+      }
+    } finally {
+      setAddingToCollection(false);
+    }
+  }, [result, prices]);
+
+  const applyCorrection = useCallback(async () => {
+    if (!corrSetCode || !corrNumber || !result) return;
+    setCorrecting(true);
+    setPrices(null);
+    setCollectionCount(null);
+    setResult(prev => prev ? { ...prev, setCode: corrSetCode, number: corrNumber } : prev);
+    try {
+      const pricesRes = await fetch("/api/prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: result.nameEn || result.cardName,
+          number: corrNumber,
+          setCode: corrSetCode,
+        }),
+      });
+      const cardPrices: Prices = pricesRes.ok
+        ? await pricesRes.json() as Prices
+        : { min: null, trend: null, url: null, found: false };
+      setPrices(cardPrices);
+      setShowCorrection(false);
+    } finally {
+      setCorrecting(false);
+    }
+  }, [corrSetCode, corrNumber, result]);
+
   const handleFile = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) return;
     const reader = new FileReader();
@@ -170,6 +262,10 @@ export function CardScanner() {
     setPreview(null);
     setError(null);
     setPrices(null);
+    setShowCorrection(false);
+    setCorrSetCode("");
+    setCorrNumber("");
+    setCollectionCount(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
@@ -193,7 +289,7 @@ export function CardScanner() {
         <div className="flex flex-col gap-5">
           <div className="flex items-center justify-between">
             <h2 className="font-mono text-sm font-bold tracking-wider text-poke-red">CARD SCANNER</h2>
-            {(state === "result" || state === "error") && (
+            {state === "error" && (
               <button
                 onClick={handleReset}
                 className="rounded-md border border-white/10 bg-white/5 px-3 py-1 font-mono text-[10px] tracking-wider text-white/60 hover:border-poke-yellow/30 hover:text-poke-yellow"
@@ -259,7 +355,31 @@ export function CardScanner() {
                 <span className="font-mono text-xs font-bold tracking-wider text-poke-green">CARD IDENTIFIED</span>
               </div>
 
-              {preview && <img src={preview} alt={result.cardName} className="mx-auto max-h-48 rounded-lg shadow-lg shadow-poke-cyan/20" />}
+              {/* Kartenbild: offizielles TCGdex-Bild wenn verfügbar, sonst Nutzer-Foto */}
+              {prices?.image ? (
+                <div className="flex items-start justify-center gap-3">
+                  <img
+                    src={`${prices.image}/low.webp`}
+                    alt={result.cardName}
+                    className="max-h-48 rounded-lg shadow-lg shadow-poke-cyan/20"
+                  />
+                  {preview && (
+                    <img
+                      src={preview}
+                      alt="Dein Foto"
+                      className="h-16 w-auto rounded opacity-40 self-start mt-1"
+                    />
+                  )}
+                </div>
+              ) : (
+                preview && (
+                  <img
+                    src={preview}
+                    alt={result.cardName}
+                    className="mx-auto max-h-48 rounded-lg shadow-lg shadow-poke-cyan/20"
+                  />
+                )
+              )}
 
               <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-lg border border-white/5 bg-white/5 p-4">
                 <span className="font-mono text-[10px] tracking-wider text-white/40">NAME</span>
@@ -327,6 +447,27 @@ export function CardScanner() {
                 )}
               </div>
 
+              {/* Zur Sammlung / Verwerfen */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={handleReset}
+                  className="rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 font-mono text-xs tracking-wider text-red-400/70 hover:border-red-500/40 hover:text-red-400"
+                >
+                  ✖ VERWERFEN
+                </button>
+                <button
+                  onClick={addToCollection}
+                  disabled={!prices?.tcgdexSet || !prices?.localId || addingToCollection}
+                  className="rounded-lg border border-poke-green/30 bg-poke-green/5 px-4 py-3 font-mono text-xs tracking-wider text-poke-green hover:bg-poke-green/10 disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  {collectionCount !== null
+                    ? `NOCH EINE (+1) · ${collectionCount}×`
+                    : addingToCollection
+                      ? "HINZUFÜGEN…"
+                      : "➕ ZUR SAMMLUNG"}
+                </button>
+              </div>
+
               <a
                 href={prices?.url ?? getCardmarketUrl(result.cardName, result.set)}
                 target="_blank"
@@ -335,6 +476,57 @@ export function CardScanner() {
               >
                 AUF CARDMARKET ANSCHAUEN
               </a>
+
+              {/* Korrektur */}
+              {!showCorrection ? (
+                <button
+                  onClick={() => {
+                    setShowCorrection(true);
+                    setCorrSetCode(result.setCode ?? "");
+                    setCorrNumber(result.number);
+                  }}
+                  className="text-center font-mono text-[10px] text-white/25 hover:text-white/50"
+                >
+                  Nicht die richtige Karte?
+                </button>
+              ) : (
+                <div className="flex flex-col gap-2 rounded-lg border border-white/10 bg-white/5 p-3">
+                  <p className="font-mono text-[10px] tracking-wider text-white/40">KARTE KORRIGIEREN</p>
+                  <div className="flex gap-2">
+                    <select
+                      value={corrSetCode}
+                      onChange={(e) => setCorrSetCode(e.target.value)}
+                      className="flex-1 rounded border border-white/10 bg-black/60 px-2 py-1.5 font-mono text-xs text-white"
+                    >
+                      <option value="">Set wählen…</option>
+                      {PTCGO_CODES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                    <input
+                      value={corrNumber}
+                      onChange={(e) => setCorrNumber(e.target.value)}
+                      placeholder="z.B. 006"
+                      className="w-24 rounded border border-white/10 bg-black/60 px-2 py-1.5 font-mono text-xs text-white placeholder:text-white/20"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={applyCorrection}
+                      disabled={!corrSetCode || !corrNumber || correcting}
+                      className="flex-1 rounded-md border border-poke-cyan/30 bg-poke-cyan/5 px-4 py-2 font-mono text-xs text-poke-cyan hover:bg-poke-cyan/10 disabled:opacity-40"
+                    >
+                      {correcting ? "SUCHE…" : "NEU SUCHEN"}
+                    </button>
+                    <button
+                      onClick={() => setShowCorrection(false)}
+                      className="rounded-md border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs text-white/40 hover:text-white/60"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

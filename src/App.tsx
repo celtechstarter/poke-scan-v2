@@ -4,6 +4,7 @@ import { PokeScanHeader } from "./components/poke-scan/poke-scan-header";
 import { AIStatusBar } from "./components/poke-scan/ai-status-bar";
 import { TechStackPokedex } from "./components/poke-scan/tech-stack-pokedex";
 import { CardScanner } from "./components/poke-scan/card-scanner";
+import { MyCollection } from "./components/poke-scan/my-collection";
 import { ScanHistory } from "./components/poke-scan/scan-history";
 import { TrainerFooter } from "./components/poke-scan/trainer-footer";
 import { ErrorBoundary } from "./components/error-boundary";
@@ -28,6 +29,10 @@ function App() {
             </ErrorBoundary>
             <TechStackPokedex />
           </div>
+
+          <ErrorBoundary>
+            <MyCollection />
+          </ErrorBoundary>
 
           <ErrorBoundary>
             <ScanHistory />
