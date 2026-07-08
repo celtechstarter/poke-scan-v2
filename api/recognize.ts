@@ -96,7 +96,8 @@ async function callGemini(image: string, apiKey: string, timeoutMs: number): Pro
           }],
           generationConfig: {
             temperature: 0.1,
-            maxOutputTokens: 400,
+            maxOutputTokens: 1024,
+            thinkingConfig: { thinkingBudget: 0 },
             // Echter JSON-Mode: Gemini liefert garantiert parsebares JSON
             response_mime_type: 'application/json',
           },
