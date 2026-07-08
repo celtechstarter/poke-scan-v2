@@ -15,7 +15,7 @@ type PriceResult = {
   verifiedName?: string;  // Kartenname aus TCGdex (z.B. "Charizard ex")
 };
 
-async function fetchFromTCGdex(tcgdexId: string, localId: string): Promise<PriceResult | null> {
+async function fetchFromTCGdex(tcgdexId: string, localId: string, searchName: string): Promise<PriceResult | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 5000);
   try {
@@ -36,6 +36,13 @@ async function fetchFromTCGdex(tcgdexId: string, localId: string): Promise<Price
     const setInfo = card?.set as Record<string, unknown> | undefined;
     const verifiedSet = (setInfo?.name as string) || undefined;
     const verifiedName = (card?.name as string) || undefined;
+
+    // Guard: Wenn der zurückgegebene Name das erste Wort des gesuchten Namens nicht enthält,
+    // wurde die falsche Karte getroffen (z.B. falscher setCode → andere Kartennummer).
+    if (verifiedName) {
+      const firstWord = searchName.split(' ')[0].toLowerCase();
+      if (!verifiedName.toLowerCase().includes(firstWord)) return null;
+    }
 
     // Cardmarket-Suchlink aus verifizierten Daten bauen (Name + Nummer ohne führende Nullen)
     const cmSearch = verifiedName
@@ -118,7 +125,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (setCode && localId) {
     const tcgdexId = PTCGO_TO_TCGDEX[(setCode as string).toUpperCase()];
     if (tcgdexId) {
-      const result = await fetchFromTCGdex(tcgdexId, localId);
+      const result = await fetchFromTCGdex(tcgdexId, localId, name as string);
       if (result) return res.status(200).json({ ...result, found: true, source: 'tcgdex' });
     }
   }
@@ -127,7 +134,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!setCode && set && localId) {
     const tcgdexId = SETNAME_TO_TCGDEX[set as string];
     if (tcgdexId) {
-      const result = await fetchFromTCGdex(tcgdexId, localId);
+      const result = await fetchFromTCGdex(tcgdexId, localId, name as string);
       if (result) return res.status(200).json({ ...result, found: true, source: 'tcgdex-vintage' });
     }
   }
