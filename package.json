@@ -8,7 +8,8 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check": "tsc -b && tsc -p tsconfig.api.json"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
@@ -23,6 +24,7 @@
     "@types/node": "^22.5.5",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "@vercel/node": "^5.8.22",
     "@vitejs/plugin-react-swc": "^4.2.3",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.9.0",

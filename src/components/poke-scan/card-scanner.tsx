@@ -4,7 +4,6 @@ import { PokedexCard } from "./pokedex-card";
 import { ScannerFrame } from "./scanner-frame";
 import { EvolutionLoader } from "./evolution-loader";
 import { RarityStars } from "./rarity-stars";
-import { ConfidenceBar } from "./confidence-bar";
 import { supabase } from "@/integrations/supabase/client";
 
 type ScanState = "idle" | "scanning" | "result" | "error";
@@ -31,7 +30,7 @@ function getSessionId(): string {
 }
 
 function getRarityInfo(rarity: string): { stars: number; label: string } {
-  const lower = rarity.toLowerCase();
+  const lower = (rarity ?? "").toLowerCase();
   if (lower.includes("ultra") || lower.includes("secret")) return { stars: 5, label: "ULTRA RARE" };
   if (lower.includes("holo")) return { stars: 4, label: "HOLO RARE" };
   if (lower.includes("rare")) return { stars: 3, label: "RARE" };
@@ -39,20 +38,35 @@ function getRarityInfo(rarity: string): { stars: number; label: string } {
   return { stars: 1, label: "COMMON" };
 }
 
-function compressImage(base64: string, maxWidth: number = 800): Promise<string> {
-  return new Promise((resolve) => {
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      const ratio = Math.min(1, maxWidth / img.width, maxWidth / img.height);
-      canvas.width = img.width * ratio;
-      canvas.height = img.height * ratio;
-      const ctx = canvas.getContext("2d");
-      ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL("image/jpeg", 0.8));
-    };
-    img.src = base64;
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Bild konnte nicht geladen werden"));
+    img.src = src;
   });
+}
+
+// Das NVIDIA-Fallback akzeptiert Inline-Bilder nur bis ~180 KB (Base64).
+// Iterativ verkleinern, bis das Limit sicher unterschritten ist.
+async function compressImage(base64: string): Promise<string> {
+  const img = await loadImage(base64);
+  const MAX_CHARS = 170_000; // Base64-Zeichen, entspricht ~127 KB binär - sicher unter dem Limit
+  const widths = [1000, 800, 640, 512];
+  const qualities = [0.8, 0.65, 0.5];
+  let result = "";
+  for (const w of widths) {
+    for (const q of qualities) {
+      const canvas = document.createElement("canvas");
+      const ratio = Math.min(1, w / img.width, w / img.height);
+      canvas.width = Math.round(img.width * ratio);
+      canvas.height = Math.round(img.height * ratio);
+      canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
+      result = canvas.toDataURL("image/jpeg", q);
+      if (result.length <= MAX_CHARS) return result;
+    }
+  }
+  return result; // kleinste Variante, auch wenn knapp drüber
 }
 
 function getCardmarketUrl(cardName: string, _set: string, number?: string): string {
@@ -71,13 +85,15 @@ export function CardScanner() {
   const [error, setError] = useState<string | null>(null);
   const [prices, setPrices] = useState<{ min: number | null; trend: number | null; url: string | null; found: boolean; verifiedSet?: string; verifiedName?: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const scanIdRef = useRef(0);
 
   const scanCard = useCallback(async (base64Image: string) => {
+    const scanId = ++scanIdRef.current;
     setState("scanning");
     setError(null);
     setPrices(null);
     try {
-      const compressed = await compressImage(base64Image, 800);
+      const compressed = await compressImage(base64Image);
       const response = await fetch("/api/recognize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -90,22 +106,16 @@ export function CardScanner() {
         throw new Error(msg);
       }
       const data = await response.json();
-      const content = data.choices?.[0]?.message?.content;
-      if (!content) {
-        console.error("[scanner] Kein Inhalt in API-Antwort:", JSON.stringify(data));
-        throw new Error("KI hat keine Antwort geliefert");
+      const cardResult: CardResult | undefined = data.card;
+      if (!cardResult?.cardName) {
+        throw new Error("Karte nicht erkannt. Bitte erneut versuchen.");
       }
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        console.error("[scanner] KI-Antwort enthält kein JSON:", content);
-        throw new Error(`Karte nicht erkannt – KI antwortete: "${content.slice(0, 80)}"`);
-      }
+      if (scanIdRef.current !== scanId) return; // Nutzer hat inzwischen resettet
 
-      const cardResult: CardResult = JSON.parse(jsonMatch[0]);
       setResult(cardResult);
       setState("result");
 
-      // Preise über eigene API-Route laden (vermeidet CORS/504 Probleme)
+      // Preise über eigene API-Route laden
       const searchName = cardResult.nameEn || cardResult.cardName;
       const pricesRes = await fetch("/api/prices", {
         method: "POST",
@@ -113,17 +123,18 @@ export function CardScanner() {
         body: JSON.stringify({
           name: searchName,
           number: cardResult.number,
-          setCode: cardResult.setCode,  // moderne Karten: z.B. "TEF"
-          set: cardResult.set,          // Vintage-Fallback: z.B. "Jungle"
+          setCode: cardResult.setCode,
+          set: cardResult.set,
         }),
       });
       const cardPrices = pricesRes.ok
         ? await pricesRes.json()
         : { min: null, trend: null, url: null, found: false };
+      if (scanIdRef.current !== scanId) return;
       setPrices(cardPrices);
 
-      const cardmarketUrl = cardPrices.url ?? getCardmarketUrl(cardResult.cardName, cardResult.set);
-      await supabase.from("scan_history").insert({
+      const cardmarketUrl = cardPrices.url ?? getCardmarketUrl(cardResult.cardName, cardResult.set, cardResult.number);
+      const { error: dbError } = await supabase.from("scan_history").insert({
         session_id: getSessionId(),
         card_name: cardResult.cardName,
         set_name: cardPrices.verifiedSet ?? cardResult.set,
@@ -133,7 +144,9 @@ export function CardScanner() {
         tcg_price_usd: cardPrices.trend,
         cardmarket_url: cardmarketUrl,
       });
+      if (dbError) console.error("[scanner] History-Insert fehlgeschlagen:", dbError.message);
     } catch (err) {
+      if (scanIdRef.current !== scanId) return;
       setError(err instanceof Error ? err.message : "Fehler");
       setState("error");
     }
@@ -151,6 +164,7 @@ export function CardScanner() {
   }, [scanCard]);
 
   const handleReset = useCallback(() => {
+    scanIdRef.current++;
     setState("idle");
     setResult(null);
     setPreview(null);
@@ -312,8 +326,6 @@ export function CardScanner() {
                   </div>
                 )}
               </div>
-
-              <ConfidenceBar value={94.7} />
 
               <a
                 href={prices?.url ?? getCardmarketUrl(result.cardName, result.set)}

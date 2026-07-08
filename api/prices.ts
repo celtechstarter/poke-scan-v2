@@ -1,43 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { PTCGO_TO_TCGDEX, SETNAME_TO_TCGDEX } from './_sets';
 
 // ─── TCGdex (Prio 0) ────────────────────────────────────────────────────────
 // Direkte EUR-Preise von Cardmarket, kein API-Key nötig.
 // Set-IDs sind NICHT identisch mit ptcgoCodes – Mapping-Tabelle nötig.
 
 const TCGDEX_API = 'https://api.tcgdex.net/v2/en/sets';
-
-// Mapping: ptcgoCode (aus KI-Erkennung) → TCGdex Set-ID
-const PTCGO_TO_TCGDEX: Record<string, string> = {
-  // Scarlet & Violet Ära
-  SVI:  'sv01',    // Scarlet & Violet
-  PAL:  'sv02',    // Paldea Evolved
-  OBF:  'sv03',    // Obsidian Flames
-  MEW:  'sv03.5',  // 151
-  PAR:  'sv04',    // Paradox Rift
-  PAF:  'sv04.5',  // Paldean Fates
-  TEF:  'sv05',    // Temporal Forces
-  TWM:  'sv06',    // Twilight Masquerade
-  SFA:  'sv06.5',  // Shrouded Fable
-  SSP:  'sv07',    // Stellar Crown
-  SCR:  'sv08',    // Surging Sparks
-  PRE:  'sv08.5',  // Prismatic Evolutions
-  SVP:  'svp',     // Scarlet & Violet Promos
-};
-
-// Mapping: Set-Name (Vintage, kein setCode) → TCGdex Set-ID
-const SETNAME_TO_TCGDEX: Record<string, string> = {
-  'Base Set':     'base1',
-  'Jungle':       'base2',
-  'Fossil':       'base3',
-  'Base Set 2':   'base4',
-  'Team Rocket':  'base5',
-  'Gym Heroes':   'gym1',
-  'Gym Challenge':'gym2',
-  'Neo Genesis':  'neo1',
-  'Neo Discovery':'neo2',
-  'Neo Revelation':'neo3',
-  'Neo Destiny':  'neo4',
-};
 
 type PriceResult = {
   min: number | null;
@@ -55,16 +23,18 @@ async function fetchFromTCGdex(tcgdexId: string, localId: string): Promise<Price
     clearTimeout(timer);
     if (!res.ok) return null;
 
-    const card = await res.json();
-    const cm = card?.pricing?.cardmarket as Record<string, number> | null | undefined;
+    const card = await res.json() as Record<string, unknown>;
+    const pricing = card?.pricing as Record<string, unknown> | undefined;
+    const cm = pricing?.cardmarket as Record<string, number> | null | undefined;
     if (!cm) return null;
 
-    const min = cm.low ?? null;
-    const trend = cm.trend ?? null;
+    const min = cm.low ?? cm['low-holo'] ?? null;
+    const trend = cm.trend ?? cm['trend-holo'] ?? null;
     if (min === null && trend === null) return null;
 
     // Set-Name und Karten-Name direkt aus TCGdex übernehmen – zuverlässiger als KI
-    const verifiedSet = (card?.set?.name as string) || undefined;
+    const setInfo = card?.set as Record<string, unknown> | undefined;
+    const verifiedSet = (setInfo?.name as string) || undefined;
     const verifiedName = (card?.name as string) || undefined;
 
     // Cardmarket-Suchlink aus verifizierten Daten bauen (Name + Nummer ohne führende Nullen)
@@ -107,8 +77,8 @@ async function fetchFromPokemonTCG(url: string, headers: Record<string, string>)
     clearTimeout(timer);
     if (!apiRes.ok) return null;
 
-    const data = await apiRes.json();
-    for (const card of (data.data ?? [])) {
+    const data = await apiRes.json() as Record<string, unknown>;
+    for (const card of ((data.data as unknown[]) ?? [])) {
       const cm = (card as Record<string, unknown>).cardmarket as Record<string, unknown> | undefined;
       if (!cm) continue;
       const prices = cm.prices as Record<string, number> | undefined;
@@ -162,21 +132,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  const apiKey = process.env.POKEMON_TCG_API_KEY;
+  const headers: Record<string, string> = apiKey ? { 'X-Api-Key': apiKey } : {};
+
   // ── Prio 2: Pokemon TCG API via setCode (liefert direkten Cardmarket-Link) ─
   if (setCode && num) {
-    const result = await fetchFromPokemonTCG(buildSetCodeUrl(setCode as string, num), {});
+    const result = await fetchFromPokemonTCG(buildSetCodeUrl(setCode as string, num), headers);
     if (result) return res.status(200).json({ ...result, found: true, source: 'ptcg-setCode' });
   }
 
   // ── Prio 3: Pokemon TCG API via Set-Name (Vintage) ───────────────────────
   if (!setCode && set && num) {
-    const result = await fetchFromPokemonTCG(buildSetNameUrl(set as string, num), {});
+    const result = await fetchFromPokemonTCG(buildSetNameUrl(set as string, num), headers);
     if (result) return res.status(200).json({ ...result, found: true, source: 'ptcg-setName' });
   }
 
   // ── Prio 4–7: Pokemon TCG API Name-Fallbacks ─────────────────────────────
-  const apiKey = process.env.POKEMON_TCG_API_KEY;
-  const headers: Record<string, string> = apiKey ? { 'X-Api-Key': apiKey } : {};
 
   const fallbackUrls = [
     buildNameUrl(name as string, num || undefined),

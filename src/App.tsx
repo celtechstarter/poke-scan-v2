@@ -6,6 +6,7 @@ import { TechStackPokedex } from "./components/poke-scan/tech-stack-pokedex";
 import { CardScanner } from "./components/poke-scan/card-scanner";
 import { ScanHistory } from "./components/poke-scan/scan-history";
 import { TrainerFooter } from "./components/poke-scan/trainer-footer";
+import { ErrorBoundary } from "./components/error-boundary";
 
 function App() {
   return (
@@ -22,11 +23,15 @@ function App() {
           <AIStatusBar />
 
           <div className="grid gap-8 lg:grid-cols-[1fr_auto]">
-            <CardScanner />
+            <ErrorBoundary>
+              <CardScanner />
+            </ErrorBoundary>
             <TechStackPokedex />
           </div>
 
-          <ScanHistory />
+          <ErrorBoundary>
+            <ScanHistory />
+          </ErrorBoundary>
         </main>
 
         <TrainerFooter />
