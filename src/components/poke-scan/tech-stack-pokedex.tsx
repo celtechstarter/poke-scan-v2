@@ -12,14 +12,14 @@ export function TechStackPokedex() {
           <p className="mb-1 text-white/40">FRONTEND</p>
           <p className="text-white/80">├─ React 18 + TypeScript</p>
           <p className="text-white/80">├─ Vite + Tailwind CSS</p>
-          <p className="text-white/80">└─ Vercel Edge Functions</p>
+          <p className="text-white/80">└─ Vercel Serverless Functions</p>
         </div>
         
         <div>
           <p className="mb-1 text-white/40">AI CORE</p>
-          <p className="text-white/80">├─ Llama 3.2 Vision (11B)</p>
-          <p className="text-white/80">├─ NVIDIA NIM API</p>
-          <p className="text-white/80">└─ 2-Model Fallback Chain</p>
+          <p className="text-white/80">├─ Gemini 2.5 Flash</p>
+          <p className="text-white/80">├─ NVIDIA NIM (Fallback)</p>
+          <p className="text-white/80">└─ 3-Model Fallback Chain</p>
         </div>
         
         <div>

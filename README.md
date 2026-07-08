@@ -4,7 +4,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Beta_🚀-green?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/KI--Vision-NVIDIA_NIM-76B900?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/KI--Vision-Gemini_Flash-4285F4?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Kosten-~18€%2FMonat-blue?style=for-the-badge" />
 </p>
 
@@ -64,7 +64,8 @@ Wir nutzen **KI-Vision** statt klassischem OCR:
 📸 Foto der Karte
      │
      ▼
-🤖 NVIDIA NIM API (Llama 3.2 Vision)
+🤖 Google Gemini 2.5 Flash (primär)
+   ↕ Fallback: NVIDIA NIM (Llama 3.2 Vision)
    ├─ Zone A: Set-Code + Kartennummer (unten)
    ├─ Zone B: Copyright-Jahr (für Vintage)
    └─ Zone C: Kartentyp (Holo, Full Art, etc.)
@@ -90,7 +91,7 @@ Die KI **sieht** die Karte wie ein Mensch – nicht nur Text, sondern das ganze 
 | **Frontend** | React 18, TypeScript, Vite, Tailwind CSS |
 | **UI** | shadcn/ui, Framer Motion |
 | **Backend** | Vercel Serverless Functions |
-| **KI-Vision** | NVIDIA NIM API (Llama 3.2 Vision) |
+| **KI-Vision** | Google Gemini 2.5 Flash (primär), NVIDIA NIM Fallback |
 | **Preise** | TCGdex API, Pokemon TCG API, Cardmarket |
 | **Datenbank** | Supabase (PostgreSQL) |
 | **Deployment** | Vercel (Auto-Deploy) |
@@ -142,7 +143,8 @@ npm run dev
 ## 🔑 Environment Variables
 
 ```env
-NVIDIA_API_KEY=nvapi-xxx          # NVIDIA NIM API
+GEMINI_API_KEY=xxx                # Google Gemini (primäres Vision-Backend, kostenlos via aistudio.google.com)
+NVIDIA_API_KEY=nvapi-xxx          # NVIDIA NIM (Fallback Vision-Backend)
 POKEMON_TCG_API_KEY=xxx           # Optional
 VITE_SUPABASE_URL=xxx             # Supabase
 VITE_SUPABASE_ANON_KEY=xxx        # Supabase
@@ -161,6 +163,7 @@ VITE_SUPABASE_ANON_KEY=xxx        # Supabase
 | 5 | 22.02.2026 | Mobile/PWA + Kamera-Integration |
 | 6 | 23.02.2026 | Preissystem (TCGdex, TCG API, Cardmarket) |
 | 7 | 24.02.2026 | Präzisions-Optimierung, Multi-Zonen-Scan |
+| 8 | 08.07.2026 | Gemini 2.5 Flash als primäres Backend, Set-Daten-Fix, ErrorBoundary, CI |
 
 ---
 

@@ -29,13 +29,15 @@ export function TrainerFooter() {
         {/* AI Vision */}
         <div className="flex justify-center text-[10px]">
           <div className="rounded border border-white/5 bg-white/5 p-2">
-            <span className="text-white/40">🦙 Llama</span>
+            <span className="text-white/40">✨ Gemini</span>
             <p className="text-white/80">Vision AI</p>
           </div>
         </div>
-        
+
         {/* Powered by */}
         <div className="flex flex-wrap items-center justify-center gap-4 text-[10px] text-white/40">
+          <span>✨ Gemini Flash</span>
+          <span>•</span>
           <span>⚡ NVIDIA NIM</span>
           <span>•</span>
           <span>▲ Vercel</span>
@@ -44,12 +46,9 @@ export function TrainerFooter() {
           <span>•</span>
           <span>📦 TCGdex</span>
         </div>
-        
+
         {/* Status */}
         <div className="flex items-center justify-center gap-2 text-[10px]">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-poke-green" />
-          <span className="text-poke-green">ALL SYSTEMS OPERATIONAL</span>
-          <span className="text-white/30">•</span>
           <span className="text-white/40">DEPLOYED ON VERCEL</span>
         </div>
         
