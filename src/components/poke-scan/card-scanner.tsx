@@ -394,9 +394,17 @@ export function CardScanner() {
           )}
 
           {state === "error" && (
-            <div className="flex min-h-[200px] flex-col items-center justify-center gap-4 rounded-lg border border-poke-red/30 bg-poke-red/5 p-6">
-              <span className="text-4xl">❌</span>
-              <p className="text-center font-mono text-sm text-poke-red">{error}</p>
+            <div className="flex flex-col gap-3">
+              <div className="flex min-h-[200px] flex-col items-center justify-center gap-4 rounded-lg border border-poke-red/30 bg-poke-red/5 p-6">
+                <span className="text-4xl">❌</span>
+                <p className="text-center font-mono text-sm text-poke-red">{error}</p>
+              </div>
+              <button
+                onClick={handleReset}
+                className="w-full rounded-lg border border-poke-cyan/40 bg-poke-cyan/10 px-4 py-3 font-mono text-xs font-bold tracking-wider text-poke-cyan hover:bg-poke-cyan/20"
+              >
+                📷 ERNEUT VERSUCHEN
+              </button>
             </div>
           )}
 
@@ -501,33 +509,41 @@ export function CardScanner() {
 
               {/* Zur Sammlung / Erfolgs-Panel */}
               {collectionCount !== null ? (
-                <div className="flex flex-col gap-2 rounded-lg border border-poke-green/30 bg-poke-green/5 p-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-poke-green">✓</span>
-                      <span className="font-mono text-xs font-bold tracking-wider text-poke-green">IN DEINER SAMMLUNG</span>
+                <>
+                  <div className="flex flex-col gap-2 rounded-lg border border-poke-green/30 bg-poke-green/5 p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-poke-green">✓</span>
+                        <span className="font-mono text-xs font-bold tracking-wider text-poke-green">IN DEINER SAMMLUNG</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={decrementCollection}
+                          disabled={addingToCollection}
+                          className="flex h-7 w-7 items-center justify-center rounded border border-white/10 bg-white/5 font-mono text-sm text-white/60 hover:border-red-500/40 hover:text-red-400 disabled:opacity-40"
+                        >−</button>
+                        <span className="w-8 text-center font-mono text-sm font-bold text-white">{collectionCount}×</span>
+                        <button
+                          onClick={incrementCollection}
+                          disabled={addingToCollection}
+                          className="flex h-7 w-7 items-center justify-center rounded border border-white/10 bg-white/5 font-mono text-sm text-white/60 hover:border-poke-green/40 hover:text-poke-green disabled:opacity-40"
+                        >+</button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={decrementCollection}
-                        disabled={addingToCollection}
-                        className="flex h-7 w-7 items-center justify-center rounded border border-white/10 bg-white/5 font-mono text-sm text-white/60 hover:border-red-500/40 hover:text-red-400 disabled:opacity-40"
-                      >−</button>
-                      <span className="w-8 text-center font-mono text-sm font-bold text-white">{collectionCount}×</span>
-                      <button
-                        onClick={incrementCollection}
-                        disabled={addingToCollection}
-                        className="flex h-7 w-7 items-center justify-center rounded border border-white/10 bg-white/5 font-mono text-sm text-white/60 hover:border-poke-green/40 hover:text-poke-green disabled:opacity-40"
-                      >+</button>
-                    </div>
+                    <button
+                      onClick={() => document.getElementById("my-collection")?.scrollIntoView({ behavior: "smooth" })}
+                      className="text-left font-mono text-[10px] text-white/30 hover:text-poke-cyan"
+                    >
+                      → Zum Pokédex
+                    </button>
                   </div>
                   <button
-                    onClick={() => document.getElementById("my-collection")?.scrollIntoView({ behavior: "smooth" })}
-                    className="text-left font-mono text-[10px] text-white/30 hover:text-poke-cyan"
+                    onClick={handleReset}
+                    className="w-full rounded-lg border border-poke-cyan/40 bg-poke-cyan/10 px-4 py-3 font-mono text-xs font-bold tracking-wider text-poke-cyan hover:bg-poke-cyan/20"
                   >
-                    → Zum Pokédex
+                    📷 NÄCHSTE KARTE SCANNEN
                   </button>
-                </div>
+                </>
               ) : (
                 <div className="grid grid-cols-2 gap-2">
                   <button
