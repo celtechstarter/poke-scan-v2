@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { PTCGO_TO_TCGDEX, SETNAME_TO_TCGDEX } from './_sets';
+import { PTCGO_TO_TCGDEX, SETNAME_TO_TCGDEX } from './_sets.js';
 
 // ─── TCGdex (Prio 0) ────────────────────────────────────────────────────────
 // Direkte EUR-Preise von Cardmarket, kein API-Key nötig.

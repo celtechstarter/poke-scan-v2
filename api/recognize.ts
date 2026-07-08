@@ -1,6 +1,6 @@
 // api/recognize.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { VALID_SET_CODES, promptSetTable, promptTotalsTable } from './_sets';
+import { VALID_SET_CODES, promptSetTable, promptTotalsTable } from './_sets.js';
 
 export const config = {
   maxDuration: 60,
