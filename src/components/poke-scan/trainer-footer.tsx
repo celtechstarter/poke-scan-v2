@@ -1,3 +1,6 @@
+// TODO: Ersetze durch deinen PayPal.Me-Link, z.B. "https://paypal.me/deinname"
+const PAYPAL_ME_URL = "PAYPAL_ME_URL";
+
 export function TrainerFooter() {
   return (
     <footer className="border-t border-white/5 bg-black/40 px-4 py-8 backdrop-blur-sm" role="contentinfo">
@@ -52,6 +55,25 @@ export function TrainerFooter() {
           <span className="text-white/40">DEPLOYED ON VERCEL</span>
         </div>
         
+        {/* Spendenlink */}
+        {PAYPAL_ME_URL !== "PAYPAL_ME_URL" && (
+          <a
+            href={PAYPAL_ME_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block rounded-md border border-poke-yellow/20 bg-poke-yellow/5 px-4 py-2 text-[10px] tracking-wide text-white/50 hover:border-poke-yellow/40 hover:text-poke-yellow"
+          >
+            ☕ Gefällt dir Poke-Scan? Freiwillige Unterstützung hilft, das Projekt am Laufen zu halten
+          </a>
+        )}
+
+        {/* Nintendo-Disclaimer */}
+        <p className="text-[9px] leading-relaxed text-white/20 max-w-2xl mx-auto">
+          Pokémon und alle Kartenbilder sind Marken von Nintendo / Creatures Inc. / GAME FREAK inc.
+          Poke-Scan ist ein nicht-kommerzielles Fan- und Lernprojekt und steht in keiner Verbindung
+          zu Nintendo oder The Pokémon Company. Preisdaten: Cardmarket via TCGdex.
+        </p>
+
         {/* Copyright */}
         <p className="text-[10px] text-white/30">
           © 2026 POKE-SCAN • GOTTA SCAN 'EM ALL • HUMANS + AI = FUTURE

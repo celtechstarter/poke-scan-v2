@@ -57,7 +57,7 @@ export function ScanHistory() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="font-mono text-sm font-bold tracking-wider text-poke-cyan">
-            SCAN HISTORY
+            SCAN-VERLAUF
             {entries.length > 0 && (
               <span className="ml-2 text-white/40">({entries.length} Scans)</span>
             )}
@@ -68,7 +68,7 @@ export function ScanHistory() {
                 onClick={clearHistory}
                 className="rounded-md border border-red-500/20 bg-red-500/5 px-3 py-1 font-mono text-[10px] tracking-wider text-red-400/60 hover:border-red-500/40 hover:text-red-400"
               >
-                CLEAR
+                LÖSCHEN
               </button>
             )}
             {entries.length > 0 && (
@@ -83,13 +83,13 @@ export function ScanHistory() {
               onClick={loadHistory}
               className="rounded-md border border-white/10 bg-white/5 px-3 py-1 font-mono text-[10px] tracking-wider text-white/60 hover:border-poke-cyan/30 hover:text-poke-cyan"
             >
-              REFRESH
+              AKTUALISIEREN
             </button>
           </div>
         </div>
 
         {loading && (
-          <p className="font-mono text-[11px] text-white/40 text-center py-4">LOADING...</p>
+          <p className="font-mono text-[11px] text-white/40 text-center py-4">LADEN…</p>
         )}
 
         {!loading && entries.length === 0 && (

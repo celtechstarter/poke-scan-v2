@@ -30,6 +30,7 @@ type Prices = {
   tcgdexSet?: string | null;
   localId?: string | null;
   image?: string | null;
+  variantLabel?: string | null;
 };
 
 function getSessionId(): string {
@@ -122,7 +123,7 @@ export function CardScanner() {
       const response = await fetch("/api/recognize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: compressed }),
+        body: JSON.stringify({ image: compressed, sessionId: getSessionId() }),
       });
       if (!response.ok) {
         const errBody = await response.json().catch(() => ({}));
@@ -149,6 +150,7 @@ export function CardScanner() {
           number: cardResult.number,
           setCode: cardResult.setCode,
           set: cardResult.set,
+          visual_type: cardResult.visual_type,
         }),
       });
       const cardPrices: Prices = pricesRes.ok
@@ -283,6 +285,7 @@ export function CardScanner() {
           name: result.nameEn || result.cardName,
           number: corrNumber,
           setCode: corrSetCode,
+          visual_type: result.visual_type,
         }),
       });
       const cardPrices: Prices = pricesRes.ok
@@ -346,7 +349,7 @@ export function CardScanner() {
                 onClick={handleReset}
                 className="rounded-md border border-white/10 bg-white/5 px-3 py-1 font-mono text-[10px] tracking-wider text-white/60 hover:border-poke-yellow/30 hover:text-poke-yellow"
               >
-                SCAN AGAIN
+                NEU SCANNEN
               </button>
             )}
           </div>
@@ -377,8 +380,8 @@ export function CardScanner() {
                   {isDragOver ? <Upload className="h-6 w-6 text-poke-yellow" /> : <Camera className="h-6 w-6 text-poke-cyan" />}
                 </div>
                 <div className="text-center">
-                  <p className="font-mono text-xs font-medium text-white">SCAN YOUR CARD</p>
-                  <p className="font-mono text-[10px] text-white/50">Tap to open camera or drop image</p>
+                  <p className="font-mono text-xs font-medium text-white">KARTE SCANNEN</p>
+                  <p className="font-mono text-[10px] text-white/50">Tippen zum Öffnen oder Bild hineinziehen</p>
                 </div>
               </div>
             </ScannerFrame>
@@ -412,7 +415,7 @@ export function CardScanner() {
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-poke-green" style={{ boxShadow: "0 0 8px rgba(34, 197, 94, 0.5)" }} />
-                <span className="font-mono text-xs font-bold tracking-wider text-poke-green">CARD IDENTIFIED</span>
+                <span className="font-mono text-xs font-bold tracking-wider text-poke-green">KARTE ERKANNT</span>
               </div>
 
               {/* Kartenbild: offizielles TCGdex-Bild wenn verfügbar, sonst Nutzer-Foto */}
@@ -484,7 +487,9 @@ export function CardScanner() {
                       </span>
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      <span className="font-mono text-[9px] tracking-wider text-white/40">TREND</span>
+                      <span className="font-mono text-[9px] tracking-wider text-white/40">
+                        TREND{prices.variantLabel ? ` (${prices.variantLabel})` : ""}
+                      </span>
                       <span className="font-mono text-sm font-bold text-poke-yellow">
                         {prices.trend !== null ? `€${prices.trend.toFixed(2)}` : "–"}
                       </span>

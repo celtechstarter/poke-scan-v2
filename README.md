@@ -215,3 +215,11 @@ MIT – Mach damit was du willst. ✌️
   <b>Gebaut mit 💛 und KI</b><br/>
   <sub>Von einem Menschen mit Ideen und KI-Tools mit Skills</sub>
 </p>
+
+---
+
+## ⚖️ Legal / Disclaimer
+
+Pokémon and all card images are trademarks of Nintendo / Creatures Inc. / GAME FREAK inc.
+Poke-Scan is a non-commercial fan and learning project and is not affiliated with Nintendo or The Pokémon Company.
+Price data provided by Cardmarket via TCGdex.

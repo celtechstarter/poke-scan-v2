@@ -11,14 +11,15 @@ type PriceResult = {
   min: number | null;
   trend: number | null;
   url: string | null;
-  verifiedSet?: string;      // Set-Name aus TCGdex (z.B. "151", "Temporal Forces")
-  verifiedName?: string;     // Kartenname aus TCGdex (z.B. "Charizard ex")
-  tcgdexSet?: string | null; // TCGdex Set-ID (nur bei TCGdex-Quelle), z.B. 'sv03.5'
-  localId?: string | null;   // TCGdex Karten-ID im Set, z.B. '6'
-  image?: string | null;     // TCGdex Bild-Basis-URL (anhängen: /low.webp oder /high.webp)
+  verifiedSet?: string;       // Set-Name aus TCGdex (z.B. "151", "Temporal Forces")
+  verifiedName?: string;      // Kartenname aus TCGdex (z.B. "Charizard ex")
+  tcgdexSet?: string | null;  // TCGdex Set-ID (nur bei TCGdex-Quelle), z.B. 'sv03.5'
+  localId?: string | null;    // TCGdex Karten-ID im Set, z.B. '6'
+  image?: string | null;      // TCGdex Bild-Basis-URL (anhängen: /low.webp oder /high.webp)
+  variantLabel?: string | null; // z.B. "HOLO" — nur wenn Varianten-Felder genutzt wurden
 };
 
-async function fetchFromTCGdex(tcgdexId: string, localId: string, searchName: string): Promise<PriceResult | null> {
+async function fetchFromTCGdex(tcgdexId: string, localId: string, searchName: string, visualType?: string): Promise<PriceResult | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 5000);
   try {
@@ -28,11 +29,25 @@ async function fetchFromTCGdex(tcgdexId: string, localId: string, searchName: st
 
     const card = await res.json() as Record<string, unknown>;
     const pricing = card?.pricing as Record<string, unknown> | undefined;
-    const cm = pricing?.cardmarket as Record<string, number> | null | undefined;
+    const cm = pricing?.cardmarket as Record<string, number | null> | null | undefined;
     if (!cm) return null;
 
-    const min = cm.low ?? cm['low-holo'] ?? null;
-    const trend = cm.trend ?? cm['trend-holo'] ?? null;
+    // Variantenabhängige Preisfelder (basierend auf echten TCGdex-Feldnamen):
+    // TCGdex liefert: low, trend, low-holo, trend-holo (letztere oft null oder 0 = nicht verfügbar)
+    let min: number | null = null;
+    let trend: number | null = null;
+    let variantLabel: string | null = null;
+
+    if (visualType === 'holo') {
+      const holoMin = cm['low-holo'];
+      const holoTrend = cm['trend-holo'];
+      if (holoMin != null && holoMin > 0) { min = holoMin; variantLabel = 'HOLO'; }
+      if (holoTrend != null && holoTrend > 0) { trend = holoTrend; variantLabel = 'HOLO'; }
+    }
+    // Fallback auf Basis-Felder (auch für reverse_holo, full_art usw.)
+    if (min === null) min = (cm.low != null && cm.low > 0 ? cm.low : null);
+    if (trend === null) trend = (cm.trend != null && cm.trend > 0 ? cm.trend : null);
+
     if (min === null && trend === null) return null;
 
     // Set-Name und Karten-Name direkt aus TCGdex übernehmen – zuverlässiger als KI
@@ -54,7 +69,7 @@ async function fetchFromTCGdex(tcgdexId: string, localId: string, searchName: st
 
     const image = (card?.image as string) || null;
 
-    return { min, trend, url: cmSearch, verifiedSet, verifiedName, tcgdexSet: tcgdexId, localId, image };
+    return { min, trend, url: cmSearch, verifiedSet, verifiedName, tcgdexSet: tcgdexId, localId, image, variantLabel };
   } catch {
     clearTimeout(timer);
     return null;
@@ -115,7 +130,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { name, number, setCode, set } = req.body ?? {};
+  const { name, number, setCode, set, visual_type } = req.body ?? {};
   if (!name) return res.status(400).json({ error: 'name required' });
 
   const rawNum = (number as string | undefined)?.split('/')[0] ?? '';
@@ -126,11 +141,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const firstName = (name as string).split(' ')[0];
 
+  const vt = (visual_type as string | undefined) ?? undefined;
+
   // ── Prio 0: TCGdex via setCode (schnell, direkte EUR-Preise) ──────────────
   if (setCode && localId) {
     const tcgdexId = PTCGO_TO_TCGDEX[(setCode as string).toUpperCase()];
     if (tcgdexId) {
-      const result = await fetchFromTCGdex(tcgdexId, localId, name as string);
+      const result = await fetchFromTCGdex(tcgdexId, localId, name as string, vt);
       if (result) return res.status(200).json({ ...result, found: true, source: 'tcgdex' });
     }
   }
@@ -139,7 +156,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!setCode && set && localId) {
     const tcgdexId = SETNAME_TO_TCGDEX[set as string];
     if (tcgdexId) {
-      const result = await fetchFromTCGdex(tcgdexId, localId, name as string);
+      const result = await fetchFromTCGdex(tcgdexId, localId, name as string, vt);
       if (result) return res.status(200).json({ ...result, found: true, source: 'tcgdex-vintage' });
     }
   }

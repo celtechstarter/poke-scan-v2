@@ -1,5 +1,6 @@
 // api/recognize.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { createClient } from '@supabase/supabase-js';
 import { VALID_SET_CODES, promptSetTable, promptTotalsTable } from './_sets.js';
 
 export const config = {
@@ -209,7 +210,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { image } = req.body;
+  const { image, sessionId } = req.body;
   const geminiKey = process.env.GEMINI_API_KEY;
   const nvidiaKey = process.env.NVIDIA_API_KEY;
 
@@ -217,6 +218,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'Kein Vision-API-Key konfiguriert' });
   }
   if (!image) return res.status(400).json({ error: 'No image provided' });
+
+  // ── Scan-Quota prüfen ───────────────────────────────────────────────────
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.VITE_SUPABASE_URL;
+  if (serviceKey && supabaseUrl && sessionId) {
+    const db = createClient(supabaseUrl, serviceKey);
+    const today = new Date().toISOString().split('T')[0];
+
+    const [sessionRow, globalRow] = await Promise.all([
+      db.from('scan_quota').select('count').eq('session_id', sessionId).eq('day', today).maybeSingle(),
+      db.from('scan_quota').select('count').eq('session_id', '_global_').eq('day', today).maybeSingle(),
+    ]);
+
+    const sessionCount = (sessionRow.data?.count as number | undefined) ?? 0;
+    const globalCount = (globalRow.data?.count as number | undefined) ?? 0;
+
+    if (sessionCount >= 20 || globalCount >= 500) {
+      return res.status(429).json({ error: 'Tageslimit erreicht — morgen geht\'s weiter!' });
+    }
+
+    await Promise.all([
+      db.from('scan_quota').upsert(
+        { session_id: sessionId as string, day: today, count: sessionCount + 1 },
+        { onConflict: 'session_id,day' },
+      ),
+      db.from('scan_quota').upsert(
+        { session_id: '_global_', day: today, count: globalCount + 1 },
+        { onConflict: 'session_id,day' },
+      ),
+    ]);
+  }
 
   console.error(`[recognize] Bildgroesse: ${Math.round(image.length / 1024)} KB (Base64)`);
 
