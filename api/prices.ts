@@ -17,9 +17,19 @@ type PriceResult = {
   localId?: string | null;    // TCGdex Karten-ID im Set, z.B. '6'
   image?: string | null;      // TCGdex Bild-Basis-URL (anhängen: /low.webp oder /high.webp)
   variantLabel?: string | null; // z.B. "HOLO" — nur wenn Varianten-Felder genutzt wurden
+  nameMismatch?: boolean;       // true wenn TCGdex-Name stark vom Suchnamen abweicht
 };
 
-async function fetchFromTCGdex(tcgdexId: string, localId: string, searchName: string, visualType?: string): Promise<PriceResult | null> {
+// useNameGuard: nur true wenn die Suche über einen Namen lief (nicht über setCode+Nummer).
+// Bei setCode+Nummer ist die Identität gesichert — deutscher Kartenname (z.B. "Glurak") würde
+// sonst fälschlich geblockt, weil TCGdex englische Namen liefert ("Charizard").
+async function fetchFromTCGdex(
+  tcgdexId: string,
+  localId: string,
+  searchName: string,
+  visualType?: string,
+  useNameGuard = false,
+): Promise<PriceResult | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 5000);
   try {
@@ -28,48 +38,49 @@ async function fetchFromTCGdex(tcgdexId: string, localId: string, searchName: st
     if (!res.ok) return null;
 
     const card = await res.json() as Record<string, unknown>;
+
+    // Karte muss zumindest einen Namen haben, sonst ist die Response unbrauchbar
+    const verifiedName = (card?.name as string) || undefined;
+    if (!verifiedName) return null;
+
+    // Name-Guard: nur anwenden wenn Suche via Name (nicht via setCode+Nummer).
+    // Ohne Guard: bei Abweichung nameMismatch=true mitgeben (UI zeigt Hinweis).
+    const firstWord = searchName.split(' ')[0].toLowerCase();
+    const nameMatches = verifiedName.toLowerCase().includes(firstWord);
+    if (useNameGuard && !nameMatches) return null;
+    const nameMismatch = !nameMatches || undefined;
+
+    const setInfo = card?.set as Record<string, unknown> | undefined;
+    const verifiedSet = (setInfo?.name as string) || undefined;
+
+    // Preise: fehlendes pricing-Objekt → min=trend=null (Karten-Identität bleibt gültig)
     const pricing = card?.pricing as Record<string, unknown> | undefined;
     const cm = pricing?.cardmarket as Record<string, number | null> | null | undefined;
-    if (!cm) return null;
 
-    // Variantenabhängige Preisfelder (basierend auf echten TCGdex-Feldnamen):
-    // TCGdex liefert: low, trend, low-holo, trend-holo (letztere oft null oder 0 = nicht verfügbar)
     let min: number | null = null;
     let trend: number | null = null;
     let variantLabel: string | null = null;
 
-    if (visualType === 'holo') {
-      const holoMin = cm['low-holo'];
-      const holoTrend = cm['trend-holo'];
-      if (holoMin != null && holoMin > 0) { min = holoMin; variantLabel = 'HOLO'; }
-      if (holoTrend != null && holoTrend > 0) { trend = holoTrend; variantLabel = 'HOLO'; }
-    }
-    // Fallback auf Basis-Felder (auch für reverse_holo, full_art usw.)
-    if (min === null) min = (cm.low != null && cm.low > 0 ? cm.low : null);
-    if (trend === null) trend = (cm.trend != null && cm.trend > 0 ? cm.trend : null);
-
-    if (min === null && trend === null) return null;
-
-    // Set-Name und Karten-Name direkt aus TCGdex übernehmen – zuverlässiger als KI
-    const setInfo = card?.set as Record<string, unknown> | undefined;
-    const verifiedSet = (setInfo?.name as string) || undefined;
-    const verifiedName = (card?.name as string) || undefined;
-
-    // Guard: Wenn der zurückgegebene Name das erste Wort des gesuchten Namens nicht enthält,
-    // wurde die falsche Karte getroffen (z.B. falscher setCode → andere Kartennummer).
-    if (verifiedName) {
-      const firstWord = searchName.split(' ')[0].toLowerCase();
-      if (!verifiedName.toLowerCase().includes(firstWord)) return null;
+    if (cm) {
+      // TCGdex liefert: low, trend, low-holo, trend-holo (letztere oft null oder 0 = n.v.)
+      if (visualType === 'holo') {
+        const holoMin = cm['low-holo'];
+        const holoTrend = cm['trend-holo'];
+        if (holoMin != null && holoMin > 0) { min = holoMin; variantLabel = 'HOLO'; }
+        if (holoTrend != null && holoTrend > 0) { trend = holoTrend; variantLabel = 'HOLO'; }
+      }
+      // Fallback auf Basis-Felder (auch für reverse_holo, full_art usw.)
+      if (min === null) min = (cm.low != null && cm.low > 0 ? cm.low : null);
+      if (trend === null) trend = (cm.trend != null && cm.trend > 0 ? cm.trend : null);
     }
 
-    // Cardmarket-Suchlink aus verifizierten Daten bauen (Name + Nummer ohne führende Nullen)
     const cmSearch = verifiedName
       ? `https://www.cardmarket.com/de/Pokemon/Products/Search?searchString=${encodeURIComponent(verifiedName + ' ' + localId)}`
       : null;
 
     const image = (card?.image as string) || null;
 
-    return { min, trend, url: cmSearch, verifiedSet, verifiedName, tcgdexSet: tcgdexId, localId, image, variantLabel };
+    return { min, trend, url: cmSearch, verifiedSet, verifiedName, tcgdexSet: tcgdexId, localId, image, variantLabel, nameMismatch };
   } catch {
     clearTimeout(timer);
     return null;
@@ -147,8 +158,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (setCode && localId) {
     const tcgdexId = PTCGO_TO_TCGDEX[(setCode as string).toUpperCase()];
     if (tcgdexId) {
-      const result = await fetchFromTCGdex(tcgdexId, localId, name as string, vt);
-      if (result) return res.status(200).json({ ...result, found: true, source: 'tcgdex' });
+      const result = await fetchFromTCGdex(tcgdexId, localId, name as string, vt, false);
+      if (result) return res.status(200).json({
+        ...result,
+        found: result.min !== null || result.trend !== null,
+        source: 'tcgdex',
+      });
     }
   }
 
@@ -156,8 +171,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!setCode && set && localId) {
     const tcgdexId = SETNAME_TO_TCGDEX[set as string];
     if (tcgdexId) {
-      const result = await fetchFromTCGdex(tcgdexId, localId, name as string, vt);
-      if (result) return res.status(200).json({ ...result, found: true, source: 'tcgdex-vintage' });
+      const result = await fetchFromTCGdex(tcgdexId, localId, name as string, vt, false);
+      if (result) return res.status(200).json({
+        ...result,
+        found: result.min !== null || result.trend !== null,
+        source: 'tcgdex-vintage',
+      });
     }
   }
 

@@ -31,6 +31,7 @@ type Prices = {
   localId?: string | null;
   image?: string | null;
   variantLabel?: string | null;
+  nameMismatch?: boolean;
 };
 
 function getSessionId(): string {
@@ -478,27 +479,41 @@ export function CardScanner() {
                 </div>
                 {prices === null ? (
                   <p className="font-mono text-[10px] text-white/40 animate-pulse">Preise werden geladen…</p>
-                ) : prices.found && (prices.min !== null || prices.trend !== null) ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="font-mono text-[9px] tracking-wider text-white/40">AB (MIN)</span>
-                      <span className="font-mono text-sm font-bold text-white">
-                        {prices.min !== null ? `€${prices.min.toFixed(2)}` : "–"}
-                      </span>
+                ) : (prices.min !== null || prices.trend !== null) ? (
+                  <>
+                    {prices.nameMismatch && (
+                      <p className="mb-2 font-mono text-[9px] text-poke-yellow/70">
+                        ⚠ Erkannter Name weicht ab — bitte Bild vergleichen
+                      </p>
+                    )}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-mono text-[9px] tracking-wider text-white/40">AB (MIN)</span>
+                        <span className="font-mono text-sm font-bold text-white">
+                          {prices.min !== null ? `€${prices.min.toFixed(2)}` : "–"}
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-mono text-[9px] tracking-wider text-white/40">
+                          TREND{prices.variantLabel ? ` (${prices.variantLabel})` : ""}
+                        </span>
+                        <span className="font-mono text-sm font-bold text-poke-yellow">
+                          {prices.trend !== null ? `€${prices.trend.toFixed(2)}` : "–"}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex flex-col gap-0.5">
-                      <span className="font-mono text-[9px] tracking-wider text-white/40">
-                        TREND{prices.variantLabel ? ` (${prices.variantLabel})` : ""}
-                      </span>
-                      <span className="font-mono text-sm font-bold text-poke-yellow">
-                        {prices.trend !== null ? `€${prices.trend.toFixed(2)}` : "–"}
-                      </span>
-                    </div>
-                  </div>
+                  </>
                 ) : (
                   <div className="flex flex-col gap-2">
+                    {prices.nameMismatch && (
+                      <p className="font-mono text-[9px] text-poke-yellow/70">
+                        ⚠ Erkannter Name weicht ab — bitte Bild vergleichen
+                      </p>
+                    )}
                     <p className="font-mono text-[10px] text-white/40">
-                      Kein Preis in der Datenbank gefunden.
+                      {prices.tcgdexSet
+                        ? "Noch kein Marktpreis verfügbar."
+                        : "Kein Preis in der Datenbank gefunden."}
                     </p>
                     <a
                       href={getCardmarketUrl(result.cardName, result.set, result.number)}
